@@ -2,8 +2,7 @@
 #include <cstdint>
 
 #include "Description.h"
-#include "Scene.h"
-
+#include "ComponentPool.h"
 namespace Wheel
 {
     namespace Engine

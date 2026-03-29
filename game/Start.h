@@ -2,7 +2,9 @@
 //This is the starting file. Register any custom systems you'd like to use here
 #pragma once
 
-#include "../src/core/Scene.h"
+#include <iostream>
+
+#include "../wheel/include/core/Scene.h"
 Wheel::Engine::Scene* g_Scene;
 
 class Start

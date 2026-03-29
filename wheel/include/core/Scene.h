@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include "SystemManager.h"
 #include "ComponentManager.h"
@@ -28,7 +29,7 @@ namespace Wheel
                 delete m_SystemManager;
             }
 
-            void Update(float deltaTime);
+            void Update(float deltaTime){std::cout << "Update" << std::endl; m_SystemManager->Update(deltaTime);}
 
             /**
             * @brief  Register all components before creating any entities. Built-in components do not have to be registered

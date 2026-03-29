@@ -2,7 +2,7 @@
 #include <random>
 #include <gtest/gtest.h>
 #include <string>
-#include "../src/core/Scene.h"
+#include "../wheel/core/Scene.h"
 
 //Empty components for testing
 class A { public: A() = default; ~A() = default; };
