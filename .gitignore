@@ -12,4 +12,11 @@ cmake-build-*/
 *.a
 *.so
 *.exe
-/build-pi/
+*.dll
+*.lib
+*.pdb
+*.ilk
+
+# Windows metadata
+desktop.ini
+Thumbs.db
