@@ -26,6 +26,7 @@ add_library(wheel_engine STATIC ${ENGINE_SOURCES})
 # Tell the engine where to find GLFW and GLAD headers
 target_link_libraries(wheel_engine PUBLIC glad glfw)
 target_include_directories(wheel_engine PUBLIC wheel/include)
+target_include_directories(wheel_engine PUBLIC wheel/renderer/include)
 
 # --- 3. PLATFORM SPECIFIC LINKING ---
 

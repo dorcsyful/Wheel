@@ -6,5 +6,16 @@
 
 void Start::Update()
 {
-    g_Scene->Update(0.016f); // Default ~60 FPS delta time
+    while (!glfwWindowShouldClose(m_Renderer->GetWindow()))
+    {
+        //Query input from the renderer
+        //TODO: Pass to InputSystem
+        glfwPollEvents();
+
+        //TODO: Update ECS here
+
+
+        m_Renderer->Update();
+
+    }
 }
