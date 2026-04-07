@@ -10,7 +10,7 @@ namespace Wheel
         class Shader
         {
         public:
-            Shader(const char* a_VertexPath, const char* a_FragmentPath);
+            Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath);
             ~Shader() = default;
 
             void use()  {  glUseProgram(m_ID);  }
@@ -21,10 +21,14 @@ namespace Wheel
             {
                 return m_ID;
             }
+            std::string GetName() const
+            {
+                return m_Name;
+            }
 
         private:
             void checkCompileErrors(unsigned int shader, const std::string& type);
-
+            std::string m_Name;
             unsigned int m_ID;
         };
     }

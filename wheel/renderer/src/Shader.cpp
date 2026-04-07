@@ -6,9 +6,11 @@
 
 #include "core/Globals.h"
 
-Wheel::Renderer::Shader::Shader(const char* a_VertexPath, const char* a_FragmentPath)
+Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath)
 {
-    // 1. retrieve the vertex/fragment source code from filePath
+    m_Name = a_VertexPath;
+    m_Name = m_Name.substr(0,m_Name.find_last_of('.'));
+
     std::string vertexCode;
     std::string fragmentCode;
     std::ifstream vShaderFile;
@@ -41,7 +43,7 @@ Wheel::Renderer::Shader::Shader(const char* a_VertexPath, const char* a_Fragment
     }
     const char* vShaderCode = vertexCode.c_str();
     const char * fShaderCode = fragmentCode.c_str();
-    // 2. compile shaders
+    //Compile shaders
     unsigned int vertex, fragment;
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
@@ -59,7 +61,7 @@ Wheel::Renderer::Shader::Shader(const char* a_VertexPath, const char* a_Fragment
     glAttachShader(m_ID, fragment);
     glLinkProgram(m_ID);
     checkCompileErrors(m_ID, "PROGRAM");
-    // delete the shaders as they're linked into our program now and no longer necessary
+    //We don't need no shaders no more
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 
