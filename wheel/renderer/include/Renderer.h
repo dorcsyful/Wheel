@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 #include <string>
-
+#include "RenderedObject.h"
 #include "Shader.h"
 #include "GLFW/glfw3.h"
 
@@ -11,7 +11,6 @@ namespace Wheel
 {
     namespace Renderer
     {
-        class RenderedObject;
         class Texture;
 
         /**
@@ -36,7 +35,7 @@ namespace Wheel
             /**
              * @brief All shaders in assets/shaders get loaded on startup. You can refer to them by their filename. Call this function if you're not sure your shader has been loaded
              */
-            std::vector<std::string> GetShaders() const
+            [[nodiscard]] std::vector<std::string> GetShaders() const
             {
                 std::vector<std::string> shaders(m_Shaders.size());
                 for (auto& shader : m_Shaders)
@@ -46,8 +45,7 @@ namespace Wheel
                 return shaders;
             }
 
-            void GetRenderedObjects();
-
+            void AddToRenderQueue(RenderedObject a_RenderedObject);
             /**
              * @brief You have direct access to the GLFW window. Don't make me regret it
              */
@@ -58,21 +56,23 @@ namespace Wheel
              */
             void LoadTexture(Texture* a_Texture);
 
+            std::vector<RenderedObject>& GetRenderedObjects() { return m_RenderedObjects; }
+
         private:
-            void AddShader(const char* a_Name, const char* a_VertexShader, const char* a_FragmentShader);
+            void AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader);
             void CreateTestSquare();
 
-            GLFWwindow* m_Window;
+            GLFWwindow* m_Window{};
             std::vector<Shader*> m_Shaders;
             std::vector<Texture*> m_Textures;
             //Using a vector instead of regular array to have access to sort() & co.
-            std::vector<RenderedObject*> m_RenderedObjects;
+            std::vector<RenderedObject> m_RenderedObjects;
 
 
 
             //Flat squares for rendering 2D
-            unsigned int m_EBO2D;
-            unsigned int m_VBO2D;
+            unsigned int m_EBO2D{};
+            unsigned int m_VBO2D{};
             GLfloat vertices2D[20] = { -0.5f,  0.5f, 0.0f,  // Position 0
                             0.0f,  0.0f,        // TexCoord 0
                            -0.5f, -0.5f, 0.0f,  // Position 1

@@ -21,7 +21,7 @@ class Start
 
     void RegisterComponents()
     {
-        //Register your components here
+
     }
 
     void RegisterSystems()
@@ -43,6 +43,7 @@ class Start
 
     private:
     std::unique_ptr<Wheel::Renderer::Renderer> m_Renderer;
+    std::unique_ptr<Wheel::Engine::Scene> m_Scene;
 };
 
 

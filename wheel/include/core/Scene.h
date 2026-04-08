@@ -43,19 +43,19 @@ namespace Wheel
             /**
             * @brief  Register all systems before creating any entities. Built-in systems do not have to be registered
             */
-            void RegisterSystem(System* a_System, Description* a_Description)
+            void RegisterSystem(System* a_System, Description a_Description)
             {
-                m_SystemManager->RegisterSystem(a_System, a_Description);
+                m_SystemManager->RegisterSystem(a_System, std::move(a_Description));
             }
 
             /**
              * @brief Add a component with default values. You can later update the component via GetComponent<T>(entityId)
              */
             template <typename T>
-            T* AddComponent(uint32_t a_Entity)
+            T& AddComponent(uint32_t a_Entity)
             {
-                m_EntityManager->GetEntityDescription(a_Entity)->AddComponentType(m_ComponentManager->GetDescription<T>()->GetAsBitset());
-                T* component = m_ComponentManager->AddComponent<T>(a_Entity);
+                m_EntityManager->GetEntityDescription(a_Entity).AddComponentType(m_ComponentManager->GetDescription<T>().GetAsBitset());
+                T& component = m_ComponentManager->AddComponent<T>(a_Entity);
                 return component;
             }
 
@@ -63,11 +63,11 @@ namespace Wheel
             void RemoveComponent(uint32_t a_Entity)
             {
                 m_ComponentManager->GetComponentPool<T>()->RemoveComponent(a_Entity);
-                m_EntityManager->GetEntityDescription(a_Entity)->RemoveComponentType(m_ComponentManager->GetDescription<T>()->GetAsBitset());
+                m_EntityManager->GetEntityDescription(a_Entity).RemoveComponentType(m_ComponentManager->GetDescription<T>().GetAsBitset());
             }
 
             template <typename T>
-            T* GetComponent(uint32_t a_Entity)
+            T& GetComponent(uint32_t a_Entity)
             {
                 return m_ComponentManager->GetComponentPool<T>()->GetComponent(a_Entity);
             }
@@ -75,9 +75,9 @@ namespace Wheel
             template <typename T>
             bool HasComponent(uint32_t a_Entity)
             {
-                Description* entityDescription = m_EntityManager->GetEntityDescription(a_Entity);
-                Description* componentBitset = m_ComponentManager->GetDescription<T>();
-                return entityDescription->HasComponentType(componentBitset);
+                Description& entityDescription = m_EntityManager->GetEntityDescription(a_Entity);
+                Description& componentBitset = m_ComponentManager->GetDescription<T>();
+                return entityDescription.HasComponentType(componentBitset);
             }
 
             /**
@@ -98,7 +98,7 @@ namespace Wheel
             }
 
             template <typename T>
-            std::unordered_map<uint32_t,T*> GetComponents()
+            std::unordered_map<uint32_t,T&> GetComponents()
             {
                 auto components = m_ComponentManager->GetComponentPool<T>()->GetComponents();
                 return components;

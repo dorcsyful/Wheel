@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <typeinfo>
 #include "ComponentPool.h"
-
+#include "Description.h"
 namespace Wheel
 {
     namespace Engine
@@ -20,14 +20,9 @@ namespace Wheel
 
             ~ComponentManager()
             {
-                for (auto element : m_ComponentPools)
+                for (const auto& it : m_ComponentPools)
                 {
-                    delete element.second;
-                }
-
-                for (auto element : m_Descriptions)
-                {
-                    delete element.second;
+                    delete it.second;
                 }
             }
 
@@ -35,39 +30,40 @@ namespace Wheel
             void RegisterComponent()
             {
                 std::string name = typeid(T).name();
-                assert(m_ComponentPools.find(name) == m_ComponentPools.end() && "Component type already registered.");
+                assert(m_ComponentPools.find(name) == m_ComponentPools.end() &&
+                        "Component type already registered.");
 
                 ComponentPool<T>* componentPool = new ComponentPool<T>();
                  m_ComponentPools.insert(std::make_pair(name, componentPool));
-                Description* description = new Description();
                 std::bitset<MAX_COMPONENT_TYPES> componentBitset;
                 componentBitset[m_ComponentPools.size() -1].flip();
-                description->AddComponentType(componentBitset);
-                m_Descriptions.insert(std::make_pair(name, description));
+                auto descriptionPair = std::make_pair(name, Description());
+                descriptionPair.second.AddComponentType(componentBitset);
+                m_Descriptions.emplace(std::move(descriptionPair));
             }
 
             template <typename T>
-            Description* GetDescription() const
+            [[nodiscard]] Description& GetDescription()
             {
                 return m_Descriptions.at(typeid(T).name());
             }
 
             template <typename T>
-            T* AddComponent(uint32_t a_EntityId)
+            T& AddComponent(uint32_t a_EntityId)
             {
                 assert(a_EntityId < MAX_ENTITIES && "Entity ID out of range: ");
                 std::string name = typeid(T).name();
 
-                T* temp = static_cast<ComponentPool<T>*>(m_ComponentPools[name])->AddComponent(a_EntityId);
+                T& temp = static_cast<ComponentPool<T>*>(m_ComponentPools[name])->AddComponent(a_EntityId);
                 return temp;
             }
 
             template <typename T>
-            void RemoveComponent(T* a_Component)
+            void RemoveComponent(const T& a_Component)
             {
                 assert(a_Component == nullptr && "Component cannot be null.");
                 std::string name = typeid(T).name();
-                static_cast<T*>(m_ComponentPools[name])->RemoveComponent(a_Component);
+                static_cast<T>(m_ComponentPools[name])->RemoveComponent(a_Component);
             }
 
             template <typename T>
@@ -80,7 +76,7 @@ namespace Wheel
             }
 
             template <typename T>
-            T* GetComponent(uint32_t a_EntityId)
+            T& GetComponent(uint32_t a_EntityId)
             {
                 //TODO: UPDATE TO MATCH DESCRIPTION
                 assert(a_EntityId < MAX_ENTITIES && "Entity ID out of range.");
@@ -106,7 +102,7 @@ namespace Wheel
 
         private:
             std::unordered_map<std::string, IComponentPool*> m_ComponentPools;
-            std::unordered_map<std::string, Description*> m_Descriptions;
+            std::unordered_map<std::string, Description> m_Descriptions;
         };
     }
 }

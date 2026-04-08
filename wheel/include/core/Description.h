@@ -28,6 +28,9 @@ namespace Wheel
         {
         public:
             Description() = default;
+            Description(const Description& a_Other) { m_ComponentBitset = a_Other.m_ComponentBitset; };
+            Description(Description&& a_Other) noexcept { m_ComponentBitset = a_Other.m_ComponentBitset; };
+
             const std::bitset<MAX_COMPONENT_TYPES>& GetAsBitset()
             {
                 return m_ComponentBitset;
@@ -47,9 +50,9 @@ namespace Wheel
                 m_ComponentBitset[firstBit] = false;
 
             }
-            bool HasComponentType(Description* componentBitset) const
+            bool HasComponentType(Description& componentBitset) const
             {
-                size_t firstBit = get_first_set_bit(componentBitset->GetAsBitset());
+                size_t firstBit = get_first_set_bit(componentBitset.GetAsBitset());
                 assert(firstBit < MAX_COMPONENT_TYPES && "Component type out of range");
                 return m_ComponentBitset[firstBit] == true;
 
@@ -68,10 +71,6 @@ namespace Wheel
             void operator=(const Description& other)
             {
                 m_ComponentBitset = other.m_ComponentBitset;
-            }
-            Description(Description&& a_Description) noexcept
-            {
-                m_ComponentBitset = a_Description.m_ComponentBitset;
             }
             void Reset()
             {

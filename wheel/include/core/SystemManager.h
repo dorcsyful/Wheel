@@ -11,7 +11,7 @@ namespace Wheel
         class SystemManager
         {
         public:
-            SystemManager() : m_SystemCount(0)
+            SystemManager() : m_Systems{}, m_SystemCount(0)
             {
                 for (int i = 0; i < MAX_SYSTEMS; i++)
                 {
@@ -38,14 +38,12 @@ namespace Wheel
             {
                 for (int i = 0; i < m_SystemCount; i++)
                 {
-                    if (m_Systems[i] != nullptr)
-                    {
-                        m_Systems[i]->Update(deltaTime);
-                    }
+                    m_Systems[i]->Update(deltaTime);
+
                 }
             }
 
-            void RegisterSystem(Wheel::Engine::System* a_System, Description* a_Description)
+            void RegisterSystem(Wheel::Engine::System* a_System, Description a_Description)
             {
                 if (m_SystemCount < MAX_SYSTEMS)
                 {

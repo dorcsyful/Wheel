@@ -1,5 +1,7 @@
 #include "RenderSystem.h"
 
+#include "RenderedObject.h"
+
 void Wheel::Engine::Systems::RenderSystem::GetComponentPool(IComponentPool* a_Pool)
 {
     if (m_Transform2DPool == nullptr) m_Transform2DPool = dynamic_cast<ComponentPool<Components::Transform2D>*>(a_Pool);
@@ -9,4 +11,5 @@ void Wheel::Engine::Systems::RenderSystem::GetComponentPool(IComponentPool* a_Po
 
 void Wheel::Engine::Systems::RenderSystem::Update(float deltaTime)
 {
+
 }

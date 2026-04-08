@@ -1,650 +1,968 @@
-﻿#pragma once
-#include <random>
+#pragma once
 #include <gtest/gtest.h>
 #include <string>
 #include "../wheel/include/core/Scene.h"
 
-//Empty components for testing
-class A { public: A() = default; ~A() = default; };
-class B { public: B() = default; ~B() = default; bool needsCheck = false; };
-class C { public: C() = default; ~C() = default; };
-class D { public: D() = default; ~D() = default; };
-class E { public: E() = default; ~E() = default; };
+// ==================== Test Components ====================
 
+struct A { int value = 0; };
+struct B { float x = 0.0f; float y = 0.0f; };
+struct C { bool flag = false; };
+struct D { int data = -1; };
+struct E { double val = 3.14; };
+struct Counter { int count = 0; };
 
-// Test component with integer for system update tests
-class CounterComponent {
-public:
-    CounterComponent() = default;
-    ~CounterComponent() = default;
-    int counter = 0;
-};
+// ==================== Entity Creation ====================
 
-class TestSystem : public Wheel::Engine::System
+TEST(ECS, Entity_IDsAreSequential)
 {
-public:
-    explicit TestSystem(Wheel::Engine::Description* a_Description) : System(a_Description) {}
-    void GetComponentPool(Wheel::Engine::IComponentPool* a_Pool) override {
-        m_ComponentPool = dynamic_cast<Wheel::Engine::ComponentPool<CounterComponent>*>(a_Pool);
+    Wheel::Engine::Scene scene;
+    for (int i = 0; i < 10; ++i) {
+        uint32_t id = scene.AddEntity();
+        EXPECT_EQ(id, static_cast<uint32_t>(i));
     }
-    void Update(float deltaTime) override {
-        if (m_ComponentPool) {
-            auto components = m_ComponentPool->GetComponents();
-            for (auto& [entityId, component] : components) {
-                component->counter++;
-            }
-        }
+}
+
+TEST(ECS, Entity_CountTracking)
+{
+    Wheel::Engine::Scene scene;
+    EXPECT_EQ(scene.GetNumberOfEntities(), 0u);
+    for (int i = 1; i <= 5; ++i) {
+        scene.AddEntity();
+        EXPECT_EQ(scene.GetNumberOfEntities(), static_cast<size_t>(i));
     }
-private:
-    Wheel::Engine::ComponentPool<CounterComponent>* m_ComponentPool = nullptr;
-};
+}
 
- TEST(ECS, SimpleEntityCreation) {
-     Wheel::Engine::Scene* scene = new Wheel::Engine::Scene();
-     for (int i = 0; i < 10; ++i) {
-         uint32_t entityId = scene->AddEntity(false);
-         EXPECT_EQ(entityId, i); // Ensure entity ID is valid
-     }
-     delete scene;
- }
-
-TEST(ECS, TooManyEntities)
- {
-     Wheel::Engine::Scene* scene = new Wheel::Engine::Scene();
-
-     for (int i= 0; i < MAX_ENTITIES; ++i)
-     {
-         scene->AddEntity(false);
-     }
-
-     EXPECT_DEATH(scene->AddEntity(false), "Too many entities in existence.");
-
-     delete scene;
- }
-
-TEST(ECS, GetNumberOfEntities)
+TEST(ECS, Entity_TooManyEntitiesAsserts)
 {
-    Wheel::Engine::Scene* scene = new Wheel::Engine::Scene();
+    Wheel::Engine::Scene scene;
+    for (int i = 0; i < MAX_ENTITIES; ++i)
+        scene.AddEntity();
+    EXPECT_DEATH(scene.AddEntity(), "Too many entities in existence.");
+}
 
-    for (int i = 0; i < 10; ++i)
-    {
-        scene->AddEntity();
+// ==================== Entity Removal ====================
+
+TEST(ECS, Entity_RemovalDecreasesCount)
+{
+    Wheel::Engine::Scene scene;
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+
+    EXPECT_EQ(scene.GetNumberOfEntities(), 3u);
+    scene.RemoveEntity(e1);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 2u);
+    scene.RemoveEntity(e0);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 1u);
+    scene.RemoveEntity(e2);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 0u);
+}
+
+TEST(ECS, Entity_RemovalOutOfRangeAsserts)
+{
+    Wheel::Engine::Scene scene;
+    EXPECT_DEATH(scene.RemoveEntity(MAX_ENTITIES + 1), "Entity ID out of range.");
+}
+
+TEST(ECS, Entity_IDReusedAfterDeletion)
+{
+    Wheel::Engine::Scene scene;
+    uint32_t e0 = scene.AddEntity();  // ID = 0
+    uint32_t e1 = scene.AddEntity();  // ID = 1
+    EXPECT_EQ(e0, 0u);
+    EXPECT_EQ(e1, 1u);
+
+    scene.RemoveEntity(e0);
+    uint32_t e2 = scene.AddEntity();  // should recycle ID 0
+    EXPECT_EQ(e2, 0u);
+}
+
+// ==================== Component Registration ====================
+
+TEST(ECS, ComponentReg_SingleType)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    EXPECT_EQ(scene.GetNumberOfComponentTypes(), 1);
+}
+
+TEST(ECS, ComponentReg_MultipleTypes)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    scene.RegisterComponentType<C>();
+    scene.RegisterComponentType<D>();
+    scene.RegisterComponentType<E>();
+    EXPECT_EQ(scene.GetNumberOfComponentTypes(), 5);
+}
+
+TEST(ECS, ComponentReg_DuplicateAsserts)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    EXPECT_DEATH(scene.RegisterComponentType<A>(), "Component type already registered.");
+}
+
+// ==================== Component Add / Has ====================
+
+TEST(ECS, Component_HasFalseBeforeAdd)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    EXPECT_FALSE(scene.HasComponent<A>(e));
+}
+
+TEST(ECS, Component_HasTrueAfterAdd)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    EXPECT_TRUE(scene.HasComponent<A>(e));
+}
+
+TEST(ECS, Component_HasFalseAfterRemove)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.RemoveComponent<A>(e);
+    EXPECT_FALSE(scene.HasComponent<A>(e));
+}
+
+TEST(ECS, Component_AddDuplicateAsserts)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    EXPECT_DEATH(scene.AddComponent<A>(e), "Entity already has component.");
+}
+
+TEST(ECS, Component_RemoveMissingAsserts)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    EXPECT_DEATH(scene.RemoveComponent<A>(e), "Entity does not have component.");
+}
+
+// ==================== Component Data via GetComponent ====================
+
+TEST(ECS, Component_DefaultValues)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.AddComponent<B>(e);
+
+    EXPECT_EQ(scene.GetComponent<A>(e).value, 0);
+    EXPECT_FLOAT_EQ(scene.GetComponent<B>(e).x, 0.0f);
+    EXPECT_FLOAT_EQ(scene.GetComponent<B>(e).y, 0.0f);
+}
+
+TEST(ECS, Component_ModifyViaGetComponent)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+
+    scene.GetComponent<A>(e).value = 42;
+    EXPECT_EQ(scene.GetComponent<A>(e).value, 42);
+}
+
+TEST(ECS, Component_ModifyPersistsAcrossMultipleCalls)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+
+    scene.GetComponent<A>(e).value = 100;
+    scene.GetComponent<A>(e).value += 23;
+    EXPECT_EQ(scene.GetComponent<A>(e).value, 123);
+}
+
+TEST(ECS, Component_MultipleEntitiesIndependentData)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<A>(e2);
+
+    scene.GetComponent<A>(e0).value = 1;
+    scene.GetComponent<A>(e1).value = 2;
+    scene.GetComponent<A>(e2).value = 3;
+
+    EXPECT_EQ(scene.GetComponent<A>(e0).value, 1);
+    EXPECT_EQ(scene.GetComponent<A>(e1).value, 2);
+    EXPECT_EQ(scene.GetComponent<A>(e2).value, 3);
+}
+
+TEST(ECS, Component_ReAddAfterRemove_ResetsToDefault)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.GetComponent<A>(e).value = 99;
+
+    scene.RemoveComponent<A>(e);
+    EXPECT_FALSE(scene.HasComponent<A>(e));
+
+    scene.AddComponent<A>(e);
+    EXPECT_TRUE(scene.HasComponent<A>(e));
+    EXPECT_EQ(scene.GetComponent<A>(e).value, 0);  // fresh default
+}
+
+// ==================== Multiple Component Types Per Entity ====================
+
+TEST(ECS, Component_MultipleTypesOnOneEntity)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    scene.RegisterComponentType<C>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.AddComponent<B>(e);
+    scene.AddComponent<C>(e);
+
+    EXPECT_TRUE(scene.HasComponent<A>(e));
+    EXPECT_TRUE(scene.HasComponent<B>(e));
+    EXPECT_TRUE(scene.HasComponent<C>(e));
+
+    scene.GetComponent<A>(e).value = 7;
+    scene.GetComponent<B>(e).x = 1.5f;
+    scene.GetComponent<C>(e).flag = true;
+
+    EXPECT_EQ(scene.GetComponent<A>(e).value, 7);
+    EXPECT_FLOAT_EQ(scene.GetComponent<B>(e).x, 1.5f);
+    EXPECT_TRUE(scene.GetComponent<C>(e).flag);
+}
+
+TEST(ECS, Component_DifferentEntitiesHaveDifferentSubsets)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    scene.RegisterComponentType<C>();
+
+    uint32_t e0 = scene.AddEntity();   // A only
+    uint32_t e1 = scene.AddEntity();   // A + B
+    uint32_t e2 = scene.AddEntity();   // A + B + C
+
+    scene.AddComponent<A>(e0);
+
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<B>(e1);
+
+    scene.AddComponent<A>(e2);
+    scene.AddComponent<B>(e2);
+    scene.AddComponent<C>(e2);
+
+    EXPECT_TRUE (scene.HasComponent<A>(e0));
+    EXPECT_FALSE(scene.HasComponent<B>(e0));
+    EXPECT_FALSE(scene.HasComponent<C>(e0));
+
+    EXPECT_TRUE (scene.HasComponent<A>(e1));
+    EXPECT_TRUE (scene.HasComponent<B>(e1));
+    EXPECT_FALSE(scene.HasComponent<C>(e1));
+
+    EXPECT_TRUE(scene.HasComponent<A>(e2));
+    EXPECT_TRUE(scene.HasComponent<B>(e2));
+    EXPECT_TRUE(scene.HasComponent<C>(e2));
+}
+
+TEST(ECS, Component_RemoveOneTypePreservesOthers)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    scene.RegisterComponentType<C>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.AddComponent<B>(e);
+    scene.AddComponent<C>(e);
+
+    scene.RemoveComponent<B>(e);
+
+    EXPECT_TRUE (scene.HasComponent<A>(e));
+    EXPECT_FALSE(scene.HasComponent<B>(e));
+    EXPECT_TRUE (scene.HasComponent<C>(e));
+}
+
+// ==================== Component Size Tracking ====================
+
+TEST(ECS, ComponentSize_IncreasesOnAdd)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
+
+    for (int i = 0; i < 5; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<A>(e);
+        EXPECT_EQ(scene.GetComponents<A>().size(), static_cast<size_t>(i + 1));
     }
-    EXPECT_EQ(scene->GetNumberOfEntities(), 10);
-    delete scene;
 }
 
- TEST(ECS, RemoveEmptyEntity) {
-     Wheel::Engine::Scene* scene = new Wheel::Engine::Scene();
-     uint32_t indexArray[10];
-     for (unsigned int & i : indexArray)
-     {
-         i = scene->AddEntity(false);
-     }
-
-     scene->RemoveEntity(indexArray[5]);
-     EXPECT_EQ(scene->GetNumberOfEntities(), 9); // Ensure entity count is correct after removal
-     EXPECT_DEATH(scene->RemoveEntity(MAX_ENTITIES + 1), "Entity ID out of range.");
-
-     delete scene;
- }
-
-TEST(ECS, RegisterComponent)
- {
-     Wheel::Engine::Scene scene = Wheel::Engine::Scene();
-     scene.RegisterComponentType<A>();
-     scene.RegisterComponentType<C>();
-     scene.RegisterComponentType<B>();
-     scene.RegisterComponentType<D>();
-     scene.RegisterComponentType<E>();
-
-     auto tempt = scene.GetNumberOfComponentTypes();
-     EXPECT_EQ(tempt, 5);
- }
-
-TEST(ECS, AddComponent)
- {
-     Wheel::Engine::Scene scene = Wheel::Engine::Scene();
-     scene.RegisterComponentType<A>();
-     scene.RegisterComponentType<C>();
-     scene.RegisterComponentType<B>();
-     scene.RegisterComponentType<D>();
-     scene.RegisterComponentType<E>();
-
-     std::vector<uint32_t> indexArray = std::vector<uint32_t>();
-     for (int i = 0; i < 100; ++i)
-     {
-         indexArray.push_back(scene.AddEntity());
-     }
-     for (int i = 0; i < 100; i++)
-     {
-         if (i < 10)
-         {scene.AddComponent<C>(indexArray[i]);}
-         if (i > 10 && i < 25)
-         {scene.AddComponent<E>(indexArray[i]);}
-         if (i > 25 && i < 50)
-         {scene.AddComponent<B>(indexArray[i]);}
-         if (i > 75)
-         {scene.AddComponent<A>(indexArray[i]);}
-     }
-     uint32_t a = scene.GetComponents<A>().size();
-     EXPECT_EQ(a, 24);
-     uint32_t b = scene.GetComponents<B>().size();
-     EXPECT_EQ(b, 24);
-     uint32_t c = scene.GetComponents<C>().size();
-     EXPECT_EQ(c, 10);
-     uint32_t d = scene.GetComponents<D>().size();
-     EXPECT_EQ(d, 0);
-     uint32_t e = scene.GetComponents<E>().size();
-     EXPECT_EQ(e, 14);
- }
-
-TEST(ECS, RemoveComponent)
- {
-     std::random_device rd;
-     std::mt19937 gen(rd());
-
-     Wheel::Engine::Scene scene = Wheel::Engine::Scene();
-     scene.RegisterComponentType<A>();
-     scene.RegisterComponentType<B>();
-     scene.RegisterComponentType<C>();
-     scene.RegisterComponentType<D>();
-     scene.RegisterComponentType<E>();
-
-     std::vector<uint32_t> indexArray = std::vector<uint32_t>();
-     for (int i = 0; i < 100; ++i)
-     {
-         indexArray.push_back(scene.AddEntity());
-     }
-
-     std::unordered_map<uint32_t, A*> aPtrs;
-     std::unordered_map<uint32_t, B*> bPtrs;
-     std::unordered_map<uint32_t, C*> cPtrs;
-     std::unordered_map<uint32_t, D*> dPtrs;
-
-     for (int i = 0; i < random(10,100); ++i) {
-         if (i == 0) {
-             aPtrs[indexArray[i]] = scene.AddComponent<A>(indexArray[i]);
-         }
-         if (!scene.HasComponent<A>(indexArray[i])) { // Avoid double-adding
-             aPtrs[indexArray[i]] = scene.AddComponent<A>(indexArray[i]);
-         }
-     }
-     for (int i = 0; i < random(0,100); ++i) {
-         if (i == 0)
-         {
-             bPtrs[indexArray[i]] = scene.AddComponent<B>(indexArray[i]);
-         }
-         if (!scene.HasComponent<B>(indexArray[i])) { // Avoid double-adding
-             bPtrs[indexArray[i]] = scene.AddComponent<B>(indexArray[i]);
-         }
-     }
-     for (int i = 0; i < random(0,100); ++i) {
-         if (!scene.HasComponent<C>(indexArray[i])) { // Avoid double-adding
-             cPtrs[indexArray[i]] = scene.AddComponent<C>(indexArray[i]);
-         }
-     }
-     for (int i = 0; i < random(0,100); ++i) {
-         if (!scene.HasComponent<C>(indexArray[i])) { // Avoid double-adding
-             dPtrs[indexArray[i]] = scene.AddComponent<D>(indexArray[i]);
-         }
-     }
-
-     //Edge case: no component has ever had E
-     EXPECT_DEATH(scene.RemoveComponent<E>(indexArray[0]),"Entity does not have component.");
-     //Edge case: remove something twice
-     uint32_t doubleRemoveId = indexArray[0];
-     scene.RemoveComponent<A>(doubleRemoveId);
-     EXPECT_DEATH(scene.RemoveComponent<A>(doubleRemoveId), "Entity does not have component.");
-     aPtrs.erase(doubleRemoveId);
-     //Edge case: remove -> add
-     B* temp = bPtrs[0];
-     temp->needsCheck = true;
-     scene.RemoveComponent<B>(indexArray[0]);
-     auto b_all = scene.GetComponents<B>();
-     EXPECT_EQ(b_all.find(indexArray[0]), b_all.end()) << "Entity does not have component.";
-     B* newB = scene.AddComponent<B>(indexArray[0]);
-     EXPECT_EQ(newB->needsCheck, false);
-
-     // Arbitrary removal of some tracked components
-     std::vector<uint32_t> removedAIds;
-     int removeCount = 5;
-     auto it = aPtrs.begin();
-     for (int i = 0; i < removeCount && it != aPtrs.end(); ++i, ++it) {
-         scene.RemoveComponent<A>(it->first);
-         removedAIds.push_back(it->first);
-     }
-     auto allA = scene.GetComponents<A>();
-
-     for (uint32_t id : removedAIds) {
-         // Check ID: Ensure ID is not in the map keys
-         EXPECT_EQ(allA.find(id), allA.end()) << "Entity " << id << " still exists in component map.";
-
-         // Check Pointer: Ensure the specific pointer we saved is not in the map values
-         A* originalPtr = aPtrs[id];
-         for (const auto& [entityId, componentPtr] : allA) {
-             EXPECT_NE(componentPtr, originalPtr) << "Dangling pointer found in map for entity " << entityId;
-         }
-     }
-
- }
-
-// ==================== Description.h Function Tests ====================
-
-TEST(ECS, Description_GetAsBitset)
+TEST(ECS, ComponentSize_DecreasesOnRemove)
 {
-    Wheel::Engine::Description desc;
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    desc.AddComponentType(bitset);
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<A>(e2);
 
-    const std::bitset<MAX_COMPONENT_TYPES>& result = desc.GetAsBitset();
-    EXPECT_EQ(result[0], true);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 3u);
+    scene.RemoveComponent<A>(e1);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 2u);
+    scene.RemoveComponent<A>(e0);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 1u);
+    scene.RemoveComponent<A>(e2);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
 }
 
-TEST(ECS, Description_AddComponentType)
+TEST(ECS, ComponentSize_UnregisteredComponentIsZero)
 {
-    Wheel::Engine::Description desc;
-    std::bitset<MAX_COMPONENT_TYPES> bitset1;
-    bitset1[0] = true;
-    desc.AddComponentType(bitset1);
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
 
-    EXPECT_EQ(desc.GetAsBitset()[0], true);
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
 
-    std::bitset<MAX_COMPONENT_TYPES> bitset2;
-    bitset2[1] = true;
-    desc.AddComponentType(bitset2);
-
-    EXPECT_EQ(desc.GetAsBitset()[1], true);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 1u);
+    EXPECT_EQ(scene.GetComponents<B>().size(), 0u);
 }
 
-TEST(ECS, Description_RemoveComponentType)
+// ==================== Component Pool Integrity After Removal ====================
+
+TEST(ECS, ComponentPool_RemoveFirst_OthersIntact)
 {
-    Wheel::Engine::Description desc;
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    desc.AddComponentType(bitset);
-    EXPECT_EQ(desc.GetAsBitset()[0], true);
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<A>(e2);
+    scene.GetComponent<A>(e0).value = 10;
+    scene.GetComponent<A>(e1).value = 20;
+    scene.GetComponent<A>(e2).value = 30;
 
-    desc.RemoveComponentType(bitset);
-    EXPECT_EQ(desc.GetAsBitset()[0], false);
+    scene.RemoveComponent<A>(e0);
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 2u);
+    EXPECT_FALSE(scene.HasComponent<A>(e0));
+    EXPECT_EQ(scene.GetComponent<A>(e1).value, 20);
+    EXPECT_EQ(scene.GetComponent<A>(e2).value, 30);
 }
 
-TEST(ECS, Description_HasComponentType)
+TEST(ECS, ComponentPool_RemoveMiddle_OthersIntact)
 {
-    Wheel::Engine::Description desc1;
-    Wheel::Engine::Description desc2;
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    desc1.AddComponentType(bitset);
-    desc2.AddComponentType(bitset);
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<A>(e2);
+    scene.GetComponent<A>(e0).value = 10;
+    scene.GetComponent<A>(e1).value = 20;
+    scene.GetComponent<A>(e2).value = 30;
 
-    EXPECT_TRUE(desc1.HasComponentType(&desc2));
+    scene.RemoveComponent<A>(e1);
 
-    Wheel::Engine::Description desc3;
-    EXPECT_DEATH(desc1.HasComponentType(&desc3), "Component type out of range");
+    EXPECT_EQ(scene.GetComponents<A>().size(), 2u);
+    EXPECT_FALSE(scene.HasComponent<A>(e1));
+    EXPECT_EQ(scene.GetComponent<A>(e0).value, 10);
+    EXPECT_EQ(scene.GetComponent<A>(e2).value, 30);
 }
 
-TEST(ECS, Description_IsEmpty)
+TEST(ECS, ComponentPool_RemoveLast_OthersIntact)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<A>(e2);
+    scene.GetComponent<A>(e0).value = 10;
+    scene.GetComponent<A>(e1).value = 20;
+    scene.GetComponent<A>(e2).value = 30;
+
+    scene.RemoveComponent<A>(e2);
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 2u);
+    EXPECT_FALSE(scene.HasComponent<A>(e2));
+    EXPECT_EQ(scene.GetComponent<A>(e0).value, 10);
+    EXPECT_EQ(scene.GetComponent<A>(e1).value, 20);
+}
+
+TEST(ECS, ComponentPool_RemoveOnly_Succeeds)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.GetComponent<A>(e).value = 42;
+
+    scene.RemoveComponent<A>(e);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
+    EXPECT_FALSE(scene.HasComponent<A>(e));
+}
+
+TEST(ECS, ComponentPool_LargeScale_RemoveEveryOther)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+
+    std::vector<uint32_t> entities;
+    for (int i = 0; i < 100; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<A>(e);
+        scene.GetComponent<A>(e).value = i;
+        entities.push_back(e);
+    }
+    EXPECT_EQ(scene.GetComponents<A>().size(), 100u);
+
+    // Remove even-indexed entities
+    for (int i = 0; i < 100; i += 2)
+        scene.RemoveComponent<A>(entities[i]);
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 50u);
+
+    // Odd-indexed entities should still have their correct data
+    for (int i = 1; i < 100; i += 2) {
+        EXPECT_TRUE(scene.HasComponent<A>(entities[i]));
+        EXPECT_EQ(scene.GetComponent<A>(entities[i]).value, i);
+    }
+    // Even-indexed entities should no longer have the component
+    for (int i = 0; i < 100; i += 2) {
+        EXPECT_FALSE(scene.HasComponent<A>(entities[i]));
+    }
+}
+
+// ==================== Entity Destruction → Component Cleanup ====================
+
+TEST(ECS, EntityDestroy_CleansUpSingleComponent)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+
+    scene.RemoveEntity(e);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 0u);
+}
+
+TEST(ECS, EntityDestroy_CleansUpAllComponents)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    scene.RegisterComponentType<C>();
+    uint32_t e = scene.AddEntity();
+    scene.AddComponent<A>(e);
+    scene.AddComponent<B>(e);
+    scene.AddComponent<C>(e);
+
+    scene.RemoveEntity(e);
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
+    EXPECT_EQ(scene.GetComponents<B>().size(), 0u);
+    EXPECT_EQ(scene.GetComponents<C>().size(), 0u);
+}
+
+TEST(ECS, EntityDestroy_EntityWithNoComponentsDoesNotCrash)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+
+    scene.RemoveEntity(e1);  // e1 has no components
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 1u);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 1u);
+}
+
+TEST(ECS, EntityDestroy_MiddleEntity_OthersPreserved)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<A>(e1);
+    scene.AddComponent<A>(e2);
+    scene.AddComponent<B>(e0);
+    scene.AddComponent<B>(e1);
+    scene.GetComponent<A>(e0).value = 1;
+    scene.GetComponent<A>(e2).value = 3;
+
+    scene.RemoveEntity(e1);
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 2u);
+    EXPECT_EQ(scene.GetComponents<B>().size(), 1u);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 2u);
+    EXPECT_EQ(scene.GetComponent<A>(e0).value, 1);
+    EXPECT_EQ(scene.GetComponent<A>(e2).value, 3);
+    EXPECT_TRUE (scene.HasComponent<B>(e0));
+    EXPECT_FALSE(scene.HasComponent<A>(e1));
+    EXPECT_FALSE(scene.HasComponent<B>(e1));
+}
+
+TEST(ECS, EntityDestroy_AllEntities_AllComponentsGone)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+
+    std::vector<uint32_t> entities;
+    for (int i = 0; i < 10; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<A>(e);
+        entities.push_back(e);
+    }
+    EXPECT_EQ(scene.GetComponents<A>().size(), 10u);
+
+    for (uint32_t e : entities)
+        scene.RemoveEntity(e);
+
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
+    EXPECT_EQ(scene.GetNumberOfEntities(), 0u);
+}
+
+// ==================== Entity ID Reuse ====================
+
+TEST(ECS, EntityReuse_RecycledIDHasNoComponents)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
+
+    uint32_t e0 = scene.AddEntity();
+    scene.AddComponent<A>(e0);
+    scene.AddComponent<B>(e0);
+    scene.GetComponent<A>(e0).value = 77;
+
+    scene.RemoveEntity(e0);
+
+    uint32_t e1 = scene.AddEntity();  // recycles ID 0
+    EXPECT_EQ(e1, 0u);
+    EXPECT_FALSE(scene.HasComponent<A>(e1));
+    EXPECT_FALSE(scene.HasComponent<B>(e1));
+
+    // Can add fresh components without issue
+    scene.AddComponent<A>(e1);
+    EXPECT_EQ(scene.GetComponent<A>(e1).value, 0);
+}
+
+TEST(ECS, EntityReuse_MultipleRecyclesCycle)
+{
+    Wheel::Engine::Scene scene;
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    EXPECT_EQ(e0, 0u);
+    EXPECT_EQ(e1, 1u);
+
+    scene.RemoveEntity(e0);
+    scene.RemoveEntity(e1);
+
+    uint32_t r0 = scene.AddEntity();  // recycles 0 (FIFO order)
+    uint32_t r1 = scene.AddEntity();  // recycles 1
+    EXPECT_EQ(r0, 0u);
+    EXPECT_EQ(r1, 1u);
+}
+
+// ==================== Description Tests ====================
+
+TEST(ECS, Description_EmptyByDefault)
 {
     Wheel::Engine::Description desc;
     EXPECT_TRUE(desc.IsEmpty());
+}
 
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    desc.AddComponentType(bitset);
+TEST(ECS, Description_IsNotEmptyAfterAdd)
+{
+    Wheel::Engine::Description desc;
+    std::bitset<MAX_COMPONENT_TYPES> bits;
+    bits[3] = true;
+    desc.AddComponentType(bits);
     EXPECT_FALSE(desc.IsEmpty());
-
-    desc.RemoveComponentType(bitset);
-    EXPECT_TRUE(desc.IsEmpty());
 }
 
-TEST(ECS, Description_AssignmentOperator)
-{
-    Wheel::Engine::Description desc1;
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    bitset[5] = true;
-    desc1.AddComponentType(bitset);
-
-    std::bitset<MAX_COMPONENT_TYPES> bitset2;
-    bitset2[5] = true;
-    desc1.AddComponentType(bitset2);
-
-    Wheel::Engine::Description desc2;
-    desc2 = desc1;
-
-    EXPECT_EQ(desc2.GetAsBitset()[0], true);
-    EXPECT_EQ(desc2.GetAsBitset()[5], true);
-}
-
-TEST(ECS, Description_MoveConstructor)
-{
-    Wheel::Engine::Description desc1;
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[3] = true;
-    desc1.AddComponentType(bitset);
-
-    Wheel::Engine::Description desc2(std::move(desc1));
-    EXPECT_EQ(desc2.GetAsBitset()[3], true);
-}
-
-TEST(ECS, Description_Reset)
+TEST(ECS, Description_AddSingleBitSetsCorrectSlot)
 {
     Wheel::Engine::Description desc;
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    bitset[1] = true;
-    bitset[2] = true;
-    desc.AddComponentType(bitset);
+    std::bitset<MAX_COMPONENT_TYPES> bits;
+    bits[5] = true;
+    desc.AddComponentType(bits);
 
-    std::bitset<MAX_COMPONENT_TYPES> bitset2;
-    bitset2[1] = true;
-    desc.AddComponentType(bitset2);
+    EXPECT_TRUE (desc.GetAsBitset()[5]);
+    EXPECT_FALSE(desc.GetAsBitset()[0]);
+    EXPECT_FALSE(desc.GetAsBitset()[4]);
+}
 
-    std::bitset<MAX_COMPONENT_TYPES> bitset3;
-    bitset3[2] = true;
-    desc.AddComponentType(bitset3);
+TEST(ECS, Description_AddMultipleBitsIndependently)
+{
+    Wheel::Engine::Description desc;
+    std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b7; b7[7] = true;
+    desc.AddComponentType(b0);
+    desc.AddComponentType(b7);
 
+    EXPECT_TRUE (desc.GetAsBitset()[0]);
+    EXPECT_TRUE (desc.GetAsBitset()[7]);
+    EXPECT_FALSE(desc.GetAsBitset()[1]);
+}
+
+TEST(ECS, Description_RemoveComponentType_ClearsBit)
+{
+    Wheel::Engine::Description desc;
+    std::bitset<MAX_COMPONENT_TYPES> bits;
+    bits[2] = true;
+    desc.AddComponentType(bits);
+
+    desc.RemoveComponentType(bits);
+    EXPECT_FALSE(desc.GetAsBitset()[2]);
+    EXPECT_TRUE (desc.IsEmpty());
+}
+
+TEST(ECS, Description_RemoveOneOfManyPreservesOthers)
+{
+    Wheel::Engine::Description desc;
+    std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b1; b1[1] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b2; b2[2] = true;
+    desc.AddComponentType(b0);
+    desc.AddComponentType(b1);
+    desc.AddComponentType(b2);
+
+    desc.RemoveComponentType(b1);
+    EXPECT_TRUE (desc.GetAsBitset()[0]);
+    EXPECT_FALSE(desc.GetAsBitset()[1]);
+    EXPECT_TRUE (desc.GetAsBitset()[2]);
+}
+
+TEST(ECS, Description_HasComponentType_Present)
+{
+    Wheel::Engine::Description entity_desc;
+    Wheel::Engine::Description comp_desc;
+    std::bitset<MAX_COMPONENT_TYPES> bits;
+    bits[4] = true;
+    entity_desc.AddComponentType(bits);
+    comp_desc.AddComponentType(bits);
+
+    EXPECT_TRUE(entity_desc.HasComponentType(comp_desc));
+}
+
+TEST(ECS, Description_HasComponentType_Absent)
+{
+    Wheel::Engine::Description entity_desc;
+    Wheel::Engine::Description comp_desc;
+    std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b1; b1[1] = true;
+    entity_desc.AddComponentType(b0);
+    comp_desc.AddComponentType(b1);
+
+    EXPECT_FALSE(entity_desc.HasComponentType(comp_desc));
+}
+
+TEST(ECS, Description_HasComponentType_EmptyQueryAsserts)
+{
+    Wheel::Engine::Description entity_desc;
+    std::bitset<MAX_COMPONENT_TYPES> bits;
+    bits[0] = true;
+    entity_desc.AddComponentType(bits);
+
+    Wheel::Engine::Description empty;
+    EXPECT_DEATH(entity_desc.HasComponentType(empty), "Component type out of range");
+}
+
+TEST(ECS, Description_Reset_ClearsAllBits)
+{
+    Wheel::Engine::Description desc;
+    std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b1; b1[1] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b2; b2[2] = true;
+    desc.AddComponentType(b0);
+    desc.AddComponentType(b1);
+    desc.AddComponentType(b2);
     EXPECT_FALSE(desc.IsEmpty());
 
     desc.Reset();
     EXPECT_TRUE(desc.IsEmpty());
 }
 
-// ==================== Component Cleanup Tests ====================
-
-TEST(ECS, EntityDeletion_SingleComponent_Cleanup)
+TEST(ECS, Description_AssignmentOperatorCopiesBits)
 {
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
+    Wheel::Engine::Description src;
+    std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
+    std::bitset<MAX_COMPONENT_TYPES> b6; b6[6] = true;
+    src.AddComponentType(b0);
+    src.AddComponentType(b6);
 
-    uint32_t entity = scene.AddEntity();
-    scene.AddComponent<A>(entity);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 1);
-
-    scene.RemoveEntity(entity);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 0);
+    Wheel::Engine::Description dst;
+    dst = src;
+    EXPECT_TRUE (dst.GetAsBitset()[0]);
+    EXPECT_TRUE (dst.GetAsBitset()[6]);
+    EXPECT_FALSE(dst.GetAsBitset()[1]);
 }
 
-TEST(ECS, EntityDeletion_MultipleComponents_Cleanup)
+TEST(ECS, Description_MoveConstructorCopiesBits)
 {
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
-    scene.RegisterComponentType<B>();
-    scene.RegisterComponentType<C>();
+    Wheel::Engine::Description src;
+    std::bitset<MAX_COMPONENT_TYPES> bits;
+    bits[9] = true;
+    src.AddComponentType(bits);
 
-    uint32_t entity = scene.AddEntity();
-    scene.AddComponent<A>(entity);
-    scene.AddComponent<B>(entity);
-    scene.AddComponent<C>(entity);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 1);
-    EXPECT_EQ(scene.GetComponents<B>().size(), 1);
-    EXPECT_EQ(scene.GetComponents<C>().size(), 1);
-
-    scene.RemoveEntity(entity);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 0);
-    EXPECT_EQ(scene.GetComponents<B>().size(), 0);
-    EXPECT_EQ(scene.GetComponents<C>().size(), 0);
+    Wheel::Engine::Description dst(std::move(src));
+    EXPECT_TRUE(dst.GetAsBitset()[9]);
 }
 
-TEST(ECS, EntityDeletion_EdgeCase_LastEntityWithComponent)
+// ==================== System Update Simulation ====================
+
+// Simulates a system by iterating GetComponents and mutating via GetComponent.
+// Avoids relying on AddComponent's (potentially dangling) return value.
+
+TEST(ECS, System_UpdateAll_CountersReachExpected)
 {
     Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
-
-    uint32_t entity1 = scene.AddEntity();
-    uint32_t entity2 = scene.AddEntity();
-    uint32_t entity3 = scene.AddEntity();
-
-    scene.AddComponent<A>(entity1);
-    scene.AddComponent<A>(entity2);
-    scene.AddComponent<A>(entity3);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 3);
-
-    // Remove last entity
-    scene.RemoveEntity(entity3);
-    EXPECT_EQ(scene.GetComponents<A>().size(), 2);
-
-    // Remove middle entity
-    scene.RemoveEntity(entity2);
-    EXPECT_EQ(scene.GetComponents<A>().size(), 1);
-
-    // Remove first entity
-    scene.RemoveEntity(entity1);
-    EXPECT_EQ(scene.GetComponents<A>().size(), 0);
-}
-
-TEST(ECS, EntityDeletion_EdgeCase_FirstEntityWithComponent)
-{
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
-
-    uint32_t entity1 = scene.AddEntity();
-    uint32_t entity2 = scene.AddEntity();
-    uint32_t entity3 = scene.AddEntity();
-
-    scene.AddComponent<A>(entity1);
-    scene.AddComponent<A>(entity2);
-    scene.AddComponent<A>(entity3);
-
-    // Remove first entity
-    scene.RemoveEntity(entity1);
-    EXPECT_EQ(scene.GetComponents<A>().size(), 2);
-
-    auto components = scene.GetComponents<A>();
-    EXPECT_TRUE(components.find(entity2) != components.end());
-    EXPECT_TRUE(components.find(entity3) != components.end());
-}
-
-TEST(ECS, EntityDeletion_EdgeCase_MiddleEntityWithMultipleComponents)
-{
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
-    scene.RegisterComponentType<B>();
-    scene.RegisterComponentType<C>();
-
-    uint32_t entity1 = scene.AddEntity();
-    uint32_t entity2 = scene.AddEntity();
-    uint32_t entity3 = scene.AddEntity();
-
-    scene.AddComponent<A>(entity1);
-    scene.AddComponent<A>(entity2);
-    scene.AddComponent<A>(entity3);
-
-    scene.AddComponent<B>(entity1);
-    scene.AddComponent<B>(entity2);
-
-    scene.AddComponent<C>(entity2);
-    scene.AddComponent<C>(entity3);
-
-    // Remove middle entity that has all three components
-    scene.RemoveEntity(entity2);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 2);
-    EXPECT_EQ(scene.GetComponents<B>().size(), 1);
-    EXPECT_EQ(scene.GetComponents<C>().size(), 1);
-
-    auto componentsA = scene.GetComponents<A>();
-    EXPECT_TRUE(componentsA.find(entity1) != componentsA.end());
-    EXPECT_TRUE(componentsA.find(entity3) != componentsA.end());
-}
-
-TEST(ECS, EntityDeletion_EdgeCase_EntityWithoutComponents)
-{
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
-
-    uint32_t entity1 = scene.AddEntity();
-    uint32_t entity2 = scene.AddEntity();
-
-    scene.AddComponent<A>(entity1);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 1);
-
-    // Remove entity without components - should not crash
-    scene.RemoveEntity(entity2);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 1);
-    EXPECT_EQ(scene.GetNumberOfEntities(), 1);
-}
-
-TEST(ECS, EntityDeletion_EdgeCase_ManyEntitiesOneComponent)
-{
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<Counter>();
 
     std::vector<uint32_t> entities;
-    for (int i = 0; i < 50; ++i) {
-        uint32_t entity = scene.AddEntity();
-        scene.AddComponent<A>(entity);
-        entities.push_back(entity);
+    for (int i = 0; i < 20; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<Counter>(e);
+        entities.push_back(e);
     }
 
-    EXPECT_EQ(scene.GetComponents<A>().size(), 50);
-
-    // Remove entities in reverse order to avoid ComponentPool swap bug
-    // Bug in ComponentPool.h:65 - uses m_EntityToComponent[lastIndex] instead of m_ComponentToEntity[lastIndex]
-    // Removing in reverse order ensures we always remove from the end, avoiding the buggy swap logic
-    for (int i = entities.size() - 1; i >= 0; i -= 2) {
-        scene.RemoveEntity(entities[i]);
+    const int TICKS = 50;
+    for (int tick = 0; tick < TICKS; ++tick) {
+        auto comps = scene.GetComponents<Counter>();
+        for (auto& [id, _] : comps)
+            scene.GetComponent<Counter>(id).count++;
     }
 
-    EXPECT_EQ(scene.GetComponents<A>().size(), 25);
+    for (uint32_t e : entities)
+        EXPECT_EQ(scene.GetComponent<Counter>(e).count, TICKS);
 }
 
-// ==================== System Tests ====================
-
-TEST(ECS, System_NoEntities)
+TEST(ECS, System_UpdatePartial_OnlyMatchingEntitiesUpdated)
 {
     Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<CounterComponent>();
+    scene.RegisterComponentType<Counter>();
+    scene.RegisterComponentType<A>();
 
-    Wheel::Engine::Description* systemDesc = new Wheel::Engine::Description();
-    std::bitset<MAX_COMPONENT_TYPES> bitset;
-    bitset[0] = true;
-    systemDesc->AddComponentType(bitset);
+    std::vector<uint32_t> counter_entities;
+    std::vector<uint32_t> other_entities;
 
-    TestSystem* testSystem = new TestSystem(systemDesc);
+    for (int i = 0; i < 15; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<Counter>(e);
+        counter_entities.push_back(e);
+    }
+    for (int i = 0; i < 15; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<A>(e);
+        other_entities.push_back(e);
+    }
 
-    // Update should not crash with no entities
-    testSystem->Update(0.016f);
+    for (int tick = 0; tick < 10; ++tick) {
+        auto comps = scene.GetComponents<Counter>();
+        for (auto& [id, _] : comps)
+            scene.GetComponent<Counter>(id).count++;
+    }
 
-    delete testSystem;
+    for (uint32_t e : counter_entities)
+        EXPECT_EQ(scene.GetComponent<Counter>(e).count, 10);
+
+    for (uint32_t e : other_entities) {
+        EXPECT_FALSE(scene.HasComponent<Counter>(e));
+        EXPECT_TRUE(scene.HasComponent<A>(e));
+    }
 }
 
-TEST(ECS, System_ThreeEntityTypes)
+TEST(ECS, System_UpdateWithEntityRemovedMidSimulation)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<Counter>();
+    uint32_t e0 = scene.AddEntity();
+    uint32_t e1 = scene.AddEntity();
+    uint32_t e2 = scene.AddEntity();
+    scene.AddComponent<Counter>(e0);
+    scene.AddComponent<Counter>(e1);
+    scene.AddComponent<Counter>(e2);
+
+    // 5 ticks before removal
+    for (int tick = 0; tick < 5; ++tick) {
+        auto comps = scene.GetComponents<Counter>();
+        for (auto& [id, _] : comps)
+            scene.GetComponent<Counter>(id).count++;
+    }
+    EXPECT_EQ(scene.GetComponent<Counter>(e0).count, 5);
+    EXPECT_EQ(scene.GetComponent<Counter>(e1).count, 5);
+    EXPECT_EQ(scene.GetComponent<Counter>(e2).count, 5);
+
+    scene.RemoveEntity(e1);
+    EXPECT_EQ(scene.GetComponents<Counter>().size(), 2u);
+
+    // 5 more ticks after removal
+    for (int tick = 0; tick < 5; ++tick) {
+        auto comps = scene.GetComponents<Counter>();
+        for (auto& [id, _] : comps)
+            scene.GetComponent<Counter>(id).count++;
+    }
+
+    EXPECT_EQ(scene.GetComponent<Counter>(e0).count, 10);
+    EXPECT_EQ(scene.GetComponent<Counter>(e2).count, 10);
+    EXPECT_EQ(scene.GetComponents<Counter>().size(), 2u);
+}
+
+TEST(ECS, System_UpdateWithEntityAddedMidSimulation)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<Counter>();
+    uint32_t e0 = scene.AddEntity();
+    scene.AddComponent<Counter>(e0);
+
+    // 5 ticks with only e0
+    for (int tick = 0; tick < 5; ++tick) {
+        auto comps = scene.GetComponents<Counter>();
+        for (auto& [id, _] : comps)
+            scene.GetComponent<Counter>(id).count++;
+    }
+    EXPECT_EQ(scene.GetComponent<Counter>(e0).count, 5);
+
+    // Add e1 mid-simulation
+    uint32_t e1 = scene.AddEntity();
+    scene.AddComponent<Counter>(e1);
+    EXPECT_EQ(scene.GetComponents<Counter>().size(), 2u);
+
+    // 5 more ticks
+    for (int tick = 0; tick < 5; ++tick) {
+        auto comps = scene.GetComponents<Counter>();
+        for (auto& [id, _] : comps)
+            scene.GetComponent<Counter>(id).count++;
+    }
+
+    EXPECT_EQ(scene.GetComponent<Counter>(e0).count, 10);
+    EXPECT_EQ(scene.GetComponent<Counter>(e1).count, 5);  // only updated for last 5 ticks
+}
+
+// ==================== Mixed Scenarios ====================
+
+TEST(ECS, Mixed_ManyEntitiesVariedComponents)
 {
     Wheel::Engine::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
+    scene.RegisterComponentType<D>();
+    scene.RegisterComponentType<E>();
 
-    // Type 1: Entities with only A
-    uint32_t entity1 = scene.AddEntity();
-    scene.AddComponent<A>(entity1);
-
-    // Type 2: Entities with A and B
-    uint32_t entity2 = scene.AddEntity();
-    scene.AddComponent<A>(entity2);
-    scene.AddComponent<B>(entity2);
-
-    // Type 3: Entities with A, B, and C
-    uint32_t entity3 = scene.AddEntity();
-    scene.AddComponent<A>(entity3);
-    scene.AddComponent<B>(entity3);
-    scene.AddComponent<C>(entity3);
-
-    EXPECT_EQ(scene.GetComponents<A>().size(), 3);
-    EXPECT_EQ(scene.GetComponents<B>().size(), 2);
-    EXPECT_EQ(scene.GetComponents<C>().size(), 1);
-
-    EXPECT_TRUE(scene.HasComponent<A>(entity1));
-    EXPECT_FALSE(scene.HasComponent<B>(entity1));
-    EXPECT_FALSE(scene.HasComponent<C>(entity1));
-
-    EXPECT_TRUE(scene.HasComponent<A>(entity2));
-    EXPECT_TRUE(scene.HasComponent<B>(entity2));
-    EXPECT_FALSE(scene.HasComponent<C>(entity2));
-
-    EXPECT_TRUE(scene.HasComponent<A>(entity3));
-    EXPECT_TRUE(scene.HasComponent<B>(entity3));
-    EXPECT_TRUE(scene.HasComponent<C>(entity3));
-}
-
-TEST(ECS, System_UpdateLoop_CounterIncrement)
-{
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<CounterComponent>();
-
-    // Create many entities with CounterComponent
     std::vector<uint32_t> entities;
-    for (int i = 0; i < 50; ++i) {
-        uint32_t entity = scene.AddEntity();
-        CounterComponent* comp = scene.AddComponent<CounterComponent>(entity);
-        comp->counter = 0;
-        entities.push_back(entity);
-    }
+    for (int i = 0; i < 100; ++i)
+        entities.push_back(scene.AddEntity());
 
-    // Run update 100 times - simulating system update behavior
-    for (int i = 0; i < 100; ++i) {
-        auto components = scene.GetComponents<CounterComponent>();
-        for (auto& [entityId, component] : components) {
-            component->counter++;
-        }
-    }
+    // A: first 10
+    for (int i = 0; i < 10; ++i)   scene.AddComponent<A>(entities[i]);
+    // B: 10-34
+    for (int i = 10; i < 35; ++i)  scene.AddComponent<B>(entities[i]);
+    // C: 35-59
+    for (int i = 35; i < 60; ++i)  scene.AddComponent<C>(entities[i]);
+    // D: 60-74
+    for (int i = 60; i < 75; ++i)  scene.AddComponent<D>(entities[i]);
+    // E: none
 
-    // Verify all counters are at 100
-    for (uint32_t entityId : entities) {
-        CounterComponent* comp = scene.GetComponent<CounterComponent>(entityId);
-        EXPECT_EQ(comp->counter, 100);
-    }
+    EXPECT_EQ(scene.GetComponents<A>().size(), 10u);
+    EXPECT_EQ(scene.GetComponents<B>().size(), 25u);
+    EXPECT_EQ(scene.GetComponents<C>().size(), 25u);
+    EXPECT_EQ(scene.GetComponents<D>().size(), 15u);
+    EXPECT_EQ(scene.GetComponents<E>().size(),  0u);
 }
 
-TEST(ECS, System_UpdateLoop_PartialEntities)
+TEST(ECS, Mixed_EntityReusedIDHasCleanSlate)
 {
     Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<CounterComponent>();
     scene.RegisterComponentType<A>();
+    scene.RegisterComponentType<B>();
 
-    // Create entities: some with CounterComponent, some without
-    std::vector<uint32_t> counterEntities;
-    std::vector<uint32_t> nonCounterEntities;
+    uint32_t original = scene.AddEntity();
+    scene.AddComponent<A>(original);
+    scene.AddComponent<B>(original);
+    scene.GetComponent<A>(original).value = 55;
 
+    scene.RemoveEntity(original);
+    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
+    EXPECT_EQ(scene.GetComponents<B>().size(), 0u);
+
+    uint32_t recycled = scene.AddEntity();
+    EXPECT_EQ(recycled, original);  // ID was recycled
+    EXPECT_FALSE(scene.HasComponent<A>(recycled));
+    EXPECT_FALSE(scene.HasComponent<B>(recycled));
+
+    scene.AddComponent<A>(recycled);
+    EXPECT_EQ(scene.GetComponent<A>(recycled).value, 0);
+}
+
+TEST(ECS, Mixed_StressCreateDestroyWithComponents)
+{
+    Wheel::Engine::Scene scene;
+    scene.RegisterComponentType<Counter>();
+
+    // Create 50, destroy odd ones, create 50 more, verify counts
+    std::vector<uint32_t> batch1;
+    for (int i = 0; i < 50; ++i) {
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<Counter>(e);
+        scene.GetComponent<Counter>(e).count = i;
+        batch1.push_back(e);
+    }
+    EXPECT_EQ(scene.GetNumberOfEntities(), 50u);
+    EXPECT_EQ(scene.GetComponents<Counter>().size(), 50u);
+
+    for (int i = 1; i < 50; i += 2)
+        scene.RemoveEntity(batch1[i]);
+
+    EXPECT_EQ(scene.GetNumberOfEntities(), 25u);
+    EXPECT_EQ(scene.GetComponents<Counter>().size(), 25u);
+
+    std::vector<uint32_t> batch2;
     for (int i = 0; i < 25; ++i) {
-        uint32_t entity = scene.AddEntity();
-        CounterComponent* comp = scene.AddComponent<CounterComponent>(entity);
-        comp->counter = 0;
-        counterEntities.push_back(entity);
+        uint32_t e = scene.AddEntity();
+        scene.AddComponent<Counter>(e);
+        batch2.push_back(e);
     }
+    EXPECT_EQ(scene.GetNumberOfEntities(), 50u);
+    EXPECT_EQ(scene.GetComponents<Counter>().size(), 50u);
 
-    for (int i = 0; i < 25; ++i) {
-        uint32_t entity = scene.AddEntity();
-        scene.AddComponent<A>(entity);
-        nonCounterEntities.push_back(entity);
-    }
-
-    // Run update 100 times - simulating system update behavior
-    for (int i = 0; i < 100; ++i) {
-        auto components = scene.GetComponents<CounterComponent>();
-        for (auto& [entityId, component] : components) {
-            component->counter++;
-        }
-    }
-
-    // Verify only CounterComponent entities were updated
-    for (uint32_t entityId : counterEntities) {
-        CounterComponent* comp = scene.GetComponent<CounterComponent>(entityId);
-        EXPECT_EQ(comp->counter, 100);
-    }
-
-    // Verify non-counter entities don't have CounterComponent
-    for (uint32_t entityId : nonCounterEntities) {
-        EXPECT_FALSE(scene.HasComponent<CounterComponent>(entityId));
-    }
+    // Even-indexed batch1 entities still have their original counts
+    for (int i = 0; i < 50; i += 2)
+        EXPECT_EQ(scene.GetComponent<Counter>(batch1[i]).count, i);
 }

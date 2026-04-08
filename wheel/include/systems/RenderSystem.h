@@ -1,16 +1,11 @@
 #pragma once
 #include "core/System.h"
 #include "../components/Transform2D.h"
-
+#include "../components/Render2DComponent.h"
+#include "../components/CameraComponent.h"
 namespace Wheel::Renderer
 {
     class Renderer;
-}
-
-namespace Wheel::Components
-{
-    struct CameraComponent;
-    struct Render2DComponent;
 }
 
 namespace Wheel
@@ -36,6 +31,7 @@ namespace Wheel
 
             private:
                 Renderer::Renderer* m_Renderer;
+                std::vector<uint32_t> m_RenderObjects;
                 ComponentPool<Components::Transform2D>* m_Transform2DPool;
                 ComponentPool<Components::Render2DComponent>* m_RenderPool;
                 ComponentPool<Components::CameraComponent>* m_CameraPool;

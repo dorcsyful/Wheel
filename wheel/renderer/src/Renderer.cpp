@@ -5,7 +5,7 @@
 
 #include "Shader.h"
 #include "Texture.h"
-
+#include "RenderedObject.h"
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -19,9 +19,9 @@ Wheel::Renderer::Renderer::~Renderer()
 {
     for (auto element : m_Shaders)
     {
-        glDeleteProgram(element.second->GetID());
+        glDeleteProgram(element->GetID());
 
-        delete element.second;
+        delete element;
     }
     for (auto element : m_Textures)
     {
@@ -33,6 +33,8 @@ Wheel::Renderer::Renderer::~Renderer()
 void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title)
 {  glfwSetErrorCallback(&glfwError);
 
+    m_RenderedObjects = std::vector<RenderedObject>();
+    m_RenderedObjects.reserve(sizeof(RenderedObject) * MAX_ENTITIES);
     if (!glfwInit())
     {
         std::cout << "Failed to initialize GLFW" << std::endl;
@@ -42,8 +44,8 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    m_Window = glfwCreateWindow(a_Width, a_Height, a_Title, NULL, NULL);
-    if (m_Window == NULL)
+    m_Window = glfwCreateWindow(a_Width, a_Height, a_Title, nullptr, nullptr);
+    if (m_Window == nullptr)
     {
         std::cout << "Failed to initialize window" << std::endl;
         glfwTerminate();
@@ -51,7 +53,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     }
     glfwMakeContextCurrent(m_Window);
 
-    if (!gladLoadGLES2Loader((GLADloadproc)glfwGetProcAddress))
+    if (!gladLoadGLES2Loader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         glfwTerminate();
@@ -59,7 +61,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     }
     glViewport(0, 0, a_Width, a_Height);
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
-    m_Shaders.insert(std::make_pair("default", new Shader("base.vert", "base.frag")));
+    m_Shaders.push_back(new Shader("base.vert", "base.frag"));
     Texture* texture = new Texture("textures/logo.png");
     LoadTexture(texture);
     CreateTestSquare();
@@ -70,43 +72,30 @@ void Wheel::Renderer::Renderer::Update()
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    unsigned int program = m_Shaders.at("default")->GetID();
+    unsigned int program = m_Shaders[0]->GetID();
     glUseProgram(program);
-    // Load the vertex position
-    glVertexAttribPointer ( glGetAttribLocation ( program, "a_position" ), 3, GL_FLOAT,
-                            GL_FALSE, 5 * sizeof(GLfloat), vertices2D );
-    // Load the texture coordinate
-    glVertexAttribPointer ( glGetAttribLocation ( program, "a_texCoord" ), 2, GL_FLOAT,
-                            GL_FALSE, 5 * sizeof(GLfloat), &vertices2D[3] );
 
-    glEnableVertexAttribArray ( glGetAttribLocation ( program, "a_position" ) );
-    glEnableVertexAttribArray ( glGetAttribLocation ( program, "a_texCoord" ) );
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO2D);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO2D);
 
-    // Bind the texture
-    glActiveTexture ( GL_TEXTURE0 );
-    glBindTexture ( GL_TEXTURE_2D, m_Textures[0]->m_ID );
+    GLint posLoc = glGetAttribLocation(program, "a_position");
+    GLint texLoc = glGetAttribLocation(program, "a_texCoord");
 
-    // Set the sampler texture unit to 0
-    glUniform1i ( glGetUniformLocation ( program, "s_texture" ), 0 );
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
+    glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
 
-    glDrawElements ( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices2D );
+    glEnableVertexAttribArray(posLoc);
+    glEnableVertexAttribArray(texLoc);
 
-    glDisableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0); // offset, not pointer
 
     glfwSwapBuffers(m_Window);
 }
 
 void Wheel::Renderer::Renderer::CreateTestSquare()
 {
-    //glGenVertexArrays(1, &m_VAO);
     glGenBuffers(1, &m_VBO2D);
     glGenBuffers(1, &m_EBO2D);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    //glBindVertexArray(m_VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO2D);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2D), vertices2D, GL_STATIC_DRAW);
@@ -114,14 +103,10 @@ void Wheel::Renderer::Renderer::CreateTestSquare()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO2D);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2D), indices2D, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    // Don't call glVertexAttribPointer here at all — do it in Update with buffers bound
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
@@ -132,8 +117,11 @@ void Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
 
 }
 
-void Wheel::Renderer::Renderer::AddShader(const char* a_Name, const char* a_VertexShader, const char* a_FragmentShader)
+void Wheel::Renderer::Renderer::AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader)
 {
-    assert(m_Shaders.find(a_Name) == m_Shaders.end() && "Shader already exists.");
-    m_Shaders.insert(std::make_pair(a_Name, new Shader(a_VertexShader, a_FragmentShader)));
+    auto it = std::find_if(m_Shaders.begin(), m_Shaders.end(),
+                       [temp = a_VertexShader.substr(0, a_VertexShader.find_last_of('.'))] (Shader* a_Shader) -> bool {
+                          return a_Shader->GetName() == temp;
+                       });
+    m_Shaders.push_back(new Shader(a_VertexShader, a_FragmentShader));
 }

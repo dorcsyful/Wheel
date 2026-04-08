@@ -13,15 +13,15 @@ namespace Wheel
             Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath);
             ~Shader() = default;
 
-            void use()  {  glUseProgram(m_ID);  }
+            void use() const  {  glUseProgram(m_ID);  }
             void setBool(const std::string &name, bool value) const { glUniform1i(glGetUniformLocation(m_ID, name.c_str()), (int)value); }
             void setInt(const std::string &name, int value) const { glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value); }
             void setFloat(const std::string &name, float value) const { glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value); }
-            unsigned int GetID() const
+            [[nodiscard]] unsigned int GetID() const
             {
                 return m_ID;
             }
-            std::string GetName() const
+            [[nodiscard]] std::string GetName() const
             {
                 return m_Name;
             }

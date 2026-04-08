@@ -20,10 +20,10 @@ namespace Wheel
             bool operator==(const Transform2D& a_Other) const { return m_Id == a_Other.m_Id; };
             bool operator!=(const Transform2D& a_Other) const { return m_Id != a_Other.m_Id; };
 
-            Transform2D(const Transform2D& a_Transform2D) = delete;
-            Transform2D(Transform2D&& a_Other) = delete;
-            Transform2D& operator=(Transform2D&& a_Other) = delete;
-            Transform2D& operator=(const Transform2D& a_Transform2D) = delete;
+            //Transform2D(const Transform2D& a_Transform2D) = delete;
+            //Transform2D(Transform2D&& a_Other) = delete;
+            //Transform2D& operator=(Transform2D&& a_Other) = delete;
+            //Transform2D& operator=(const Transform2D& a_Transform2D) = delete;
             Transform2D operator+(const Transform2D& a_Other) const = delete;
             Transform2D operator-(const Transform2D& a_Other) const = delete;
             Transform2D operator*(const Transform2D& a_Other) const = delete;
