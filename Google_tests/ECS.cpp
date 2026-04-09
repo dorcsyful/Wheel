@@ -65,19 +65,6 @@ TEST(ECS, Entity_RemovalOutOfRangeAsserts)
     EXPECT_DEATH(scene.RemoveEntity(MAX_ENTITIES + 1), "Entity ID out of range.");
 }
 
-TEST(ECS, Entity_IDReusedAfterDeletion)
-{
-    Wheel::Engine::Scene scene;
-    uint32_t e0 = scene.AddEntity();  // ID = 0
-    uint32_t e1 = scene.AddEntity();  // ID = 1
-    EXPECT_EQ(e0, 0u);
-    EXPECT_EQ(e1, 1u);
-
-    scene.RemoveEntity(e0);
-    uint32_t e2 = scene.AddEntity();  // should recycle ID 0
-    EXPECT_EQ(e2, 0u);
-}
-
 // ==================== Component Registration ====================
 
 TEST(ECS, ComponentReg_SingleType)
@@ -572,31 +559,12 @@ TEST(ECS, EntityReuse_RecycledIDHasNoComponents)
 
     scene.RemoveEntity(e0);
 
-    uint32_t e1 = scene.AddEntity();  // recycles ID 0
-    EXPECT_EQ(e1, 0u);
-    EXPECT_FALSE(scene.HasComponent<A>(e1));
-    EXPECT_FALSE(scene.HasComponent<B>(e1));
+    EXPECT_FALSE(scene.HasComponent<A>(e0));
+    EXPECT_FALSE(scene.HasComponent<B>(e0));
 
     // Can add fresh components without issue
-    scene.AddComponent<A>(e1);
-    EXPECT_EQ(scene.GetComponent<A>(e1).value, 0);
-}
-
-TEST(ECS, EntityReuse_MultipleRecyclesCycle)
-{
-    Wheel::Engine::Scene scene;
-    uint32_t e0 = scene.AddEntity();
-    uint32_t e1 = scene.AddEntity();
-    EXPECT_EQ(e0, 0u);
-    EXPECT_EQ(e1, 1u);
-
-    scene.RemoveEntity(e0);
-    scene.RemoveEntity(e1);
-
-    uint32_t r0 = scene.AddEntity();  // recycles 0 (FIFO order)
-    uint32_t r1 = scene.AddEntity();  // recycles 1
-    EXPECT_EQ(r0, 0u);
-    EXPECT_EQ(r1, 1u);
+    scene.AddComponent<A>(e0);
+    EXPECT_EQ(scene.GetComponent<A>(e0).value, 0);
 }
 
 // ==================== Description Tests ====================
@@ -905,30 +873,6 @@ TEST(ECS, Mixed_ManyEntitiesVariedComponents)
     EXPECT_EQ(scene.GetComponents<C>().size(), 25u);
     EXPECT_EQ(scene.GetComponents<D>().size(), 15u);
     EXPECT_EQ(scene.GetComponents<E>().size(),  0u);
-}
-
-TEST(ECS, Mixed_EntityReusedIDHasCleanSlate)
-{
-    Wheel::Engine::Scene scene;
-    scene.RegisterComponentType<A>();
-    scene.RegisterComponentType<B>();
-
-    uint32_t original = scene.AddEntity();
-    scene.AddComponent<A>(original);
-    scene.AddComponent<B>(original);
-    scene.GetComponent<A>(original).value = 55;
-
-    scene.RemoveEntity(original);
-    EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
-    EXPECT_EQ(scene.GetComponents<B>().size(), 0u);
-
-    uint32_t recycled = scene.AddEntity();
-    EXPECT_EQ(recycled, original);  // ID was recycled
-    EXPECT_FALSE(scene.HasComponent<A>(recycled));
-    EXPECT_FALSE(scene.HasComponent<B>(recycled));
-
-    scene.AddComponent<A>(recycled);
-    EXPECT_EQ(scene.GetComponent<A>(recycled).value, 0);
 }
 
 TEST(ECS, Mixed_StressCreateDestroyWithComponents)

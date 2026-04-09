@@ -33,8 +33,6 @@ Wheel::Renderer::Renderer::~Renderer()
 void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title)
 {  glfwSetErrorCallback(&glfwError);
 
-    m_RenderedObjects = std::vector<RenderedObject>();
-    m_RenderedObjects.reserve(sizeof(RenderedObject) * MAX_ENTITIES);
     if (!glfwInit())
     {
         std::cout << "Failed to initialize GLFW" << std::endl;

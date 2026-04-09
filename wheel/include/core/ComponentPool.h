@@ -22,7 +22,7 @@ namespace Wheel
         {
         public:
 
-            ComponentPool() : m_Components{nullptr}
+            ComponentPool() : m_Components{NULL}
             {
                 //m_Components = std::array<T, MAX_ENTITIES>();
                 m_EntityToComponent = std::unordered_map<uint32_t, uint32_t>();
@@ -44,7 +44,7 @@ namespace Wheel
                 m_ComponentToEntity.insert(std::make_pair(m_Size, a_Entity));
                 m_Components[m_Size] = component;
                 m_Size++;
-                return component;
+                return m_Components[m_Size];
             }
 
             T& GetComponent(uint32_t a_Entity)
@@ -86,11 +86,11 @@ namespace Wheel
                 }
             }
 
-            std::unordered_map<uint32_t, T&> GetComponents()
+            std::unordered_map<uint32_t, T*> GetComponents()
             {
-                std::unordered_map<uint32_t, T&> components = std::unordered_map<uint32_t, T&>(m_Size);
+                std::unordered_map<uint32_t, T*> components = std::unordered_map<uint32_t, T*>(m_Size);
                 for (const auto & [ key, value ] : m_EntityToComponent) {
-                    std::pair<uint32_t, T&> component = std::make_pair(key, m_Components[value]);
+                    std::pair<uint32_t, T*> component = std::make_pair(key, &m_Components[value]);
                     components.insert(component);
                 }
 

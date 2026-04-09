@@ -31,7 +31,7 @@ namespace Wheel
             Description(const Description& a_Other) { m_ComponentBitset = a_Other.m_ComponentBitset; };
             Description(Description&& a_Other) noexcept { m_ComponentBitset = a_Other.m_ComponentBitset; };
 
-            const std::bitset<MAX_COMPONENT_TYPES>& GetAsBitset()
+            std::bitset<MAX_COMPONENT_TYPES>& GetAsBitset()
             {
                 return m_ComponentBitset;
             }
@@ -40,7 +40,15 @@ namespace Wheel
                 size_t firstBit = get_first_set_bit(componentBitset);
                 assert(firstBit < MAX_COMPONENT_TYPES);
 
-                assert(!m_ComponentBitset[firstBit]);
+                assert(!m_ComponentBitset[firstBit] && "Entity already has component.");
+                m_ComponentBitset[firstBit] = true;
+            }
+            void AddComponentType(Description& description)
+            {
+                size_t firstBit = get_first_set_bit(description.GetAsBitset());
+                assert(firstBit < MAX_COMPONENT_TYPES);
+
+                assert(!m_ComponentBitset[firstBit] && "Entity already has component.");
                 m_ComponentBitset[firstBit] = true;
             }
             void RemoveComponentType(std::bitset<MAX_COMPONENT_TYPES> componentBitset)

@@ -7,8 +7,6 @@
 #include "EntityManager.h"
 #include "System.h"
 
-class Description;
-
 namespace Wheel
 {
     namespace Engine
@@ -43,9 +41,10 @@ namespace Wheel
             /**
             * @brief  Register all systems before creating any entities. Built-in systems do not have to be registered
             */
-            void RegisterSystem(System* a_System, Description a_Description)
+            template<typename T>
+            void RegisterSystem(const Description& a_Description)
             {
-                m_SystemManager->RegisterSystem(a_System, std::move(a_Description));
+                m_SystemManager->RegisterSystem<T>(std::move(a_Description));
             }
 
             /**
@@ -56,6 +55,7 @@ namespace Wheel
             {
                 m_EntityManager->GetEntityDescription(a_Entity).AddComponentType(m_ComponentManager->GetDescription<T>().GetAsBitset());
                 T& component = m_ComponentManager->AddComponent<T>(a_Entity);
+                m_SystemManager->AddEntityWithComponent(a_Entity, m_ComponentManager->GetComponentBitset<T>());
                 return component;
             }
 
@@ -85,12 +85,18 @@ namespace Wheel
              * @param a_AddToWorld Set this to false if you do not want to render the entity.
              * @return The ID of the created entity. Without you CANNOT interact with the entity in any way, so make sure to store it somewhere if you want to use it.
              */
+            template<typename T>
             uint32_t AddEntity(bool a_AddToWorld = true) {
-                return m_EntityManager->CreateEntity();
+                uint32_t temp = m_EntityManager->CreateEntity();
+                m_SystemManager->AddEntityWithComponent(temp, m_ComponentManager->GetComponentBitset<T>());
+                return temp;
             }
+            template<typename T>
             void RemoveEntity(uint32_t a_Entity) {
                 m_EntityManager->DestroyEntity(a_Entity);
                 m_ComponentManager->EntityDestroyed(a_Entity);
+                m_SystemManager->RemoveEntitiyWithComponent(a_Entity, m_ComponentManager->GetComponentBitset<T>());
+
             }
             size_t GetNumberOfEntities()
             {
@@ -98,7 +104,7 @@ namespace Wheel
             }
 
             template <typename T>
-            std::unordered_map<uint32_t,T&> GetComponents()
+            std::unordered_map<uint32_t,T*> GetComponents()
             {
                 auto components = m_ComponentManager->GetComponentPool<T>()->GetComponents();
                 return components;
@@ -108,7 +114,11 @@ namespace Wheel
             {
                 return m_ComponentManager->GetNumberOfComponentTypes();
             }
-
+            template <typename T>
+            Description GetComponentDescription()
+            {
+                return m_ComponentManager->GetComponentBitset<T>();
+            }
         private:
             EntityManager* m_EntityManager;
             SystemManager* m_SystemManager;

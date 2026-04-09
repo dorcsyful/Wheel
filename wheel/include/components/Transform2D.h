@@ -12,7 +12,7 @@ namespace Wheel
         class Transform2D final
         {
         public:
-            Transform2D() = delete;
+            Transform2D() {m_Id = -1; };
             Transform2D(uint32_t a_Id);
             Transform2D(uint32_t a_Id, float x, float y);
             Transform2D(uint32_t a_Id, float x, float y, float rotation);
@@ -54,7 +54,7 @@ namespace Wheel
 
             Wheel::Math::Vector2 position;
             Wheel::Math::Vector2 scale;
-            float rotation;
+            float rotation{};
 
         private:
             uint32_t m_Id;

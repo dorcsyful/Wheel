@@ -76,6 +76,12 @@ namespace Wheel
             }
 
             template <typename T>
+            Description GetComponentBitset()
+            {
+                return m_Descriptions.at(typeid(T).name());
+            }
+
+            template <typename T>
             T& GetComponent(uint32_t a_EntityId)
             {
                 //TODO: UPDATE TO MATCH DESCRIPTION

@@ -1,4 +1,5 @@
 #pragma once
+#include "RenderedObject.h"
 #include "core/System.h"
 #include "../components/Transform2D.h"
 #include "../components/Render2DComponent.h"
@@ -21,17 +22,17 @@ namespace Wheel
             {
             public:
                 RenderSystem() = delete;
-                explicit RenderSystem(Description* a_Description);
+                explicit RenderSystem(const Description& a_Description) : System(a_Description) { m_RenderObjects.reserve(MAX_ENTITIES); m_Description = a_Description; }
                 /**
                  * @return A pointer to the renderer. Use this to load resources.
                  */
                 Renderer::Renderer* GetRenderer() { return m_Renderer; }
                 void GetComponentPool(IComponentPool* a_Pool) override;
                 void Update(float deltaTime) override;
-
+                static bool ROSorter(Renderer::RenderedObject& a_A, Renderer::RenderedObject& a_B);
             private:
                 Renderer::Renderer* m_Renderer;
-                std::vector<uint32_t> m_RenderObjects;
+                std::vector<Renderer::RenderedObject> m_RenderObjects;
                 ComponentPool<Components::Transform2D>* m_Transform2DPool;
                 ComponentPool<Components::Render2DComponent>* m_RenderPool;
                 ComponentPool<Components::CameraComponent>* m_CameraPool;

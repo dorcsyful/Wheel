@@ -27,6 +27,20 @@ namespace Wheel
                 }
             }
 
+            void AddEntityWithComponent(uint32_t a_EntityID, Description& a_Description)
+            {
+                for (int i = 0; i < m_SystemCount; i++)
+                {
+                    m_Systems[i]->AddEntityWithComponent(a_EntityID, a_Description);
+                }
+            }
+            void RemoveEntityWithComponent(uint32_t a_EntityID, Description& a_Description)
+            {
+                for (int i = 0; i < m_SystemCount; i++)
+                {
+                    m_Systems[i]->RemoveEntityWithComponent(a_EntityID, a_Description);
+                }
+            }
             template <typename T>
             void AddComponentType(ComponentPool<T>* a_Pool)
             {
@@ -42,12 +56,12 @@ namespace Wheel
 
                 }
             }
-
-            void RegisterSystem(Wheel::Engine::System* a_System, Description a_Description)
+            template <typename T>
+            void RegisterSystem(const Description& a_Description)
             {
                 if (m_SystemCount < MAX_SYSTEMS)
                 {
-                    m_Systems[m_SystemCount] = a_System;
+                    m_Systems[m_SystemCount] = new T(a_Description);
                     m_SystemCount++;
                 }
             }

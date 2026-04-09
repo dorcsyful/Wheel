@@ -56,7 +56,7 @@ namespace Wheel
              */
             void LoadTexture(Texture* a_Texture);
 
-            std::vector<RenderedObject>& GetRenderedObjects() { return m_RenderedObjects; }
+            void GetRenderedObjects(std::vector<RenderedObject>* a_ROs) { m_RenderedObjects = a_ROs; }
 
         private:
             void AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader);
@@ -66,7 +66,7 @@ namespace Wheel
             std::vector<Shader*> m_Shaders;
             std::vector<Texture*> m_Textures;
             //Using a vector instead of regular array to have access to sort() & co.
-            std::vector<RenderedObject> m_RenderedObjects;
+            std::vector<RenderedObject>* m_RenderedObjects;
 
 
 
