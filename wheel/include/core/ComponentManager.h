@@ -76,7 +76,7 @@ namespace Wheel
             }
 
             template <typename T>
-            Description GetComponentBitset()
+            Description& GetComponentBitset()
             {
                 return m_Descriptions.at(typeid(T).name());
             }

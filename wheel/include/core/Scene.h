@@ -85,17 +85,15 @@ namespace Wheel
              * @param a_AddToWorld Set this to false if you do not want to render the entity.
              * @return The ID of the created entity. Without you CANNOT interact with the entity in any way, so make sure to store it somewhere if you want to use it.
              */
-            template<typename T>
             uint32_t AddEntity(bool a_AddToWorld = true) {
                 uint32_t temp = m_EntityManager->CreateEntity();
-                m_SystemManager->AddEntityWithComponent(temp, m_ComponentManager->GetComponentBitset<T>());
                 return temp;
             }
-            template<typename T>
+
             void RemoveEntity(uint32_t a_Entity) {
                 m_EntityManager->DestroyEntity(a_Entity);
                 m_ComponentManager->EntityDestroyed(a_Entity);
-                m_SystemManager->RemoveEntitiyWithComponent(a_Entity, m_ComponentManager->GetComponentBitset<T>());
+                m_SystemManager->RemoveEntityWithComponent(a_Entity, m_EntityManager->GetEntityDescription(a_Entity));
 
             }
             size_t GetNumberOfEntities()
