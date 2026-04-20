@@ -7,13 +7,11 @@ namespace Wheel
     {
         struct Render2DComponent
         {
-            bool active;
-            uint32_t ID;
-            size_t TextureName;
-            float top;
-            float left;
-            float width;
-            float height;
+            bool active = true;
+            uint32_t ID = 999999;
+            size_t TextureName = 0;
+            float width = 0;
+            float height = 0;
         };
     }
 }

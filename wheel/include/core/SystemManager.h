@@ -57,14 +57,19 @@ namespace Wheel
                 }
             }
             template <typename T>
-            void RegisterSystem(const Description& a_Description)
+            T* RegisterSystem(const Description& a_Description)
             {
                 if (m_SystemCount < MAX_SYSTEMS)
                 {
-                    m_Systems[m_SystemCount] = new T(a_Description);
+                    T* system = new T(a_Description);
+                    m_Systems[m_SystemCount] = system;
                     m_SystemCount++;
+                    return system;
                 }
+                return nullptr;
             }
+
+
 
         private:
             System* m_Systems[MAX_SYSTEMS];

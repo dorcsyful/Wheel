@@ -67,6 +67,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
 
 void Wheel::Renderer::Renderer::Update()
 {
+    if (!m_RenderedObjects) return;
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -75,17 +76,23 @@ void Wheel::Renderer::Renderer::Update()
 
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO2D);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO2D);
+    glBindTexture(GL_TEXTURE_2D, m_Textures[0]->m_ID);
+    for (int i =0; i < m_RenderedObjects->size(); i++)
+    {
+        GLint posLoc = glGetAttribLocation(program, "a_position");
+        GLint texLoc = glGetAttribLocation(program, "a_texCoord");
+        GLint mvpLocation = glGetUniformLocation(program, "u_mvpMatrix");
+        GLint samplerLoc = glGetUniformLocation(program, "s_texture");
+        glUniform1i(samplerLoc, 0);
+        glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
+        glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        auto mvp = m_RenderedObjects->at(i).modelMatrix.Transpose();
+        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, &mvp.First());
+        glEnableVertexAttribArray(posLoc);
+        glEnableVertexAttribArray(texLoc);
 
-    GLint posLoc = glGetAttribLocation(program, "a_position");
-    GLint texLoc = glGetAttribLocation(program, "a_texCoord");
-
-    glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
-    glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-
-    glEnableVertexAttribArray(posLoc);
-    glEnableVertexAttribArray(texLoc);
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0); // offset, not pointer
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0); // offset, not pointer
+    }
 
     glfwSwapBuffers(m_Window);
 }

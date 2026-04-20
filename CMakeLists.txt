@@ -15,13 +15,18 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 add_subdirectory(dependencies/glfw)
 
 # Create a library for GLAD (since it's just raw source files)
-add_library(glad STATIC dependencies/glad/glad.c)
+add_library(glad STATIC dependencies/glad/glad.c
+        wheel/EventSystem/EventBus.h
+        wheel/EventSystem/RenderEvents.h
+        wheel/EventSystem/SubscriptionToken.h)
 target_include_directories(glad PUBLIC dependencies/glad)
 
 # --- 2. THE ENGINE (Wheel) ---
 
 file(GLOB_RECURSE ENGINE_SOURCES "wheel/*.cpp" "wheel/*.h")
-add_library(wheel_engine STATIC ${ENGINE_SOURCES})
+add_library(wheel_engine STATIC ${ENGINE_SOURCES}
+        wheel/include/systems/InputSystem.cpp
+        wheel/include/systems/InputSystem.h)
 
 # Include directories for the engine (so it can find its own and dependency headers)
 target_link_libraries(wheel_engine PUBLIC glad glfw)

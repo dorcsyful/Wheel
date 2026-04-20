@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include "Globals.h"
-
+#include <array>
 namespace Wheel
 {
     namespace Engine
@@ -13,7 +13,7 @@ namespace Wheel
         {
         public:
             IComponentPool() = default;
-            virtual ~IComponentPool() {};
+            virtual ~IComponentPool() = default;
             virtual void EntityDestroyed(uint32_t a_Entity) = 0;
         };
 
@@ -22,7 +22,7 @@ namespace Wheel
         {
         public:
 
-            ComponentPool() : m_Components{NULL}
+            ComponentPool()
             {
                 //m_Components = std::array<T, MAX_ENTITIES>();
                 m_EntityToComponent = std::unordered_map<uint32_t, uint32_t>();
@@ -44,7 +44,7 @@ namespace Wheel
                 m_ComponentToEntity.insert(std::make_pair(m_Size, a_Entity));
                 m_Components[m_Size] = component;
                 m_Size++;
-                return m_Components[m_Size];
+                return m_Components[m_Size - 1];
             }
 
             T& GetComponent(uint32_t a_Entity)
@@ -98,8 +98,8 @@ namespace Wheel
             }
 
         private:
-            T m_Components[MAX_ENTITIES];
-
+            //T m_Components[MAX_ENTITIES];
+            std::array<T, MAX_ENTITIES> m_Components;
             std::unordered_map<uint32_t, uint32_t> m_EntityToComponent;
             std::unordered_map<uint32_t, uint32_t> m_ComponentToEntity;
 

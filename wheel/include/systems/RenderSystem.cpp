@@ -2,22 +2,27 @@
 
 #include "RenderedObject.h"
 #include "Renderer.h"
-
-void Wheel::Engine::Systems::RenderSystem::GetComponentPool(IComponentPool* a_Pool)
-{
-    if (m_Transform2DPool == nullptr) m_Transform2DPool = dynamic_cast<ComponentPool<Components::Transform2D>*>(a_Pool);
-    if (m_RenderPool == nullptr) m_RenderPool = dynamic_cast<ComponentPool<Components::Render2DComponent>*>(a_Pool);
-    if (m_CameraPool == nullptr) m_CameraPool = dynamic_cast<ComponentPool<Components::CameraComponent>*>(a_Pool);
-}
+#include "../../game/Start.h"
+extern std::shared_ptr<Start> gStart;
 
 void Wheel::Engine::Systems::RenderSystem::Update(float deltaTime)
 {
     m_RenderObjects.clear();
+
+    const Components::Transform2D& camTransform =
+        gStart->GetScene()->GetComponent<Components::Transform2D>(m_CameraEntity);
+    const Components::CameraComponent& camComponent =
+        gStart->GetScene()->GetComponent<Components::CameraComponent>(m_CameraEntity);
+
     for (unsigned int m_EntityID : m_EntityIDs)
     {
         Renderer::RenderedObject ro{};
-        ro.Add2DComponent(m_RenderPool->GetComponent(m_EntityID), m_EntityID,
-            m_Transform2DPool->GetComponent(m_EntityID));
+        ro.Add2DComponent(
+            gStart->GetScene()->GetComponent<Components::Render2DComponent>(m_EntityID),
+            m_EntityID,
+            gStart->GetScene()->GetComponent<Components::Transform2D>(m_EntityID),
+            camTransform,
+            camComponent);
         m_RenderObjects.push_back(ro);
     }
     std::sort(m_RenderObjects.begin(), m_RenderObjects.end(),ROSorter);

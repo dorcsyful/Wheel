@@ -1,11 +1,9 @@
 ﻿#pragma once
 #include <cstdint>
 #include <iostream>
-#include <memory>
 #include "SystemManager.h"
 #include "ComponentManager.h"
 #include "EntityManager.h"
-#include "System.h"
 
 namespace Wheel
 {
@@ -27,7 +25,10 @@ namespace Wheel
                 delete m_SystemManager;
             }
 
-            void Update(float deltaTime){std::cout << "Update" << std::endl; m_SystemManager->Update(deltaTime);}
+            void Update(float deltaTime)
+            {
+                m_SystemManager->Update(deltaTime);
+            }
 
             /**
             * @brief  Register all components before creating any entities. Built-in components do not have to be registered
@@ -42,9 +43,9 @@ namespace Wheel
             * @brief  Register all systems before creating any entities. Built-in systems do not have to be registered
             */
             template<typename T>
-            void RegisterSystem(const Description& a_Description)
+            T* RegisterSystem(const Description& a_Description)
             {
-                m_SystemManager->RegisterSystem<T>(std::move(a_Description));
+                return m_SystemManager->RegisterSystem<T>(std::move(a_Description));
             }
 
             /**

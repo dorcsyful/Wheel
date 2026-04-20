@@ -6,11 +6,11 @@
 
 #include "Start.h"
 
-
+std::shared_ptr<Start> gStart;
 int main() {
 
-    std::unique_ptr<Start> start = std::make_unique<Start>();
-    start->Init();
-    start->Update();
+    gStart = std::make_unique<Start>();
+    gStart->Init();
+    gStart->Update();
     return 0;
 }

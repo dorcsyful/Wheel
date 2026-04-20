@@ -23,12 +23,9 @@ namespace Wheel
                 if (m_Description.HasComponentType(description))
                     m_EntityIDs.erase(std::find(m_EntityIDs.begin(), m_EntityIDs.end(), a_Entity));
             }
-            System(Description a_Description) : m_Description(std::move(a_Description))
-            {
-            }
+            System(Description a_Description) : m_Description(std::move(a_Description)) {}
 
 
-            virtual void GetComponentPool(IComponentPool* a_Pool) = 0;
             virtual void Update(float deltaTime) = 0;
         protected:
             std::vector<uint32_t> m_EntityIDs;

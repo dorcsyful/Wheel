@@ -26,16 +26,14 @@ namespace Wheel
                 /**
                  * @return A pointer to the renderer. Use this to load resources.
                  */
-                Renderer::Renderer* GetRenderer() { return m_Renderer; }
-                void GetComponentPool(IComponentPool* a_Pool) override;
+                void GetRenderer(Renderer::Renderer* a_Renderer) { m_Renderer = a_Renderer; }
                 void Update(float deltaTime) override;
+                void SetCameraEntity(uint32_t a_Id) { m_CameraEntity = a_Id; }
                 static bool ROSorter(Renderer::RenderedObject& a_A, Renderer::RenderedObject& a_B);
             private:
-                Renderer::Renderer* m_Renderer;
+                Renderer::Renderer* m_Renderer = nullptr;
+                uint32_t m_CameraEntity;
                 std::vector<Renderer::RenderedObject> m_RenderObjects;
-                ComponentPool<Components::Transform2D>* m_Transform2DPool;
-                ComponentPool<Components::Render2DComponent>* m_RenderPool;
-                ComponentPool<Components::CameraComponent>* m_CameraPool;
             };
 
 
