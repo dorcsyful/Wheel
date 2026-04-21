@@ -14,46 +14,66 @@ namespace Wheel
     namespace EventSystem
     {
         template <typename TEvent>
-struct Handler {
+        struct Handler {
             int id;
             std::function<void(const TEvent&)> callback;
+            std::function<bool(const TEvent&)> filter; // nullptr = no filter, always fires
         };
 
         class EventBus {
         public:
 
-            template <typename TEvent>
-            static void Subscribe(std::function<void(const TEvent&)> callback,
-                                  SubscriptionToken& token)
+            template <typename TEvent, typename TCallback>
+            static void Subscribe(TCallback&& callback)
             {
-                auto& handlers = GetHandlers<TEvent>();
-                int id = s_NextId++;
-                handlers.push_back({ id, callback });
+                GetHandlers<TEvent>().push_back({ s_NextId++, std::forward<TCallback>(callback), nullptr });
+            }
 
-                // When the token dies, this lambda runs and removes the handler
+
+            template <typename TEvent, typename TCallback>
+            static void Subscribe(TCallback&& callback, SubscriptionToken& token)
+            {
+                int id = s_NextId++;
+                GetHandlers<TEvent>().push_back({ id, std::forward<TCallback>(callback), nullptr });
                 token.m_Unsubscribers.push_back([id]() {
-                    auto& h = GetHandlers<TEvent>();
-                    h.erase(std::remove_if(h.begin(), h.end(),
-                        [id](const Handler<TEvent>& handler) {
-                            return handler.id == id;
-                        }), h.end());
+                    auto& handlers = GetHandlers<TEvent>();
+                    handlers.erase(
+                        std::remove_if(handlers.begin(), handlers.end(),
+                            [id](const Handler<TEvent>& h) { return h.id == id; }),
+                        handlers.end());
+                });
+            }
+
+            template <typename TEvent, typename TFilter, typename TCallback>
+            static void Subscribe(TFilter&& filter, TCallback&& callback, SubscriptionToken& token)
+            {
+                int id = s_NextId++;
+                GetHandlers<TEvent>().push_back({ id, std::forward<TCallback>(callback), std::forward<TFilter>(filter) });
+                token.m_Unsubscribers.push_back([id]() {
+                    auto& handlers = GetHandlers<TEvent>();
+                    handlers.erase(
+                        std::remove_if(handlers.begin(), handlers.end(),
+                            [id](const Handler<TEvent>& h) { return h.id == id; }),
+                        handlers.end());
                 });
             }
 
             template <typename TEvent>
             static void Publish(const TEvent& event) {
-                for (auto& handler : GetHandlers<TEvent>())
-                    handler.callback(event); // was just handler(event) before
+                for (auto& handler : GetHandlers<TEvent>()) {
+                    if (!handler.filter || handler.filter(event))
+                        handler.callback(event);
+                }
             }
 
 
         private:
 
-            static int s_NextId;
+            inline static int s_NextId = 0;
 
             template <typename TEvent>
-            static std::vector<std::function<void(const TEvent&)>>& GetHandlers() {
-                static std::vector<std::function<void(const TEvent&)>> handlers;
+            static std::vector<Handler<TEvent>>& GetHandlers() {
+                static std::vector<Handler<TEvent>> handlers;
                 return handlers;
             }
         };

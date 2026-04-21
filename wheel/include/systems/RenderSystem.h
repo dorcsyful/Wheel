@@ -22,7 +22,7 @@ namespace Wheel
             {
             public:
                 RenderSystem() = delete;
-                explicit RenderSystem(const Description& a_Description) : System(a_Description) { m_RenderObjects.reserve(MAX_ENTITIES); m_Description = a_Description; }
+                explicit RenderSystem(const Description& a_Description);
                 /**
                  * @return A pointer to the renderer. Use this to load resources.
                  */
@@ -32,7 +32,7 @@ namespace Wheel
                 static bool ROSorter(Renderer::RenderedObject& a_A, Renderer::RenderedObject& a_B);
             private:
                 Renderer::Renderer* m_Renderer = nullptr;
-                uint32_t m_CameraEntity;
+                uint32_t m_CameraEntity = -1;
                 std::vector<Renderer::RenderedObject> m_RenderObjects;
             };
 

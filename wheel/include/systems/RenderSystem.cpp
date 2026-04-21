@@ -3,7 +3,23 @@
 #include "RenderedObject.h"
 #include "Renderer.h"
 #include "../../game/Start.h"
+#include "EventBus.h"
+#include "RenderEvents.h"
 extern std::shared_ptr<Start> gStart;
+
+Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Description) : System(a_Description)
+{
+    m_RenderObjects.reserve(MAX_ENTITIES);
+    m_Description = a_Description;
+
+    EventSystem::EventBus::Subscribe<Events::WindowResizeEvent>([this](const Events::WindowResizeEvent& e)
+    {
+        Components::CameraComponent& camComponent = gStart->GetScene()->GetComponent<Components::CameraComponent>(m_CameraEntity);
+        camComponent.width = e.width;
+        camComponent.height = e.height;
+    });
+
+}
 
 void Wheel::Engine::Systems::RenderSystem::Update(float deltaTime)
 {

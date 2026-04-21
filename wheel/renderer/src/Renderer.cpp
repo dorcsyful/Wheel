@@ -6,9 +6,13 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "RenderedObject.h"
+#include "EventBus.h"
+#include "RenderEvents.h"
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    Wheel::EventSystem::EventBus::Publish(Wheel::Events::WindowResizeEvent(width, height));
 }
 static void glfwError(int id, const char* description)
 {
@@ -31,7 +35,8 @@ Wheel::Renderer::Renderer::~Renderer()
 }
 
 void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title)
-{  glfwSetErrorCallback(&glfwError);
+{
+    glfwSetErrorCallback(&glfwError);
 
     if (!glfwInit())
     {

@@ -18,7 +18,9 @@ add_subdirectory(dependencies/glfw)
 add_library(glad STATIC dependencies/glad/glad.c
         wheel/EventSystem/EventBus.h
         wheel/EventSystem/RenderEvents.h
-        wheel/EventSystem/SubscriptionToken.h)
+        wheel/EventSystem/SubscriptionToken.h
+        wheel/EventSystem/InputEvents.h
+)
 target_include_directories(glad PUBLIC dependencies/glad)
 
 # --- 2. THE ENGINE (Wheel) ---
@@ -33,6 +35,7 @@ target_link_libraries(wheel_engine PUBLIC glad glfw)
 target_include_directories(wheel_engine PUBLIC wheel/include)
 target_include_directories(wheel_engine PUBLIC wheel/renderer/include)
 target_include_directories(wheel_engine PUBLIC wheel/stb)
+target_include_directories(wheel_engine PUBLIC wheel/EventSystem)
 
 # --- 3. PLATFORM SPECIFIC LINKING ---
 
