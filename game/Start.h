@@ -9,6 +9,7 @@
 #include "systems/RenderSystem.h"
 #include "core/Description.h"
 #include "components/CameraComponent.h"
+#include "systems/InputSystem.h"
 
 //This is the class that communicates with the engine. Override any part of this to fit your needs
 class Start
@@ -35,6 +36,8 @@ class Start
         finalDesc.AddComponentType(render.GetAsBitset());
         m_RenderSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::RenderSystem>(finalDesc);
         m_RenderSystem->GetRenderer(m_Renderer.get());
+        Wheel::Engine::Systems::InputSystem* input = m_Scene->RegisterSystem<Wheel::Engine::Systems::InputSystem>(Wheel::Engine::Description());
+        input->Initialize(m_Renderer->GetWindow());
     }
 
     void CreateEntities()

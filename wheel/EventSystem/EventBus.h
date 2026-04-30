@@ -29,7 +29,9 @@ namespace Wheel
                 GetHandlers<TEvent>().push_back({ s_NextId++, std::forward<TCallback>(callback), nullptr });
             }
 
-
+            /**
+             * @param token Holds the unsubscribe lambda. Must be a global variable or a class member!
+             */
             template <typename TEvent, typename TCallback>
             static void Subscribe(TCallback&& callback, SubscriptionToken& token)
             {

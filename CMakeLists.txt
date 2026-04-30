@@ -17,9 +17,8 @@ add_subdirectory(dependencies/glfw)
 # Create a library for GLAD (since it's just raw source files)
 add_library(glad STATIC dependencies/glad/glad.c
         wheel/EventSystem/EventBus.h
-        wheel/EventSystem/RenderEvents.h
+        wheel/EventSystem/Events.h
         wheel/EventSystem/SubscriptionToken.h
-        wheel/EventSystem/InputEvents.h
 )
 target_include_directories(glad PUBLIC dependencies/glad)
 

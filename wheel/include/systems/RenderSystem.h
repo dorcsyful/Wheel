@@ -34,6 +34,9 @@ namespace Wheel
                 Renderer::Renderer* m_Renderer = nullptr;
                 uint32_t m_CameraEntity = -1;
                 std::vector<Renderer::RenderedObject> m_RenderObjects;
+                float m_designWidth = 0.0f;
+                float m_designHeight = 0.0f;
+                float m_initialZoom = 0.0f;
             };
 
 

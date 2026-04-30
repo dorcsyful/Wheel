@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "RenderedObject.h"
 #include "EventBus.h"
-#include "RenderEvents.h"
+#include "Events.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
