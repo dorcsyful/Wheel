@@ -1,11 +1,11 @@
+#pragma once
 #include "RenderSystem.h"
 
 #include "RenderedObject.h"
 #include "Renderer.h"
-#include "../../game/Start.h"
 #include "EventBus.h"
 #include "Events.h"
-extern std::shared_ptr<Start> gStart;
+#include "core/Scene.h"
 
 Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Description) : System(a_Description)
 {
@@ -14,7 +14,7 @@ Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Descript
 
     EventSystem::EventBus::Subscribe<Events::WindowResizeEvent>([this](const Events::WindowResizeEvent& e)
     {
-        Components::CameraComponent& camComponent = gStart->GetScene()->GetComponent<Components::CameraComponent>(m_CameraEntity);
+        Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
 
         if (m_designWidth == 0.0f)
         {
@@ -36,17 +36,17 @@ void Wheel::Engine::Systems::RenderSystem::Update(float deltaTime)
     m_RenderObjects.clear();
 
     const Components::Transform2D& camTransform =
-        gStart->GetScene()->GetComponent<Components::Transform2D>(m_CameraEntity);
+        m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
     const Components::CameraComponent& camComponent =
-        gStart->GetScene()->GetComponent<Components::CameraComponent>(m_CameraEntity);
+        m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
 
     for (unsigned int m_EntityID : m_EntityIDs)
     {
         Renderer::RenderedObject ro{};
         ro.Add2DComponent(
-            gStart->GetScene()->GetComponent<Components::Render2DComponent>(m_EntityID),
+            m_Scene->GetComponent<Components::Render2DComponent>(m_EntityID),
             m_EntityID,
-            gStart->GetScene()->GetComponent<Components::Transform2D>(m_EntityID),
+            m_Scene->GetComponent<Components::Transform2D>(m_EntityID),
             camTransform,
             camComponent);
         m_RenderObjects.push_back(ro);

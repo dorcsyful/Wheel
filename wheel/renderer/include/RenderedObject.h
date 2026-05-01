@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
 #include <cstdint>
-
+#include "../../wheel/include/core/Globals.h"
 #include "components/CameraComponent.h"
 #include "components/Render2DComponent.h"
 #include "components/Transform2D.h"
@@ -55,8 +55,8 @@ namespace Wheel
 
                 // Orthographic projection: maps world units to NDC [-1,1] given viewport and zoom
                 float z = a_Camera.zoom;
-                float W = a_Camera.width;
-                float H = a_Camera.height;
+                float W = a_Camera.width  / PIXELS_PER_UNIT;  // viewport width in world units
+                float H = a_Camera.height / PIXELS_PER_UNIT;  // viewport height in world units
 
                 Math::Matrix4x4 proj(
                     2.0f * z / W, 0.0f,         0.0f, 0.0f,

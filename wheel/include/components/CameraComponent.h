@@ -15,7 +15,14 @@ namespace Wheel
          */
         struct CameraComponent
         {
-            bool active = true;
+        public:
+
+            void SetCameraActive(bool a_Enable)
+            {
+                active = a_Enable;
+            }
+            bool IsActive() { return active; }
+
             Math::Vector4 backgroundColor = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             /**
              * @brief Use Orthographic for 2D and Perspective for 3D
@@ -33,6 +40,10 @@ namespace Wheel
             // float right = 0;
             float zoom = 1.0f;
             //TODO: Implement required variables for 3D camera
+
+        private:
+            bool active = true;
+
         };
     }
 }

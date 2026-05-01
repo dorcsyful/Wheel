@@ -3,6 +3,9 @@
 
 #include "Description.h"
 #include "ComponentPool.h"
+
+namespace Wheel { namespace Engine { class Scene; } }
+
 namespace Wheel
 {
     namespace Engine
@@ -25,9 +28,11 @@ namespace Wheel
             }
             System(Description a_Description) : m_Description(std::move(a_Description)) {}
 
+            void SetScene(Scene* a_Scene) { m_Scene = a_Scene; }
 
             virtual void Update(float deltaTime) = 0;
         protected:
+            Scene* m_Scene = nullptr;
             std::vector<uint32_t> m_EntityIDs;
             Description m_Description;
         };

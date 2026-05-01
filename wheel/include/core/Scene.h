@@ -45,7 +45,9 @@ namespace Wheel
             template<typename T>
             T* RegisterSystem(const Description& a_Description)
             {
-                return m_SystemManager->RegisterSystem<T>(std::move(a_Description));
+                T* system = m_SystemManager->RegisterSystem<T>(std::move(a_Description));
+                if (system) system->SetScene(this);
+                return system;
             }
 
             /**
@@ -71,6 +73,12 @@ namespace Wheel
             T& GetComponent(uint32_t a_Entity)
             {
                 return m_ComponentManager->GetComponentPool<T>()->GetComponent(a_Entity);
+            }
+
+            template<typename T>
+            T* GetSystem()
+            {
+                return m_SystemManager->GetSystem<T>();
             }
 
             template <typename T>

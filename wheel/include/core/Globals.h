@@ -1,12 +1,16 @@
 ﻿#pragma once
-#define  MAX_ENTITIES 1000
-#define  MAX_COMPONENT_TYPES 16
-#define  MAX_SYSTEMS 16
+#define MAX_ENTITIES 1000
+#define MAX_COMPONENT_TYPES 16
+#define MAX_SYSTEMS 16
 
 /**
  * @brief The location of all assets relative to the EXECUTABLE. You can change this if you want to put your assets in a different location
  */
-#define  ASSETS_LOCATION "../assets/"
+#define ASSETS_LOCATION "../assets/"
+/**
+ * @brief Wheel Units to actual pixels. Relevant in 2D
+ */
+#define PIXELS_PER_UNIT 100
 #include <random>
 
 template<typename T>

@@ -6,10 +6,9 @@
 
 #include "Start.h"
 
-std::shared_ptr<Start> gStart;
 int main() {
 
-    gStart = std::make_unique<Start>();
+    std::unique_ptr<Start> gStart = std::make_unique<Start>();
     gStart->Init();
     gStart->Update();
     return 0;

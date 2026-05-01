@@ -10,7 +10,13 @@ namespace Wheel
             bool active = true;
             uint32_t ID = 999999;
             size_t TextureName = 0;
+            /**
+             * @brief In world units
+             */
             float width = 0;
+            /**
+             * @brief In world units
+             */
             float height = 0;
         };
     }

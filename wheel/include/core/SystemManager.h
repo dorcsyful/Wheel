@@ -63,16 +63,29 @@ namespace Wheel
                 {
                     T* system = new T(a_Description);
                     m_Systems[m_SystemCount] = system;
+                    m_SystemNames[m_SystemCount] = typeid(T).name();
                     m_SystemCount++;
                     return system;
                 }
                 return nullptr;
             }
 
-
+            template<typename T>
+            T* GetSystem()
+            {
+                const char* t_name = typeid(T).name();
+                for (int i = 0; i < m_SystemCount; i++)
+                {
+                    if (t_name == m_SystemNames[i])
+                    {
+                        return static_cast<T*>(m_Systems[i]);
+                    }
+                }
+            }
 
         private:
             System* m_Systems[MAX_SYSTEMS];
+            const char* m_SystemNames[MAX_SYSTEMS];
             int m_SystemCount;
         };
     }
