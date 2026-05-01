@@ -115,17 +115,14 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::ScreenToWorldPoint(con
     const Components::Transform2D& camTransform = m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
     const Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
 
-    // Screen pixels (0,0 = top-left, Y down) → NDC [-1,1] (Y up)
     float ndc_x =  2.0f * screenPoint.x / camComponent.width  - 1.0f;
     float ndc_y = -2.0f * screenPoint.y / camComponent.height + 1.0f;
 
-    // Invert projection: NDC → view space (world units in camera frame)
     float half_w = camComponent.width  / (2.0f * PIXELS_PER_UNIT * camComponent.zoom);
     float half_h = camComponent.height / (2.0f * PIXELS_PER_UNIT * camComponent.zoom);
     float view_x = ndc_x * half_w;
     float view_y = ndc_y * half_h;
 
-    // Invert view matrix: un-rotate by camera rotation, then translate by camera position
     float cos_cr = std::cos(camTransform.rotation);
     float sin_cr = std::sin(camTransform.rotation);
     return {
@@ -136,12 +133,28 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::ScreenToWorldPoint(con
 
 Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::WorldToScreenPoint(const Math::Vector2& worldPoint)
 {
-    return Math::Vector2();
+    const Components::Transform2D& camTransform = m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
+    const Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
+
+    float cos_cr = std::cos(camTransform.rotation);
+    float sin_cr = std::sin(camTransform.rotation);
+    float dx = worldPoint.x - camTransform.position.x;
+    float dy = worldPoint.y - camTransform.position.y;
+    float view_x =  cos_cr * dx + sin_cr * dy;
+    float view_y = -sin_cr * dx + cos_cr * dy;
+
+    float ndc_x = view_x * 2.0f * PIXELS_PER_UNIT * camComponent.zoom / camComponent.width;
+    float ndc_y = view_y * 2.0f * PIXELS_PER_UNIT * camComponent.zoom / camComponent.height;
+
+    return {
+        (ndc_x + 1.0f) * camComponent.width  * 0.5f,
+        (1.0f - ndc_y) * camComponent.height * 0.5f
+    };
 }
 
 Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::MousePositionToWorldPoint()
 {
-    return Math::Vector2();
+    return ScreenToWorldPoint(Math::Vector2(m_MouseX, m_MouseY));
 }
 
 void Wheel::Engine::Systems::InputSystem::Update(float deltaTime)
