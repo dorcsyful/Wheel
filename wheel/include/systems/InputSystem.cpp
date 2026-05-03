@@ -1,4 +1,4 @@
-#pragma once
+
 #include "InputSystem.h"
 
 #include <cmath>

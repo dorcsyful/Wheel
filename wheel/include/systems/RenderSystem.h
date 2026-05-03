@@ -1,9 +1,6 @@
 #pragma once
 #include "RenderedObject.h"
 #include "core/System.h"
-#include "../components/Transform2D.h"
-#include "../components/Render2DComponent.h"
-#include "../components/CameraComponent.h"
 namespace Wheel::Renderer
 {
     class Renderer;

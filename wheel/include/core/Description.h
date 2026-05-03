@@ -62,7 +62,14 @@ namespace Wheel
             {
                 size_t firstBit = get_first_set_bit(componentBitset.GetAsBitset());
                 assert(firstBit < MAX_COMPONENT_TYPES && "Component type out of range");
-                return m_ComponentBitset[firstBit] == true;
+                for (int i = 0; i < MAX_COMPONENT_TYPES; i++)
+                {
+                    if (componentBitset.GetAsBitset()[i] && !m_ComponentBitset[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
 
             }
             bool IsEmpty()

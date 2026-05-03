@@ -42,6 +42,8 @@ void Wheel::Engine::Systems::RenderSystem::Update(float deltaTime)
 
     for (unsigned int m_EntityID : m_EntityIDs)
     {
+        if (!m_Scene->HasComponent<Components::Render2DComponent>(m_EntityID)) continue;
+
         Renderer::RenderedObject ro{};
         ro.Add2DComponent(
             m_Scene->GetComponent<Components::Render2DComponent>(m_EntityID),

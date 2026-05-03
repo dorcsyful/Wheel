@@ -2,6 +2,7 @@
 //This is the starting file. Register any custom systems you'd like to use here
 #pragma once
 #include <iostream>
+#include <memory>
 
 #include <core/Scene.h>
 
@@ -54,8 +55,8 @@ class Start
             m_Scene->AddComponent<Wheel::Components::CameraComponent>(cameraId);
         cam.SetCameraActive(true);
         cam.zoom = 1.0f;
-        cam.width  = 1920.0f;
-        cam.height = 1080.0f;
+        cam.width  = 1280.0f;
+        cam.height = 720.0f;
         m_RenderSystem->SetCameraEntity(cameraId);
         m_InputSystem->SetCameraEntity(cameraId);
         m_CameraId = cameraId;
@@ -78,7 +79,7 @@ class Start
     void Init()
     {
         m_Renderer = std::make_unique<Wheel::Renderer::Renderer>();
-        m_Renderer->Init(1920, 1080, "Wheel Engine");
+        m_Renderer->Init(1280, 720, "Wheel Engine");
         m_Scene = std::make_unique<Wheel::Engine::Scene>();
         m_SubscriptionTokens = std::vector<Wheel::EventSystem::SubscriptionToken>();
         RegisterComponents();
