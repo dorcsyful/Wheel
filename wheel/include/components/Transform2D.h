@@ -3,6 +3,7 @@
 
 #include "../math/Vector2.h"
 
+namespace Wheel::Engine { template <typename T> class ComponentPool; }
 
 namespace Wheel
 {
@@ -14,12 +15,7 @@ namespace Wheel
         class Transform2D final
         {
         public:
-            Transform2D() {m_Id = -1; };
-            Transform2D(uint32_t a_Id) { m_Id = a_Id; name = "Entity " + std::to_string(a_Id); };
-            Transform2D(uint32_t a_Id, float x, float y)
-            {m_Id = a_Id; position.x = x; position.y = y; name = "Entity " + std::to_string(a_Id); };
-            Transform2D(uint32_t a_Id, float x, float y, float a_Rotation)
-            {m_Id = a_Id; position.x = x; position.y = y; rotation = a_Rotation; name = "Entity " + std::to_string(a_Id); };
+            Transform2D() = default;
 
             bool operator==(const Transform2D& a_Other) const { return m_Id == a_Other.m_Id; };
             bool operator!=(const Transform2D& a_Other) const { return m_Id != a_Other.m_Id; };
@@ -52,13 +48,17 @@ namespace Wheel
             Transform2D operator<<=(const Transform2D& a_Other) = delete;
             Transform2D operator>>=(const Transform2D& a_Other) = delete;
 
-            std::string name = "Entity";
+            std::string name;
             Wheel::Math::Vector2 position;
             Wheel::Math::Vector2 scale;
             float rotation = 0.0f;
 
         private:
-            uint32_t m_Id;
+            template <typename T> friend class Engine::ComponentPool;
+
+            void SetEntityId(uint32_t id) { m_Id = id; name = "Entity " + std::to_string(id); }
+
+            uint32_t m_Id = 0;
 
         };
 };

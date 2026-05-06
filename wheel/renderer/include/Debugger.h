@@ -12,7 +12,7 @@ namespace Wheel
     {
         enum class DEBUG_MODULES
         {
-            COMPONENT_LIST,
+            ENTITY_LIST,
             COMPONENT_DETAILS,
             WINDOW_STATS
         };
@@ -30,7 +30,7 @@ namespace Wheel
 
         private:
 
-            void DrawComponentList();
+            void DrawEntityList();
             void DrawComponentDetails();
             void DrawWindowStats();
 

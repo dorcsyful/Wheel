@@ -38,7 +38,7 @@ void Start::CreateEntities()
     m_RenderSystem->SetCameraEntity(cameraId);
     m_InputSystem->SetCameraEntity(cameraId);
     m_CameraId = cameraId;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 10; i++)
     {
         uint32_t id = m_Scene->AddEntity();
         Wheel::Components::Transform2D& transform =
@@ -71,6 +71,7 @@ void Start::Init()
         },m_SubscriptionTokens[0]);
     Wheel::Renderer::Debugger* debugger = m_Renderer->InitDebugger();
     debugger->GetScene(m_Scene.get());
+    debugger->AddModule(Wheel::Renderer::DEBUG_MODULES::ENTITY_LIST);
 }
 
 void Start::SpawnAtMousePosition(Wheel::Math::Vector2 mousePosition)

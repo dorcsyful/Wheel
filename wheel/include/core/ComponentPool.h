@@ -20,11 +20,17 @@ namespace Wheel
         template <typename T>
         class ComponentPool : public IComponentPool
         {
+
+            //SFINAE magic for getting the Entity id into Transform2D
+            template <typename U, typename = void>
+            struct HasSetEntityId : std::false_type {};
+            template <typename U>
+            struct HasSetEntityId<U, std::void_t<decltype(std::declval<U>().SetEntityId(uint32_t{}))>> : std::true_type {};
+
         public:
 
             ComponentPool()
             {
-                //m_Components = std::array<T, MAX_ENTITIES>();
                 m_EntityToComponent = std::unordered_map<uint32_t, uint32_t>();
                 m_ComponentToEntity = std::unordered_map<uint32_t, uint32_t>();
             }
@@ -39,10 +45,12 @@ namespace Wheel
             T& AddComponent(uint32_t a_Entity)
             {
                 assert(m_EntityToComponent.find(a_Entity) == m_EntityToComponent.end() && "Entity already has component.");
-                T component = T();
                 m_EntityToComponent.insert(std::make_pair(a_Entity, m_Size));
                 m_ComponentToEntity.insert(std::make_pair(m_Size, a_Entity));
-                m_Components[m_Size] = component;
+                m_Components[m_Size] = T{};
+                if constexpr (HasSetEntityId<T>::value) {
+                    m_Components[m_Size].SetEntityId(a_Entity);
+                }
                 m_Size++;
                 return m_Components[m_Size - 1];
             }
