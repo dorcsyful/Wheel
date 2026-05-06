@@ -81,6 +81,7 @@ namespace Wheel
                         return static_cast<T*>(m_Systems[i]);
                     }
                 }
+                return nullptr;
             }
 
         private:

@@ -1,5 +1,5 @@
 
-#include "InputSystem.h"
+#include "../include/systems/InputSystem.h"
 
 #include <cmath>
 #include "components/CameraComponent.h"

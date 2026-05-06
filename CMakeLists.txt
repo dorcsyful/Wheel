@@ -15,27 +15,42 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 add_subdirectory(dependencies/glfw)
 
 # Create a library for GLAD (since it's just raw source files)
-add_library(glad STATIC dependencies/glad/glad.c
-        wheel/EventSystem/EventBus.h
-        wheel/EventSystem/Events.h
-        wheel/EventSystem/SubscriptionToken.h
-)
+add_library(glad STATIC dependencies/glad/glad.c)
 target_include_directories(glad PUBLIC dependencies/glad)
+
+add_library(imgui STATIC
+    dependencies/imgui/imgui.cpp
+    dependencies/imgui/imgui_draw.cpp
+    dependencies/imgui/imgui_tables.cpp
+    dependencies/imgui/imgui_widgets.cpp
+    dependencies/imgui/imgui_impl_glfw.cpp
+    dependencies/imgui/imgui_impl_opengl3.cpp
+)
+target_include_directories(imgui PUBLIC dependencies/imgui)
+target_link_libraries(imgui PUBLIC glfw)
+
 
 # --- 2. THE ENGINE (Wheel) ---
 
 file(GLOB_RECURSE ENGINE_SOURCES "wheel/*.cpp" "wheel/*.h")
 add_library(wheel_engine STATIC ${ENGINE_SOURCES}
-        wheel/include/systems/InputSystem.cpp
-        wheel/include/systems/InputSystem.h)
+        wheel/src/InputSystem.cpp
+        wheel/include/systems/InputSystem.h
+        wheel/EventSystem/EventBus.h
+        wheel/EventSystem/Events.h
+        wheel/EventSystem/SubscriptionToken.h
+)
 
 # Include directories for the engine (so it can find its own and dependency headers)
-target_link_libraries(wheel_engine PUBLIC glad glfw)
+target_link_libraries(wheel_engine PUBLIC glad glfw imgui)
 target_include_directories(wheel_engine PUBLIC wheel/include)
 target_include_directories(wheel_engine PUBLIC wheel/renderer/include)
 target_include_directories(wheel_engine PUBLIC wheel/stb)
 target_include_directories(wheel_engine PUBLIC wheel/EventSystem)
 
+target_compile_definitions(wheel_engine PRIVATE
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+)
 # --- 3. PLATFORM SPECIFIC LINKING ---
 
 if(WIN32)
@@ -61,3 +76,6 @@ add_executable(WheelApp ${USER_SOURCES}) # Using USER_SOURCES which includes you
 
 # Link the Game to the Engine
 target_link_libraries(WheelApp PRIVATE wheel_engine)
+target_compile_definitions(WheelApp PRIVATE
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+)

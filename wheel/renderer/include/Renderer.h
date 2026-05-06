@@ -11,6 +11,7 @@ namespace Wheel
 {
     namespace Renderer
     {
+        class Debugger;
         class Texture;
 
         /**
@@ -45,7 +46,6 @@ namespace Wheel
                 return shaders;
             }
 
-            void AddToRenderQueue(RenderedObject a_RenderedObject);
             /**
              * @brief You have direct access to the GLFW window. Don't make me regret it
              */
@@ -56,12 +56,19 @@ namespace Wheel
              */
             void LoadTexture(Texture* a_Texture);
 
+            /**
+             * @details Initializes the imgui debugger. Use GetScene() to pass the currently active scene. Use AddModules() to define what to display.
+             */
+            Debugger* InitDebugger();
+
+
             void GetRenderedObjects(std::vector<RenderedObject>* a_ROs) { m_RenderedObjects = a_ROs; }
 
         private:
             void AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader);
             void CreateTestSquare();
 
+            Debugger* m_Debugger = nullptr;
             GLFWwindow* m_Window{};
             std::vector<Shader*> m_Shaders;
             std::vector<Texture*> m_Textures;

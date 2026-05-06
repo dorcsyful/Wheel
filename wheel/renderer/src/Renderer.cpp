@@ -8,6 +8,7 @@
 #include "RenderedObject.h"
 #include "EventBus.h"
 #include "Events.h"
+#include "Debugger.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -21,6 +22,7 @@ static void glfwError(int id, const char* description)
 
 Wheel::Renderer::Renderer::~Renderer()
 {
+    delete m_Debugger;
     for (auto element : m_Shaders)
     {
         glDeleteProgram(element->GetID());
@@ -36,6 +38,7 @@ Wheel::Renderer::Renderer::~Renderer()
 
 void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title)
 {
+
     glfwSetErrorCallback(&glfwError);
 
     if (!glfwInit())
@@ -98,7 +101,7 @@ void Wheel::Renderer::Renderer::Update()
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0); // offset, not pointer
     }
-
+    if (m_Debugger != nullptr) m_Debugger->Draw();
     glfwSwapBuffers(m_Window);
 }
 
@@ -125,6 +128,12 @@ void Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
     m_Textures.push_back(a_Texture);
     a_Texture->LoadTexture();
 
+}
+
+Wheel::Renderer::Debugger* Wheel::Renderer::Renderer::InitDebugger()
+{
+    m_Debugger = new Debugger(m_Window);
+    return m_Debugger;
 }
 
 void Wheel::Renderer::Renderer::AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader)

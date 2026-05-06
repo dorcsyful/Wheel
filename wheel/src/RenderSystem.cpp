@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderSystem.h"
+#include "../include/systems/RenderSystem.h"
 
 #include "RenderedObject.h"
 #include "Renderer.h"
