@@ -69,9 +69,6 @@ void Start::Init()
         {
             SpawnAtMousePosition(Wheel::Math::Vector2(e.x,e.y));
         },m_SubscriptionTokens[0]);
-    Wheel::Renderer::Debugger* debugger = m_Renderer->InitDebugger();
-    debugger->GetScene(m_Scene.get());
-    debugger->AddModule(Wheel::Renderer::DEBUG_MODULES::ENTITY_LIST);
 }
 
 void Start::SpawnAtMousePosition(Wheel::Math::Vector2 mousePosition)

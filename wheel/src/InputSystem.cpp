@@ -2,6 +2,8 @@
 #include "../include/systems/InputSystem.h"
 
 #include <cmath>
+
+#include "imgui.h"
 #include "components/CameraComponent.h"
 #include "components/Transform2D.h"
 #include "core/Globals.h"
@@ -16,6 +18,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+#ifdef DEBUG_BUILD
+
+    if (ImGui::GetIO().WantCaptureMouse) return;
+#endif
+
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
     if (button == GLFW_MOUSE_BUTTON_LEFT)

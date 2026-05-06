@@ -4,7 +4,7 @@
 #include "SystemManager.h"
 #include "ComponentManager.h"
 #include "EntityManager.h"
-
+#include "Debugger.h"
 namespace Wheel
 {
     namespace Engine
@@ -17,6 +17,7 @@ namespace Wheel
                 m_EntityManager = new EntityManager();
                 m_ComponentManager = new ComponentManager();
                 m_SystemManager = new SystemManager();
+                Debugger::get().GetScene(this);
             }
             ~Scene()
             {

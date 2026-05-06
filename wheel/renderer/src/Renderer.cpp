@@ -22,7 +22,6 @@ static void glfwError(int id, const char* description)
 
 Wheel::Renderer::Renderer::~Renderer()
 {
-    delete m_Debugger;
     for (auto element : m_Shaders)
     {
         glDeleteProgram(element->GetID());
@@ -71,6 +70,11 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     Texture* texture = new Texture("textures/logo.png");
     LoadTexture(texture);
     CreateTestSquare();
+
+#ifdef DEBUG_BUILD
+    Engine::Debugger::get().Initialize(m_Window);
+     Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::ENTITY_LIST);
+#endif
 }
 
 void Wheel::Renderer::Renderer::Update()
@@ -101,7 +105,11 @@ void Wheel::Renderer::Renderer::Update()
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0); // offset, not pointer
     }
-    if (m_Debugger != nullptr) m_Debugger->Draw();
+
+#ifdef DEBUG_BUILD
+    Engine::Debugger::get().Draw();
+#endif
+
     glfwSwapBuffers(m_Window);
 }
 
@@ -130,11 +138,6 @@ void Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
 
 }
 
-Wheel::Renderer::Debugger* Wheel::Renderer::Renderer::InitDebugger()
-{
-    m_Debugger = new Debugger(m_Window);
-    return m_Debugger;
-}
 
 void Wheel::Renderer::Renderer::AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader)
 {

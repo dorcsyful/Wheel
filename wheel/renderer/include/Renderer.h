@@ -56,11 +56,6 @@ namespace Wheel
              */
             void LoadTexture(Texture* a_Texture);
 
-            /**
-             * @details Initializes the imgui debugger. Use GetScene() to pass the currently active scene. Use AddModules() to define what to display.
-             */
-            Debugger* InitDebugger();
-
 
             void GetRenderedObjects(std::vector<RenderedObject>* a_ROs) { m_RenderedObjects = a_ROs; }
 
@@ -68,13 +63,11 @@ namespace Wheel
             void AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader);
             void CreateTestSquare();
 
-            Debugger* m_Debugger = nullptr;
             GLFWwindow* m_Window{};
             std::vector<Shader*> m_Shaders;
             std::vector<Texture*> m_Textures;
             //Using a vector instead of regular array to have access to sort() & co.
             std::vector<RenderedObject>* m_RenderedObjects;
-
 
 
             //Flat squares for rendering 2D

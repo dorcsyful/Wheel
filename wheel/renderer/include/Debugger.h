@@ -8,7 +8,7 @@ namespace Wheel::Engine
 
 namespace Wheel
 {
-    namespace Renderer
+    namespace Engine
     {
         enum class DEBUG_MODULES
         {
@@ -17,24 +17,31 @@ namespace Wheel
             WINDOW_STATS
         };
 
+        /**
+         * @brief NOTE: Only renders in Debug builds
+         */
         class Debugger
         {
-            public:
-            Debugger(GLFWwindow* window);
+        public:
+            Debugger(const Debugger& obj) = delete;
+            void operator=(const Debugger&)  = delete;
             ~Debugger();
+            static Debugger& get() {  static Debugger instance; return instance;}
 
+            void Initialize(GLFWwindow* a_Window);
+            void GetScene(Engine::Scene* a_Scene) { m_Scene = a_Scene; }
             void AddModule(DEBUG_MODULES a_Module);
             void RemoveModule(DEBUG_MODULES a_Module);
             void Draw();
-            void GetScene(Engine::Scene* a_Scene) { m_Scene = a_Scene; }
 
         private:
+            Debugger() = default;
 
             void DrawEntityList();
             void DrawComponentDetails();
             void DrawWindowStats();
 
-
+            static Debugger* s_Instance;
             Engine::Scene* m_Scene;
             GLFWwindow* m_Window;
 

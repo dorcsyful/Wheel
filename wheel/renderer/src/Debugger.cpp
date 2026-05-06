@@ -5,37 +5,37 @@
 #include "components/Transform2D.h"
 #include "core/Scene.h"
 
-Wheel::Renderer::Debugger::Debugger(GLFWwindow* window) : m_Scene(nullptr)
+void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
 {
     // Initialize ImGUI
-    m_Window = window;
+    m_Window = a_Window;
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(a_Window, true);
     ImGui_ImplOpenGL3_Init("#version 110");
 }
 
-Wheel::Renderer::Debugger::~Debugger()
+Wheel::Engine::Debugger::~Debugger()
 {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
-void Wheel::Renderer::Debugger::AddModule(DEBUG_MODULES a_Module)
+void Wheel::Engine::Debugger::AddModule(DEBUG_MODULES a_Module)
 {
     m_Modules[static_cast<int>(a_Module)] = true;
 }
 
-void Wheel::Renderer::Debugger::RemoveModule(DEBUG_MODULES a_Module)
+void Wheel::Engine::Debugger::RemoveModule(DEBUG_MODULES a_Module)
 {
     m_Modules[static_cast<int>(a_Module)] = false;
 }
 
-void Wheel::Renderer::Debugger::Draw()
+void Wheel::Engine::Debugger::Draw()
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -52,7 +52,7 @@ void Wheel::Renderer::Debugger::Draw()
 
 }
 
-void Wheel::Renderer::Debugger::DrawEntityList()
+void Wheel::Engine::Debugger::DrawEntityList()
 {
     //Transform components hold the names
     auto transforms = m_Scene->GetComponents<Wheel::Components::Transform2D>();
@@ -73,10 +73,10 @@ void Wheel::Renderer::Debugger::DrawEntityList()
     }
 }
 
-void Wheel::Renderer::Debugger::DrawComponentDetails()
+void Wheel::Engine::Debugger::DrawComponentDetails()
 {
 }
 
-void Wheel::Renderer::Debugger::DrawWindowStats()
+void Wheel::Engine::Debugger::DrawWindowStats()
 {
 }
