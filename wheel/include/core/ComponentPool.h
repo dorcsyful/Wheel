@@ -15,6 +15,8 @@ namespace Wheel
             IComponentPool() = default;
             virtual ~IComponentPool() = default;
             virtual void EntityDestroyed(uint32_t a_Entity) = 0;
+            virtual void* GetRaw(uint32_t entityId) = 0;
+
         };
 
         template <typename T>
@@ -59,7 +61,9 @@ namespace Wheel
             {
                 return m_Components[m_EntityToComponent[a_Entity]];
             }
-
+            void* GetRaw(uint32_t entityId) override {
+                return &GetComponent(entityId);
+            }
             void RemoveComponent(uint32_t a_Entity)
             {
                 assert(

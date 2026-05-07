@@ -105,6 +105,35 @@ namespace Wheel
                 return m_ComponentPools.size();
             }
 
+            std::string GetNameByDescription(const Description& description)
+            {
+                std::string name;
+                for (const auto& pair : m_Descriptions)
+                {
+                    if (pair.second == description)
+                    {
+                        name = pair.first;
+                        break;
+                    }
+                }
+                return name;
+            }
+
+            Description GetDescriptionByName(const std::string& name)
+            {
+                return m_Descriptions.at(name);
+            }
+
+            IComponentPool* GetPoolByDescription(const Description& description)
+            {
+                std::string name = GetNameByDescription(description);
+                return m_ComponentPools[name];
+            }
+            void* GetComponentRaw(uint32_t a_EntityId, const Description& a_Description)
+            {
+                IComponentPool* pool = GetPoolByDescription(a_Description);
+                return pool->GetRaw(a_EntityId);
+            }
 
         private:
             std::unordered_map<std::string, IComponentPool*> m_ComponentPools;

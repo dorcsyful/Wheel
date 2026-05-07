@@ -1,4 +1,5 @@
 #pragma once
+#include "DebugDescriptor.h"
 #include "math/Vector4.h"
 
 namespace Wheel
@@ -15,6 +16,12 @@ namespace Wheel
              * @brief: You can give the texture a tint. If there is no texture assigned, this will be the color of the mesh
              */
             Math::Vector4 color;
+
+            REFLECT_BEGIN(TextureComponent)
+            FIELD(textureID)
+            FIELD(color)
+            REFLECT_END(TextureComponent, "TextureComponent")
+
         };
     }
 }

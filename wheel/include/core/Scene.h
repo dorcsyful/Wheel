@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <iostream>
+#include <vector>
 #include "SystemManager.h"
 #include "ComponentManager.h"
 #include "EntityManager.h"
@@ -38,6 +39,9 @@ namespace Wheel
             void RegisterComponentType()
             {
                 m_ComponentManager->RegisterComponent<T>();
+#ifdef DEBUG_BUILD
+                Debugger::get().RegisterComponentDescriptor<T>(m_ComponentManager->GetDescription<T>());
+#endif
             }
 
             /**
@@ -76,6 +80,11 @@ namespace Wheel
                 return m_ComponentManager->GetComponentPool<T>()->GetComponent(a_Entity);
             }
 
+            void* GetComponentRaw(uint32_t a_Entity, const Description& a_Description)
+            {
+                return m_ComponentManager->GetComponentRaw(a_Entity, a_Description);
+            }
+
             template<typename T>
             T* GetSystem()
             {
@@ -91,11 +100,9 @@ namespace Wheel
             }
 
             /**
-             *
-             * @param a_AddToWorld Set this to false if you do not want to render the entity.
              * @return The ID of the created entity. Without you CANNOT interact with the entity in any way, so make sure to store it somewhere if you want to use it.
              */
-            uint32_t AddEntity(bool a_AddToWorld = true) {
+            uint32_t AddEntity() {
                 uint32_t temp = m_EntityManager->CreateEntity();
                 return temp;
             }
@@ -127,6 +134,35 @@ namespace Wheel
             {
                 return m_ComponentManager->GetComponentBitset<T>();
             }
+            Description GetComponentDescription(const std::string& a_Name)
+            {
+                return m_ComponentManager->GetDescriptionByName(a_Name);
+            }
+            std::string GetComponentName(const Description& a_Description)
+            {
+                return m_ComponentManager->GetNameByDescription(a_Description);
+            }
+
+            std::vector<std::string> GetEntityComponentNames(uint32_t a_Entity)
+            {
+                std::vector<std::string> names;
+                auto& entityBitset = m_EntityManager->GetEntityDescription(a_Entity).GetAsBitset();
+                uint8_t numTypes = m_ComponentManager->GetNumberOfComponentTypes();
+                for (size_t i = 0; i < numTypes; ++i)
+                {
+                    if (!entityBitset[i]) continue;
+                    std::bitset<MAX_COMPONENT_TYPES> singleBit;
+                    singleBit[i] = true;
+                    Description singleDesc;
+                    singleDesc.AddComponentType(singleBit);
+                    std::string name = m_ComponentManager->GetNameByDescription(singleDesc);
+                    if (!name.empty())
+                        names.push_back(name);
+                }
+                return names;
+            }
+
+
         private:
             EntityManager* m_EntityManager;
             SystemManager* m_SystemManager;

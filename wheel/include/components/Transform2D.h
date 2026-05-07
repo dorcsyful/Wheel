@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <string>
 
+#include "DebugDescriptor.h"
 #include "../math/Vector2.h"
 
 namespace Wheel::Engine { template <typename T> class ComponentPool; }
@@ -52,6 +53,13 @@ namespace Wheel
             Wheel::Math::Vector2 position;
             Wheel::Math::Vector2 scale;
             float rotation = 0.0f;
+
+            REFLECT_BEGIN(Transform2D)
+            FIELD(name)
+            FIELD(position)
+            FIELD(scale)
+            FIELD(rotation)
+            REFLECT_END(Transform2D, "Transform2D")
 
         private:
             template <typename T> friend class Engine::ComponentPool;

@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "imgui.h"
+#include "imgui_impl_glfw.h"
 #include "components/CameraComponent.h"
 #include "components/Transform2D.h"
 #include "core/Globals.h"
@@ -19,7 +20,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 #ifdef DEBUG_BUILD
-
+    ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
     if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
@@ -42,10 +43,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
+#ifdef DEBUG_BUILD
+    ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+#endif
     Wheel::EventSystem::EventBus::Publish(Wheel::Events::MouseMoveEvent(xpos,ypos));
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
+#ifdef DEBUG_BUILD
+    ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+    if (ImGui::GetIO().WantCaptureMouse) return;
+#endif
     Wheel::EventSystem::EventBus::Publish(Wheel::Events::MouseScrollEvent(xoffset,yoffset));
 }
 void cursor_enter_callback(GLFWwindow* window, int entered)

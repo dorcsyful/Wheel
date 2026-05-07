@@ -1,11 +1,12 @@
 #pragma once
+#include "DebugDescriptor.h"
 #include "math/Vector4.h"
 
 namespace Wheel
 {
     namespace Components
     {
-        enum CameraMode
+        enum class CameraMode : int
         {
             MODE_ORTHO,
             MODE_PERSPECTIVE
@@ -13,7 +14,7 @@ namespace Wheel
         /**
          * @brief You can have multiple cameras in the scene, but only one can be active at a time. If multiple cameras are set to active, a random one will be chosen
          */
-        struct CameraComponent
+        class CameraComponent
         {
         public:
 
@@ -27,7 +28,7 @@ namespace Wheel
             /**
              * @brief Use Orthographic for 2D and Perspective for 3D
              */
-            CameraMode mode = MODE_ORTHO;
+            CameraMode mode = CameraMode::MODE_ORTHO;
             /**
              * @brief Vieport width
              */
@@ -40,6 +41,14 @@ namespace Wheel
             // float right = 0;
             float zoom = 1.0f;
             //TODO: Implement required variables for 3D camera
+
+                REFLECT_BEGIN(CameraComponent)
+                FIELD(backgroundColor)
+                FIELD(mode)
+                FIELD(width)
+                FIELD(height)
+                FIELD(zoom)
+                REFLECT_END(CameraComponent, "CameraComponent")
 
         private:
             bool active = true;

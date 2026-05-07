@@ -3,6 +3,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "components/Transform2D.h"
+#include "components/CameraComponent.h"
 #include "core/Scene.h"
 
 void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
@@ -41,7 +42,7 @@ void Wheel::Engine::Debugger::Draw()
     ImGui_ImplGlfw_NewFrame();
 
     ImGui::NewFrame();
-    ImGui::Begin("My name is window, ImGUI window");
+    ImGui::Begin("Wheel Debugger");
     if (m_Modules[static_cast<int>(DEBUG_MODULES::ENTITY_LIST)])
     {
         DrawEntityList();
@@ -57,26 +58,97 @@ void Wheel::Engine::Debugger::DrawEntityList()
     //Transform components hold the names
     auto transforms = m_Scene->GetComponents<Wheel::Components::Transform2D>();
     if (ImGui::BeginListBox("##EntityList", ImVec2(-FLT_MIN, 10 * ImGui::GetTextLineHeightWithSpacing()))) {
-        int selectedIndex = 0;
-        int i = 0;
         for (auto& [id, transform] : transforms) {
-            const bool isSelected = (selectedIndex == i);
+            const bool isSelected = (m_SelectedEntityIndex >= 0 && m_SelectedEntityId == id);
             if (ImGui::Selectable(transform->name.c_str(), isSelected)) {
-                selectedIndex = i;
+                m_SelectedEntityIndex = 0;
+                m_SelectedEntityId = id;
             }
             if (isSelected) {
                 ImGui::SetItemDefaultFocus();
             }
-            ++i;
         }
         ImGui::EndListBox();
     }
+
+    if (m_SelectedEntityIndex >= 0) {
+        auto componentNames = m_Scene->GetEntityComponentNames(m_SelectedEntityId);
+        if (!componentNames.empty()) {
+            if (ImGui::BeginListBox("##ComponentList", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
+                bool isSelected = false;
+                for (const auto& name : componentNames) {
+                    if (ImGui::Selectable(name.c_str(), isSelected)) {
+                        m_SelectedEntityDescription = m_Scene->GetComponentDescription(name);
+                    }
+                }
+                ImGui::EndListBox();
+            }
+        }
+    }
+
+    if (!m_SelectedEntityDescription.IsEmpty() && m_SelectedEntityIndex >= 0)
+    {
+        auto raw = m_Scene->GetComponentRaw(m_SelectedEntityId, m_SelectedEntityDescription);
+        const ComponentDescriptor* desc = nullptr;
+        auto it = m_Descriptors.find(m_SelectedEntityDescription);
+        if (it != m_Descriptors.end())
+            desc = it->second;
+        if (raw && desc) {
+            if (ImGui::CollapsingHeader(desc->name)) {
+                for (size_t i = 0; i < desc->fieldCount; ++i)
+                    RenderField(raw, desc->fields[i]);
+            }
+        }
+    }
 }
 
-void Wheel::Engine::Debugger::DrawComponentDetails()
-{
-}
 
 void Wheel::Engine::Debugger::DrawWindowStats()
 {
+}
+
+void Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescriptor& field)
+{
+    // Resolve the pointer to the actual field using the byte offset
+    void* fieldPtr = static_cast<char*>(componentPtr) + field.offset;
+
+    switch (field.type) {
+    case FieldType::FLOAT:
+        ImGui::DragFloat(field.name, static_cast<float*>(fieldPtr), 0.1f);
+        break;
+    case FieldType::INT:
+        ImGui::DragInt(field.name, static_cast<int*>(fieldPtr));
+        break;
+    case FieldType::BOOL:
+        ImGui::Checkbox(field.name, static_cast<bool*>(fieldPtr));
+        break;
+    case FieldType::STRING: {
+            auto* str = static_cast<std::string*>(fieldPtr);
+            char buf[256];
+            strncpy(buf, str->c_str(), sizeof(buf));
+            if (ImGui::InputText(field.name, buf, sizeof(buf)))
+                *str = buf;
+            break;
+    }
+    case FieldType::VEC2: {
+            ImGui::DragFloat2(field.name, static_cast<float*>(fieldPtr), 0.1f);
+            break;
+    }
+    case FieldType::VEC3: {
+            ImGui::DragFloat3(field.name, static_cast<float*>(fieldPtr), 0.1f);
+            break;
+    }
+    case FieldType::VEC4: {
+            ImGui::ColorEdit4(field.name, static_cast<float*>(fieldPtr));
+            break;
+    }
+    case FieldType::CAMERA_MODE: {
+            auto* mode = static_cast<Wheel::Components::CameraMode*>(fieldPtr);
+            int current = static_cast<int>(*mode);
+            const char* items[] = { "Orthographic", "Perspective" };
+            if (ImGui::Combo(field.name, &current, items, 2))
+                *mode = static_cast<Wheel::Components::CameraMode>(current);
+            break;
+    }
+    }
 }

@@ -4,6 +4,11 @@
 #include <bitset>
 #include "Globals.h"
 
+namespace Wheel::Engine
+{
+    class Description;
+}
+
 inline size_t get_first_set_bit(const std::bitset<MAX_COMPONENT_TYPES>& b)
 {
     if (b.none()) return MAX_COMPONENT_TYPES; // Or handle as needed
@@ -30,8 +35,24 @@ namespace Wheel
             Description() = default;
             Description(const Description& a_Other) { m_ComponentBitset = a_Other.m_ComponentBitset; };
             Description(Description&& a_Other) noexcept { m_ComponentBitset = a_Other.m_ComponentBitset; };
-
+            void operator=(const Description& other)
+            {
+                m_ComponentBitset = other.m_ComponentBitset;
+            }
+            bool operator==(const Description& other) const
+            {
+                return m_ComponentBitset == other.m_ComponentBitset;
+            }
+            bool operator<(const Description& other) const
+            {
+                return m_ComponentBitset.to_ullong() < other.m_ComponentBitset.to_ullong();
+            }
             std::bitset<MAX_COMPONENT_TYPES>& GetAsBitset()
+            {
+                return m_ComponentBitset;
+            }
+
+            std::bitset<MAX_COMPONENT_TYPES> GetAsBitset() const
             {
                 return m_ComponentBitset;
             }
@@ -83,10 +104,8 @@ namespace Wheel
                 }
                 return true;
             }
-            void operator=(const Description& other)
-            {
-                m_ComponentBitset = other.m_ComponentBitset;
-            }
+
+
             void Reset()
             {
                 m_ComponentBitset = std::bitset<MAX_COMPONENT_TYPES>();
