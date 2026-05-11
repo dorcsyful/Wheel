@@ -15,10 +15,11 @@ namespace Wheel
 
         struct BoxCollider2D
         {
+
             float width = 0.0f;
             float height = 0.0f;
-            Math::Vector2 offset = { 0.0f, 0.0f };
-            const E_COLLIDER2_D type = E_COLLIDER2_D::BOX;
+            Math::Vector2 offset = Math::Vector2(0.0f, 0.0f);
+            E_COLLIDER2_D type = E_COLLIDER2_D::BOX;
 
             REFLECT_BEGIN(BoxCollider2D)
             FIELD(width)
@@ -31,7 +32,7 @@ namespace Wheel
         {
             float radius = 0.0f;
             Math::Vector2 offset = { 0.0f, 0.0f };
-            const E_COLLIDER2_D type = E_COLLIDER2_D::CIRCLE;
+            E_COLLIDER2_D type = E_COLLIDER2_D::CIRCLE;
 
             REFLECT_BEGIN(CircleCollider2D)
             FIELD(radius)

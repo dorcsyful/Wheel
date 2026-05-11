@@ -150,5 +150,6 @@ void Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescrip
                 *mode = static_cast<Wheel::Components::CameraMode>(current);
             break;
     }
+    default: ;
     }
 }

@@ -39,6 +39,7 @@ add_library(wheel_engine STATIC ${ENGINE_SOURCES}
         wheel/EventSystem/EventBus.h
         wheel/EventSystem/Events.h
         wheel/EventSystem/SubscriptionToken.h
+        wheel/src/Collision2DSystem.cpp
 )
 
 # Include directories for the engine (so it can find its own and dependency headers)

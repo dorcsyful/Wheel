@@ -16,7 +16,7 @@ namespace Wheel
                 void Update(float deltaTime) override;
 
             private:
-
+                void CheckNarrowPhase();
             };
         }
     }

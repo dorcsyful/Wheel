@@ -48,8 +48,9 @@ namespace Wheel
             void DrawEntityList();
             void DrawWindowStats();
             void RenderField(void* componentPtr, const FieldDescriptor& field);
-            std::map<Description, const ComponentDescriptor*> m_Descriptors{};
 
+
+            std::map<Description, const ComponentDescriptor*> m_Descriptors{};
             static Debugger* s_Instance;
             Engine::Scene* m_Scene;
             GLFWwindow* m_Window;

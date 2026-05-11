@@ -1,5 +1,5 @@
 #pragma once
-
+#include "helpers/Collision2DManifold.h"
 //basic events
 namespace Wheel
 {
@@ -73,6 +73,12 @@ namespace Wheel
         struct CameraSwitchEvent
         {
 
+        };
+
+        struct CollisionEnterEvent
+        {
+            CollisionEnterEvent(const Engine::Collision::Collision2DManifold& a_Manifold) : manifold(a_Manifold) {}
+            const Engine::Collision::Collision2DManifold manifold;
         };
     }
 }

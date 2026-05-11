@@ -1,10 +1,14 @@
 ﻿#include "Start.h"
 #include "Debugger.h"
+#include "systems/Collision2DSystem.h"
+#include "components/Collider2D.h"
+
 void Start::RegisterComponents()
 {
     m_Scene->RegisterComponentType<Wheel::Components::Transform2D>();
     m_Scene->RegisterComponentType<Wheel::Components::Render2DComponent>();
     m_Scene->RegisterComponentType<Wheel::Components::CameraComponent>();
+    m_Scene->RegisterComponentType<Wheel::Components::BoxCollider2D>();
 }
 
 void Start::RegisterSystems()
@@ -13,6 +17,7 @@ void Start::RegisterSystems()
     Wheel::Engine::Description render = m_Scene->GetComponentDescription<Wheel::Components::Render2DComponent>();
     Wheel::Engine::Description finalDesc = Wheel::Engine::Description();
     Wheel::Engine::Description cameraDesc = m_Scene->GetComponentDescription<Wheel::Components::CameraComponent>();
+    Wheel::Engine::Description boxCollider2D = m_Scene->GetComponentDescription<Wheel::Components::BoxCollider2D>();
     finalDesc.AddComponentType(transform.GetAsBitset());
     finalDesc.AddComponentType(render.GetAsBitset());
     m_RenderSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::RenderSystem>(finalDesc);
@@ -22,6 +27,10 @@ void Start::RegisterSystems()
     finalDesc.AddComponentType(cameraDesc.GetAsBitset());
     m_InputSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::InputSystem>(finalDesc);
     m_InputSystem->Initialize(m_Renderer->GetWindow());
+    finalDesc.Reset();
+    finalDesc.AddComponentType(transform.GetAsBitset());
+    finalDesc.AddComponentType(boxCollider2D.GetAsBitset());
+    m_Scene->RegisterSystem<Wheel::Engine::Systems::Collision2DSystem>(finalDesc);
 }
 
 void Start::CreateEntities()
