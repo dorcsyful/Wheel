@@ -32,6 +32,7 @@ namespace Wheel
             Vector2 Normalized() const { return *this / Length(); }
             static Vector2 Normalize(const Vector2& a) { return a / a.Length(); }
             Vector2 Perpendicular() const { return Vector2(-y, x); }
+            static Vector2 Lerp(const Vector2& a, const Vector2& b, float t) { return a + (b - a) * t; }
 
             float x;
             float y;

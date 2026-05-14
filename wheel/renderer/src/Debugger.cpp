@@ -1,10 +1,19 @@
 #include "Debugger.h"
 
+#include "EventBus.h"
+#include "Events.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "components/Transform2D.h"
 #include "components/CameraComponent.h"
+#include "components/Collider2D.h"
 #include "core/Scene.h"
+#include "core/Globals.h"
+#include "systems/subsystems/BoxBoxCollision2D.h"
+#ifdef DEBUG_BUILD
+#include "../include/DebugDrawQueue.h"
+#include <cmath>
+#endif
 
 void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
 {
@@ -17,6 +26,12 @@ void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(a_Window, true);
     ImGui_ImplOpenGL3_Init("#version 110");
+    m_Tokens.emplace_back();
+    EventSystem::EventBus::Subscribe<Events::CollisionEnterEvent>(
+        [&](const Events::CollisionEnterEvent& e)
+        {
+            m_ActiveCollisions.push_back(e.manifold);
+        }, m_Tokens.back());
 }
 
 Wheel::Engine::Debugger::~Debugger()
@@ -48,8 +63,18 @@ void Wheel::Engine::Debugger::Draw()
         DrawEntityList();
     }
     ImGui::End();
+
+    ImGui::Begin("Window Stats");
+    if (m_Modules[static_cast<int>(DEBUG_MODULES::WINDOW_STATS)])
+    {
+        DrawWindowStats();
+    }
+    ImGui::End();
+
+    DrawOverlay();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    m_ActiveCollisions.clear();
 
 }
 
@@ -95,8 +120,15 @@ void Wheel::Engine::Debugger::DrawEntityList()
             desc = it->second;
         if (raw && desc) {
             if (ImGui::CollapsingHeader(desc->name)) {
+                bool anyChanged = false;
                 for (size_t i = 0; i < desc->fieldCount; ++i)
-                    RenderField(raw, desc->fields[i]);
+                    anyChanged |= RenderField(raw, desc->fields[i]);
+                if (anyChanged) {
+                    if (m_Scene->HasComponent<Components::Transform2D>(m_SelectedEntityId))
+                        m_Scene->GetComponent<Components::Transform2D>(m_SelectedEntityId).isDirty = true;
+                    if (m_Scene->HasComponent<Components::BoxCollider2D>(m_SelectedEntityId))
+                        m_Scene->GetComponent<Components::BoxCollider2D>(m_SelectedEntityId).isDirty = true;
+                }
             }
         }
     }
@@ -105,51 +137,139 @@ void Wheel::Engine::Debugger::DrawEntityList()
 
 void Wheel::Engine::Debugger::DrawWindowStats()
 {
+    ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+    ImGui::Text("Current collisions: ");
+    if (!m_ActiveCollisions.empty()) {
+        if (ImGui::BeginListBox("##CollisionList", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
+            bool isSelected = false;
+            for (const auto& manifold : m_ActiveCollisions) {
+                std::string str = std::to_string(manifold.collider1) + " vs " + std::to_string(manifold.collider2);
+                if (ImGui::Selectable(str.c_str(), false)) {
+                    ;
+                }
+            }
+            ImGui::EndListBox();
+        }
+    }
 }
 
-void Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescriptor& field)
+void Wheel::Engine::Debugger::DrawOverlay()
 {
-    // Resolve the pointer to the actual field using the byte offset
+    if (m_CameraEntity == UINT32_MAX || !m_Scene) return;
+
+    const Components::Transform2D& camT = m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
+    const Components::CameraComponent& camC = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
+
+
+    ImDrawList* dl = ImGui::GetForegroundDrawList();
+
+    for (auto& [id, collider] : m_Scene->GetComponents<Components::BoxCollider2D>())
+        DrawColliderWireframes(id, dl, camT, camC);
+
+    DrawCollisions(dl, camT, camC);
+}
+
+void Wheel::Engine::Debugger::DrawCollisions(ImDrawList* dl, const Wheel::Components::Transform2D& a_CameraTransform,
+    const Wheel::Components::CameraComponent& a_CameraComponent)
+{
+    for (int i = 0; i < m_ActiveCollisions.size(); ++i)
+    {
+        ImVec2 p1 = ToScreen(m_ActiveCollisions[i].contactPoint[0], a_CameraTransform, a_CameraComponent);
+        ImVec2 p2 = ToScreen(m_ActiveCollisions[i].contactPoint[1], a_CameraTransform, a_CameraComponent);
+        Math::Vector2 middle = Math::Vector2::Lerp(m_ActiveCollisions[i].contactPoint[0],m_ActiveCollisions[i].contactPoint[1],0.5f);
+        Math::Vector2 normalTarget = middle + (m_ActiveCollisions[i].collisionNormal);
+        Math::Vector2 normalPerp = normalTarget + Math::Vector2(-normalTarget.y, normalTarget.x).Normalized() * 0.1;
+        dl->AddCircleFilled(p1, 5.0f, GetColor(DebugColor::Yellow));
+        dl->AddCircleFilled(p2, 5.0f, GetColor(DebugColor::Yellow));
+        ImVec2 normalStart = ToScreen(middle, a_CameraTransform,a_CameraComponent);
+        ImVec2 normalEnd = ToScreen(normalTarget, a_CameraTransform,a_CameraComponent);
+        dl->AddLine(normalStart, normalEnd, GetColor(DebugColor::Yellow));
+
+        ImVec2 left = AddImVec2(normalStart,MultiplyImVec2WithScalar(NormalizeImVec2(ImVec2(-normalStart.y,normalStart.x)), 30.f));
+        left = AddImVec2(left,MultiplyImVec2WithScalar(SubtractImVec2(normalEnd,left), 0.8f));
+        ImVec2 right = AddImVec2(normalStart,MultiplyImVec2WithScalar(NormalizeImVec2(ImVec2(normalStart.y,-normalStart.x)), 30.f));
+        right = AddImVec2(right,MultiplyImVec2WithScalar(SubtractImVec2(normalEnd,right), 0.8f));
+        dl->AddLine(normalEnd,left, GetColor(DebugColor::Red));
+        dl->AddLine(normalEnd, right, GetColor(DebugColor::Green));
+    }
+}
+
+void Wheel::Engine::Debugger::DrawColliderWireframes(uint32_t a_EntityId, ImDrawList* dl,
+    const Wheel::Components::Transform2D& a_CameraTransform,
+    const Wheel::Components::CameraComponent& a_CameraComponent)
+{
+    auto& collider = m_Scene->GetComponent<Components::BoxCollider2D>(a_EntityId);
+    auto& transform = m_Scene->GetComponent<Components::Transform2D>(a_EntityId);
+    const Math::Vector2* vertices = Collision::BoxBoxCollision2D::GetVertices(collider, transform);
+
+    for (int i = 0; i < 4; i++)
+    {
+        ImVec2 p1 = ToScreen(vertices[i], a_CameraTransform, a_CameraComponent);
+        ImVec2 p2 = ToScreen(vertices[(i + 1) % 4], a_CameraTransform, a_CameraComponent);
+        dl->AddLine(p1, p2, GetColor(DebugColor::Cyan));
+    }
+}
+
+bool Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescriptor& field)
+{
     void* fieldPtr = static_cast<char*>(componentPtr) + field.offset;
 
     switch (field.type) {
     case FieldType::FLOAT:
-        ImGui::DragFloat(field.name, static_cast<float*>(fieldPtr), 0.1f);
-        break;
+        return ImGui::DragFloat(field.name, static_cast<float*>(fieldPtr), 0.1f);
     case FieldType::INT:
-        ImGui::DragInt(field.name, static_cast<int*>(fieldPtr));
-        break;
+        return ImGui::DragInt(field.name, static_cast<int*>(fieldPtr));
     case FieldType::BOOL:
-        ImGui::Checkbox(field.name, static_cast<bool*>(fieldPtr));
-        break;
+        return ImGui::Checkbox(field.name, static_cast<bool*>(fieldPtr));
     case FieldType::STRING: {
             auto* str = static_cast<std::string*>(fieldPtr);
             char buf[256];
             strncpy(buf, str->c_str(), sizeof(buf));
-            if (ImGui::InputText(field.name, buf, sizeof(buf)))
-                *str = buf;
-            break;
+            if (ImGui::InputText(field.name, buf, sizeof(buf))) { *str = buf; return true; }
+            return false;
     }
-    case FieldType::VEC2: {
-            ImGui::DragFloat2(field.name, static_cast<float*>(fieldPtr), 0.1f);
-            break;
-    }
-    case FieldType::VEC3: {
-            ImGui::DragFloat3(field.name, static_cast<float*>(fieldPtr), 0.1f);
-            break;
-    }
-    case FieldType::VEC4: {
-            ImGui::ColorEdit4(field.name, static_cast<float*>(fieldPtr));
-            break;
-    }
+    case FieldType::VEC2:
+        return ImGui::DragFloat2(field.name, static_cast<float*>(fieldPtr), 0.1f);
+    case FieldType::VEC3:
+        return ImGui::DragFloat3(field.name, static_cast<float*>(fieldPtr), 0.1f);
+    case FieldType::VEC4:
+        return ImGui::ColorEdit4(field.name, static_cast<float*>(fieldPtr));
     case FieldType::CAMERA_MODE: {
             auto* mode = static_cast<Wheel::Components::CameraMode*>(fieldPtr);
             int current = static_cast<int>(*mode);
             const char* items[] = { "Orthographic", "Perspective" };
             if (ImGui::Combo(field.name, &current, items, 2))
-                *mode = static_cast<Wheel::Components::CameraMode>(current);
-            break;
+                { *mode = static_cast<Wheel::Components::CameraMode>(current); return true; }
+            return false;
     }
-    default: ;
+    default: return false;
+    }
+}
+
+ImVec2 Wheel::Engine::Debugger::ToScreen(const Math::Vector2& a_World, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent)
+{
+    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+    float cos_r = std::cos(a_CameraTransform.GetRotation() * DEG_TO_RAD);
+    float sin_r = std::sin(a_CameraTransform.GetRotation() * DEG_TO_RAD);
+    float ppu   = static_cast<float>(PIXELS_PER_UNIT);
+
+    float dx = a_World.x - a_CameraTransform.GetPosition().x;
+    float dy = a_World.y - a_CameraTransform.GetPosition().y;
+    float vx =  cos_r * dx + sin_r * dy;
+    float vy = -sin_r * dx + cos_r * dy;
+    float ndcX = vx * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.width;
+    float ndcY = vy * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.height;
+    return { (ndcX + 1.0f) * a_CameraComponent.width * 0.5f, (1.0f - ndcY) * a_CameraComponent.height * 0.5f };
+
+}
+
+ImColor Wheel::Engine::Debugger::GetColor(DebugColor a_Color)
+{
+    switch (a_Color) {
+    case DebugColor::Red:    return IM_COL32(220, 50,  50,  255);
+    case DebugColor::Green:  return IM_COL32(50,  220, 50,  255);
+    case DebugColor::Yellow: return IM_COL32(255, 220, 0,   255);
+    case DebugColor::Cyan:   return IM_COL32(0,   220, 220, 255);
+    default:                 return IM_COL32(255, 255, 255, 255);
     }
 }

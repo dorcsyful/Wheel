@@ -12,10 +12,12 @@ namespace Wheel
             class BoxBoxCollision2D
             {
             public:
-                static Collision2DManifold BoxBoxCollision(Components::BoxCollider2D& a_Collider1, const Components::Transform2D& a_Transform1, Components::BoxCollider2D& a_Collider2, const Components::Transform2D& a_Transform2);
+                static Collision2DManifold BoxBoxCollision(const Components::BoxCollider2D& a_Collider1, const Components::Transform2D& a_Transform1, const Components::BoxCollider2D& a_Collider2, const Components::Transform2D& a_Transform2);
+                static const Math::Vector2* GetVertices(const Components::BoxCollider2D& a_Collider, const Components::Transform2D& a_Transform2D);
 
             private:
-                static void GetVertices(const Components::BoxCollider2D& a_Collider, const Components::Transform2D& a_Transform2D, Math::Vector2* a_Vertices);
+                static void GetContactPoints(const Components::BoxCollider2D& a_Collider1, const Components::BoxCollider2D& a_Collider2, int a_Normal1, int a_Normal2, Math::Vector2* a_ContactPoints);
+                static void ClipSegmentToLine(const Math::Vector2& a_P1, const Math::Vector2& a_P2, const Math::Vector2& a_Normal, Math::Vector2 a_Offset, Math::Vector2* a_Contact);
                 static void ProjectOntoAxis(const Math::Vector2* a_Vertices, const Math::Vector2& a_Axis, float& a_Min, float& a_Max);
             };
         }

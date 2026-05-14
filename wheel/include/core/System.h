@@ -17,7 +17,9 @@ namespace Wheel
             virtual ~System() = default;
             void AddEntityWithComponent(uint32_t a_Entity, Description& description)
             {
-                if (m_Description.HasComponentType(description))
+                //TODO: change so it compared description instead of a search
+                if (description.HasComponentType(m_Description) &&
+                    std::find(m_EntityIDs.begin(), m_EntityIDs.end(), a_Entity) == m_EntityIDs.end())
                 {
                     m_EntityIDs.push_back(a_Entity);
                 }

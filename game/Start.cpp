@@ -44,21 +44,27 @@ void Start::CreateEntities()
     cam.zoom = 1.0f;
     cam.width  = 1280.0f;
     cam.height = 720.0f;
+    Wheel::Components::Transform2D cameraTransform =m_Scene->GetComponent<Wheel::Components::Transform2D>(cameraId);
+    cameraTransform.name = "Camera";
     m_RenderSystem->SetCameraEntity(cameraId);
     m_InputSystem->SetCameraEntity(cameraId);
+#ifdef DEBUG_BUILD
+    Wheel::Engine::Debugger::get().SetCameraEntity(cameraId);
+#endif
     m_CameraId = cameraId;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 2; i++)
     {
         uint32_t id = m_Scene->AddEntity();
         Wheel::Components::Transform2D& transform =
             m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
         Wheel::Components::Render2DComponent& render =
             m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
-        transform.position.x = (float)random(-3, 3);
-        transform.position.y = (float)random(-3, 3);
-        transform.scale.x = 1.0f;
-        transform.scale.y = 1.0f;
-        transform.rotation = (float)random(-180, 180);
+        Wheel::Components::BoxCollider2D& collider =
+            m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
+        collider.SetWidth(0.5f); collider.SetHeight(0.3f);
+        transform.SetPosition((float)random(-3, 3), (float)random(-3, 3));
+        transform.SetScale(1.0f, 1.0f);
+        transform.SetRotation((float)random(-180, 180));
         render.width = 0.5f; render.height = 0.3f;
     }
 }
@@ -89,28 +95,34 @@ void Start::SpawnAtMousePosition(Wheel::Math::Vector2 mousePosition)
         m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
     Wheel::Engine::Systems::InputSystem* inputSystem = m_Scene->GetSystem<Wheel::Engine::Systems::InputSystem>();
     Wheel::Math::Vector2 worldPosition = inputSystem->ScreenToWorldPoint(mousePosition);
-    transform.position.x = worldPosition.x;
-    transform.position.y = worldPosition.y;
-    transform.scale.x = 1.0f;
-    transform.scale.y = 1.0f;
-    transform.rotation = (float)random(-180, 180);
+    transform.SetPosition(worldPosition);
+    transform.SetScale(1.0f, 1.0f);
+    transform.SetRotation((float)random(-180, 180));
     render.width = 0.5f; render.height = 0.3f;
 
 }
 
 void Start::Update()
 {
+    clock_t beginFrame = clock();
+    clock_t endFrame = clock();
+    double deltaTime = 0;
+
+#if DEBUG_BUILD
+    Wheel::Engine::Debugger::get().SetFrameTime(deltaTime);
+#endif
+
     while (!glfwWindowShouldClose(m_Renderer->GetWindow()))
     {
+        beginFrame = clock();
         //Query input from the renderer
         //TODO: Pass to InputSystem
         glfwPollEvents();
-        Wheel::Components::Transform2D& comp = m_Scene->GetComponent<Wheel::Components::Transform2D>(m_CameraId);
-        //comp.rotation += 0.01 * 0.1;
         //TODO: Update ECS here
-        m_Scene->Update(0.1);
+        m_Scene->Update(deltaTime);
 
         m_Renderer->Update();
-
+        endFrame = clock();
+        deltaTime += endFrame - beginFrame;
     }
 }

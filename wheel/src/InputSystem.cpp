@@ -138,11 +138,11 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::ScreenToWorldPoint(con
     float view_x = ndc_x * half_w;
     float view_y = ndc_y * half_h;
 
-    float cos_cr = std::cos(camTransform.rotation);
-    float sin_cr = std::sin(camTransform.rotation);
+    float cos_cr = std::cos(camTransform.GetRotation());
+    float sin_cr = std::sin(camTransform.GetRotation());
     return {
-        camTransform.position.x + cos_cr * view_x - sin_cr * view_y,
-        camTransform.position.y + sin_cr * view_x + cos_cr * view_y
+        camTransform.GetPosition().x + cos_cr * view_x - sin_cr * view_y,
+        camTransform.GetPosition().y + sin_cr * view_x + cos_cr * view_y
     };
 }
 
@@ -151,10 +151,10 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::WorldToScreenPoint(con
     const Components::Transform2D& camTransform = m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
     const Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
 
-    float cos_cr = std::cos(camTransform.rotation);
-    float sin_cr = std::sin(camTransform.rotation);
-    float dx = worldPoint.x - camTransform.position.x;
-    float dy = worldPoint.y - camTransform.position.y;
+    float cos_cr = std::cos(camTransform.GetRotation());
+    float sin_cr = std::sin(camTransform.GetRotation());
+    float dx = worldPoint.x - camTransform.GetPosition().x;
+    float dy = worldPoint.y - camTransform.GetPosition().y;
     float view_x =  cos_cr * dx + sin_cr * dy;
     float view_y = -sin_cr * dx + cos_cr * dy;
 

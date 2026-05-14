@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 
 #include "DebugDescriptor.h"
@@ -17,7 +17,7 @@ namespace Wheel
         {
         public:
             Transform2D() = default;
-
+            uint32_t GetEntityId() const { return m_Id; }
             bool operator==(const Transform2D& a_Other) const { return m_Id == a_Other.m_Id; };
             bool operator!=(const Transform2D& a_Other) const { return m_Id != a_Other.m_Id; };
 
@@ -49,11 +49,7 @@ namespace Wheel
             Transform2D operator<<=(const Transform2D& a_Other) = delete;
             Transform2D operator>>=(const Transform2D& a_Other) = delete;
 
-            std::string name;
-            Wheel::Math::Vector2 position;
-            Wheel::Math::Vector2 scale;
-            float rotation = 0.0f;
-
+            // Field names match private member names so reflection displays them without a prefix
             REFLECT_BEGIN(Transform2D)
             FIELD(name)
             FIELD(position)
@@ -61,14 +57,30 @@ namespace Wheel
             FIELD(rotation)
             REFLECT_END(Transform2D, "Transform2D")
 
+            std::string name;
+            bool isDirty = true;
+
+            const Math::Vector2& GetPosition() const { return position; }
+            const Math::Vector2& GetScale() const { return scale; }
+            float GetRotation() const { return rotation; }
+
+            void SetPosition(const Wheel::Math::Vector2& pos) { position = pos; isDirty = true; }
+            void SetPosition(float x, float y) { position.x = x; position.y = y; isDirty = true; }
+            void SetScale(const Wheel::Math::Vector2& s){ scale = s; isDirty = true; }
+            void SetScale(float x, float y) { scale.x = x; scale.y = y; isDirty = true; }
+            void SetRotation(float rot) { rotation = rot; isDirty = true; }
+
         private:
+            //Hate it but required so the user cannot change EntityId
             template <typename T> friend class Engine::ComponentPool;
 
             void SetEntityId(uint32_t id) { m_Id = id; name = "Entity " + std::to_string(id); }
 
-            uint32_t m_Id = 0;
-
+            uint32_t m_Id = UINT32_MAX;
+            Wheel::Math::Vector2 position;
+            Wheel::Math::Vector2 scale;
+            float rotation = 0.0f;
         };
-};
+    };
 
 }

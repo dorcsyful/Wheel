@@ -63,7 +63,7 @@ namespace Wheel
             {
                 m_EntityManager->GetEntityDescription(a_Entity).AddComponentType(m_ComponentManager->GetDescription<T>().GetAsBitset());
                 T& component = m_ComponentManager->AddComponent<T>(a_Entity);
-                m_SystemManager->AddEntityWithComponent(a_Entity, m_ComponentManager->GetComponentBitset<T>());
+                m_SystemManager->AddEntityWithComponent(a_Entity, m_EntityManager->GetEntityDescription(a_Entity));
                 return component;
             }
 

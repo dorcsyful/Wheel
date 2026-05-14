@@ -74,6 +74,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
 #ifdef DEBUG_BUILD
     Engine::Debugger::get().Initialize(m_Window);
      Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::ENTITY_LIST);
+    Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::WINDOW_STATS);
 #endif
 }
 

@@ -26,12 +26,13 @@ namespace Wheel
                 textureId = a_Render.TextureName;
 
                 // Model matrix: scale by (width*scaleX, height*scaleY), rotate, translate
-                float cos_r = std::cos(a_Transform.rotation);
-                float sin_r = std::sin(a_Transform.rotation);
-                float sx = a_Render.width  * a_Transform.scale.x;
-                float sy = a_Render.height * a_Transform.scale.y;
-                float px = a_Transform.position.x;
-                float py = a_Transform.position.y;
+                constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+                float cos_r = std::cos(a_Transform.GetRotation() * DEG_TO_RAD);
+                float sin_r = std::sin(a_Transform.GetRotation() * DEG_TO_RAD);
+                float sx = a_Render.width  * a_Transform.GetScale().x;
+                float sy = a_Render.height * a_Transform.GetScale().y;
+                float px = a_Transform.GetPosition().x;
+                float py = a_Transform.GetPosition().y;
 
                 Math::Matrix4x4 model(
                     sx * cos_r, -sy * sin_r, 0.0f, px,
@@ -41,10 +42,10 @@ namespace Wheel
                 );
 
                 // View matrix: inverse of camera's world transform (translate then rotate)
-                float cos_cr = std::cos(a_CameraTransform.rotation);
-                float sin_cr = std::sin(a_CameraTransform.rotation);
-                float cx = a_CameraTransform.position.x;
-                float cy = a_CameraTransform.position.y;
+                float cos_cr = std::cos(a_CameraTransform.GetRotation() * DEG_TO_RAD);
+                float sin_cr = std::sin(a_CameraTransform.GetRotation() * DEG_TO_RAD);
+                float cx = a_CameraTransform.GetPosition().x;
+                float cy = a_CameraTransform.GetPosition().y;
 
                 Math::Matrix4x4 view(
                      cos_cr,  sin_cr, 0.0f, -(cx * cos_cr + cy * sin_cr),

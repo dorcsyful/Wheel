@@ -17,6 +17,7 @@ namespace Wheel
 
             private:
                 void CheckNarrowPhase();
+
             };
         }
     }

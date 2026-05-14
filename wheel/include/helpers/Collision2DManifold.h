@@ -12,13 +12,13 @@ namespace Wheel
             struct Collision2DManifold
             {
             public:
-                Collision2DManifold(Components::BoxCollider2D& a_Collider1, Components::BoxCollider2D& a_Collider2) : collider1(a_Collider1), collider2(a_Collider2) {}
+                Collision2DManifold(uint32_t a_Entity1, uint32_t a_Entity2) : collider1(a_Entity1), collider2(a_Entity2) {}
                 bool isColliding = false;
                 float penetrationDepth = FLT_MAX;
                 Math::Vector2 collisionNormal = Math::Vector2(0.0f, 0.0f);
                 Math::Vector2 contactPoint[2] = { Math::Vector2(FLT_MAX, FLT_MAX), Math::Vector2(FLT_MAX, FLT_MAX) };
-                Components::BoxCollider2D& collider1;
-                Components::BoxCollider2D& collider2;
+                uint32_t collider1;
+                uint32_t collider2;
             };
         }
     }
