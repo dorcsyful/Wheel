@@ -1,4 +1,5 @@
 #pragma once
+#include <cfloat>
 #include "DebugDescriptor.h"
 #include "math/Vector2.h"
 

@@ -125,6 +125,13 @@ namespace Wheel
                 return components;
             }
 
+            // Returns the raw pool. Note that this does NOT get you the list of components
+            template <typename T>
+            ComponentPool<T>* GetComponentPool()
+            {
+                return m_ComponentManager->GetComponentPool<T>();
+            }
+
             uint8_t GetNumberOfComponentTypes()
             {
                 return m_ComponentManager->GetNumberOfComponentTypes();

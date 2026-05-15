@@ -15,8 +15,9 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Collision::BoxBoxCo
     float minOverlap1 = FLT_MAX, minOverlap2 = FLT_MAX;
     int bestAxis1 = -1, bestAxis2 = -1;
 
-    // Test axes from box 1
-    for (int i = 0; i < 4; i++)
+    // Each box has 4 normals, but normals[2] == -normals[0] and normals[3] == -normals[1].
+    // Projecting onto opposite axes gives the same overlap, so only 2 unique axes per box.
+    for (int i = 0; i < 2; i++)
     {
         Math::Vector2 axis = a_Collider1.cachedNormals[i];
 
@@ -31,8 +32,7 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Collision::BoxBoxCo
         if (overlap < minOverlap1) { minOverlap1 = overlap; bestAxis1 = i; }
     }
 
-    // Test axes from box 2
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         Math::Vector2 axis = a_Collider2.cachedNormals[i];
 

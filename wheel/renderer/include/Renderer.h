@@ -70,6 +70,12 @@ namespace Wheel
             std::vector<RenderedObject>* m_RenderedObjects;
 
 
+            // Cached shader locations — queried once at init, not per draw call
+            GLint m_PosLoc     = -1;
+            GLint m_TexLoc     = -1;
+            GLint m_MvpLoc     = -1;
+            GLint m_SamplerLoc = -1;
+
             //Flat squares for rendering 2D
             unsigned int m_EBO2D{};
             unsigned int m_VBO2D{};

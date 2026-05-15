@@ -1,4 +1,3 @@
-#pragma once
 #include "../include/systems/RenderSystem.h"
 
 #include "RenderedObject.h"
@@ -33,27 +32,31 @@ Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Descript
 
 void Wheel::Engine::Systems::RenderSystem::Update(float deltaTime)
 {
+    if (!m_TransformPool) {
+        m_TransformPool = m_Scene->GetComponentPool<Components::Transform2D>();
+        m_RenderPool    = m_Scene->GetComponentPool<Components::Render2DComponent>();
+        m_CameraPool    = m_Scene->GetComponentPool<Components::CameraComponent>();
+    }
+
     m_RenderObjects.clear();
 
-    const Components::Transform2D& camTransform =
-        m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
-    const Components::CameraComponent& camComponent =
-        m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
+    const Components::Transform2D&    camTransform  = m_TransformPool->GetComponent(m_CameraEntity);
+    const Components::CameraComponent& camComponent = m_CameraPool->GetComponent(m_CameraEntity);
+    const Math::Matrix4x4 viewProj = Renderer::RenderedObject::ComputeViewProj(camTransform, camComponent);
 
-    for (unsigned int m_EntityID : m_EntityIDs)
+    for (unsigned int entityId : m_EntityIDs)
     {
-        if (!m_Scene->HasComponent<Components::Render2DComponent>(m_EntityID)) continue;
+        if (!m_Scene->HasComponent<Components::Render2DComponent>(entityId)) continue;
 
         Renderer::RenderedObject ro{};
         ro.Add2DComponent(
-            m_Scene->GetComponent<Components::Render2DComponent>(m_EntityID),
-            m_EntityID,
-            m_Scene->GetComponent<Components::Transform2D>(m_EntityID),
-            camTransform,
-            camComponent);
+            m_RenderPool->GetComponent(entityId),
+            entityId,
+            m_TransformPool->GetComponent(entityId),
+            viewProj);
         m_RenderObjects.push_back(ro);
     }
-    std::sort(m_RenderObjects.begin(), m_RenderObjects.end(),ROSorter);
+    std::sort(m_RenderObjects.begin(), m_RenderObjects.end(), ROSorter);
     m_Renderer->GetRenderedObjects(&m_RenderObjects);
 }
 

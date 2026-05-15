@@ -1,5 +1,8 @@
 #pragma once
 #include "core/System.h"
+#include "core/ComponentPool.h"
+#include "components/Collider2D.h"
+#include "components/Transform2D.h"
 
 namespace Wheel
 {
@@ -18,6 +21,8 @@ namespace Wheel
             private:
                 void CheckNarrowPhase();
 
+                ComponentPool<Components::BoxCollider2D>* m_ColliderPool  = nullptr;
+                ComponentPool<Components::Transform2D>*   m_TransformPool = nullptr;
             };
         }
     }

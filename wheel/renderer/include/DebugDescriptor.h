@@ -3,13 +3,15 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "math/Vector2.h"
 #include "math/Vector4.h"
 
 namespace Wheel { namespace Components { enum class CameraMode : int; } }
+namespace Wheel { namespace Components { enum class Rigidbody2DType : int; } }
 
-enum class FieldType { INT, UINT, FLOAT, BOOL, STRING, VEC2, VEC3, VEC4, SIZE_T, CAMERA_MODE };
+enum class FieldType { INT, UINT, FLOAT, BOOL, STRING, VEC2, VEC3, VEC4, SIZE_T, CAMERA_MODE, RIGIDBODY2D_TYPE };
 
 struct FieldDescriptor {
     const char*             name;
@@ -43,6 +45,11 @@ FieldDescriptor makeField(const char* name, float C::*mp) {
 template<typename C>
 FieldDescriptor makeField(const char* name, int C::*mp) {
     return { name, FieldType::INT, offsetFromMemberPtr(mp) };
+}
+
+template<typename C>
+FieldDescriptor makeField(const char* name, Wheel::Components::Rigidbody2DType C::*mp) {
+    return { name, FieldType::RIGIDBODY2D_TYPE, offsetFromMemberPtr(mp) };
 }
 
 template<typename C>

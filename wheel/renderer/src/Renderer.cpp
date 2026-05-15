@@ -67,6 +67,14 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     glViewport(0, 0, a_Width, a_Height);
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
     m_Shaders.push_back(new Shader("base.vert", "base.frag"));
+    unsigned int program = m_Shaders[0]->GetID();
+    glUseProgram(program);
+    m_PosLoc     = glGetAttribLocation(program, "a_position");
+    m_TexLoc     = glGetAttribLocation(program, "a_texCoord");
+    m_MvpLoc     = glGetUniformLocation(program, "u_mvpMatrix");
+    m_SamplerLoc = glGetUniformLocation(program, "s_texture");
+    glUseProgram(0);
+
     Texture* texture = new Texture("textures/logo.png");
     LoadTexture(texture);
     CreateTestSquare();
@@ -84,27 +92,23 @@ void Wheel::Renderer::Renderer::Update()
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    unsigned int program = m_Shaders[0]->GetID();
-    glUseProgram(program);
+    glUseProgram(m_Shaders[0]->GetID());
 
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO2D);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO2D);
     glBindTexture(GL_TEXTURE_2D, m_Textures[0]->m_ID);
-    for (int i =0; i < m_RenderedObjects->size(); i++)
-    {
-        GLint posLoc = glGetAttribLocation(program, "a_position");
-        GLint texLoc = glGetAttribLocation(program, "a_texCoord");
-        GLint mvpLocation = glGetUniformLocation(program, "u_mvpMatrix");
-        GLint samplerLoc = glGetUniformLocation(program, "s_texture");
-        glUniform1i(samplerLoc, 0);
-        glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
-        glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-        auto mvp = m_RenderedObjects->at(i).modelMatrix.Transpose();
-        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, &mvp.First());
-        glEnableVertexAttribArray(posLoc);
-        glEnableVertexAttribArray(texLoc);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0); // offset, not pointer
+    glUniform1i(m_SamplerLoc, 0);
+    glVertexAttribPointer(m_PosLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(m_TexLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(m_PosLoc);
+    glEnableVertexAttribArray(m_TexLoc);
+
+    for (int i = 0; i < (int)m_RenderedObjects->size(); i++)
+    {
+        auto mvp = m_RenderedObjects->at(i).modelMatrix.Transpose();
+        glUniformMatrix4fv(m_MvpLoc, 1, GL_FALSE, &mvp.First());
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
     }
 
 #ifdef DEBUG_BUILD

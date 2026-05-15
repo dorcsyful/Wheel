@@ -4,6 +4,7 @@
 #include "DebugDescriptor.h"
 #include "imgui.h"
 #include "SubscriptionToken.h"
+#define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "core/Description.h"
 #include "helpers/Collision2DManifold.h"

@@ -28,6 +28,9 @@ add_library(imgui STATIC
 )
 target_include_directories(imgui PUBLIC dependencies/imgui)
 target_link_libraries(imgui PUBLIC glfw)
+target_compile_definitions(imgui PRIVATE
+    $<$<NOT:$<BOOL:${WIN32}>>:IMGUI_IMPL_OPENGL_ES2>
+)
 
 
 # --- 2. THE ENGINE (Wheel) ---

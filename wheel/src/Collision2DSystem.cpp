@@ -18,11 +18,15 @@ void Wheel::Engine::Systems::Collision2DSystem::Update(float deltaTime)
 
 void Wheel::Engine::Systems::Collision2DSystem::CheckNarrowPhase()
 {
-    //Checking if collision vertices need to recompute
+    if (!m_ColliderPool) {
+        m_ColliderPool  = m_Scene->GetComponentPool<Components::BoxCollider2D>();
+        m_TransformPool = m_Scene->GetComponentPool<Components::Transform2D>();
+    }
+
     for (auto id : m_EntityIDs)
     {
-        auto& transform  = m_Scene->GetComponent<Components::Transform2D>(id);
-        auto& collision = m_Scene->GetComponent<Components::BoxCollider2D>(id);
+        auto& transform = m_TransformPool->GetComponent(id);
+        auto& collision = m_ColliderPool->GetComponent(id);
         if (transform.isDirty)
             collision.isDirty = true;
     }
@@ -31,11 +35,10 @@ void Wheel::Engine::Systems::Collision2DSystem::CheckNarrowPhase()
     {
         for (int j = i + 1; j < (int)m_EntityIDs.size(); j++)
         {
-            if (m_EntityIDs[i] == m_EntityIDs[j]) continue;
-            auto& collider1  = m_Scene->GetComponent<Components::BoxCollider2D>(m_EntityIDs[i]);
-            auto& transform1 = m_Scene->GetComponent<Components::Transform2D>(m_EntityIDs[i]);
-            auto& collider2  = m_Scene->GetComponent<Components::BoxCollider2D>(m_EntityIDs[j]);
-            auto& transform2 = m_Scene->GetComponent<Components::Transform2D>(m_EntityIDs[j]);
+            auto& collider1  = m_ColliderPool->GetComponent(m_EntityIDs[i]);
+            auto& transform1 = m_TransformPool->GetComponent(m_EntityIDs[i]);
+            auto& collider2  = m_ColliderPool->GetComponent(m_EntityIDs[j]);
+            auto& transform2 = m_TransformPool->GetComponent(m_EntityIDs[j]);
             Collision::Collision2DManifold manifold = Collision::BoxBoxCollision2D::BoxBoxCollision(collider1, transform1, collider2, transform2);
             if (manifold.isColliding)
             {
@@ -44,7 +47,6 @@ void Wheel::Engine::Systems::Collision2DSystem::CheckNarrowPhase()
         }
     }
 
-    // Clear transform dirty flags — col.isDirty was already reset by GetVertices after recomputing
     for (auto id : m_EntityIDs)
-        m_Scene->GetComponent<Components::Transform2D>(id).isDirty = false;
+        m_TransformPool->GetComponent(id).isDirty = false;
 }

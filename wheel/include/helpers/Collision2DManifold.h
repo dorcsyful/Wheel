@@ -2,7 +2,7 @@
 #include "components/Collider2D.h"
 #include "components/TextureComponent.h"
 #include "math/Vector2.h"
-
+#include <cfloat>
 namespace Wheel
 {
     namespace Engine

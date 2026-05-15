@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <cmath>
 
 namespace Wheel
 {
@@ -27,7 +28,7 @@ namespace Wheel
 
             float Dot(const Vector2& a) const { return x * a.x + y * a.y; }
             float Cross(const Vector2& a) const { return x * a.y - y * a.x; }
-            float Length() const { return sqrt(x * x + y * y); }
+            float Length() const { return std::sqrt(x * x + y * y); }
             float LengthSquared() const { return x * x + y * y; }
             Vector2 Normalized() const { return *this / Length(); }
             static Vector2 Normalize(const Vector2& a) { return a / a.Length(); }

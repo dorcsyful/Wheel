@@ -1,6 +1,11 @@
 #pragma once
 #include "RenderedObject.h"
 #include "core/System.h"
+#include "core/ComponentPool.h"
+#include "components/Transform2D.h"
+#include "components/Render2DComponent.h"
+#include "components/CameraComponent.h"
+
 namespace Wheel::Renderer
 {
     class Renderer;
@@ -31,9 +36,13 @@ namespace Wheel
                 Renderer::Renderer* m_Renderer = nullptr;
                 uint32_t m_CameraEntity = -1;
                 std::vector<Renderer::RenderedObject> m_RenderObjects;
-                float m_designWidth = 0.0f;
+                float m_designWidth  = 0.0f;
                 float m_designHeight = 0.0f;
-                float m_initialZoom = 0.0f;
+                float m_initialZoom  = 0.0f;
+
+                ComponentPool<Components::Transform2D>*      m_TransformPool = nullptr;
+                ComponentPool<Components::Render2DComponent>* m_RenderPool   = nullptr;
+                ComponentPool<Components::CameraComponent>*  m_CameraPool    = nullptr;
             };
 
 
