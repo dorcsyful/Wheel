@@ -104,25 +104,20 @@ void Start::SpawnAtMousePosition(Wheel::Math::Vector2 mousePosition)
 
 void Start::Update()
 {
-    clock_t beginFrame = clock();
-    clock_t endFrame = clock();
-    double deltaTime = 0;
-
-#if DEBUG_BUILD
-    Wheel::Engine::Debugger::get().SetFrameTime(deltaTime);
-#endif
+    double lastTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(m_Renderer->GetWindow()))
     {
-        beginFrame = clock();
-        //Query input from the renderer
-        //TODO: Pass to InputSystem
-        glfwPollEvents();
-        //TODO: Update ECS here
-        m_Scene->Update(deltaTime);
+        double now = glfwGetTime();
+        float deltaTime = static_cast<float>(now - lastTime);
+        lastTime = now;
 
+        glfwPollEvents();
+        m_Scene->Update(deltaTime);
         m_Renderer->Update();
-        endFrame = clock();
-        deltaTime += endFrame - beginFrame;
+
+#ifdef DEBUG_BUILD
+        Wheel::Engine::Debugger::get().SetFrameTime(deltaTime);
+#endif
     }
 }

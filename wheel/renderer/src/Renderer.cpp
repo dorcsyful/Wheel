@@ -57,6 +57,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
         return;
     }
     glfwMakeContextCurrent(m_Window);
+    glfwSwapInterval(0); // disable vsync — let the loop run at full speed
 
     if (!gladLoadGLES2Loader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {
