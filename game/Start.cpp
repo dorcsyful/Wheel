@@ -2,6 +2,8 @@
 #include "Debugger.h"
 #include "systems/Collision2DSystem.h"
 #include "components/Collider2D.h"
+#include "components/Rigidbody2D.h"
+#include "systems/Physics2DSystem.h"
 
 void Start::RegisterComponents()
 {
@@ -9,6 +11,7 @@ void Start::RegisterComponents()
     m_Scene->RegisterComponentType<Wheel::Components::Render2DComponent>();
     m_Scene->RegisterComponentType<Wheel::Components::CameraComponent>();
     m_Scene->RegisterComponentType<Wheel::Components::BoxCollider2D>();
+    m_Scene->RegisterComponentType<Wheel::Components::Rigidbody2D>();
 }
 
 void Start::RegisterSystems()
@@ -18,6 +21,7 @@ void Start::RegisterSystems()
     Wheel::Engine::Description finalDesc = Wheel::Engine::Description();
     Wheel::Engine::Description cameraDesc = m_Scene->GetComponentDescription<Wheel::Components::CameraComponent>();
     Wheel::Engine::Description boxCollider2D = m_Scene->GetComponentDescription<Wheel::Components::BoxCollider2D>();
+    Wheel::Engine::Description rigidbody2D = m_Scene->GetComponentDescription<Wheel::Components::Rigidbody2D>();
     finalDesc.AddComponentType(transform.GetAsBitset());
     finalDesc.AddComponentType(render.GetAsBitset());
     m_RenderSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::RenderSystem>(finalDesc);
@@ -31,6 +35,12 @@ void Start::RegisterSystems()
     finalDesc.AddComponentType(transform.GetAsBitset());
     finalDesc.AddComponentType(boxCollider2D.GetAsBitset());
     m_Scene->RegisterSystem<Wheel::Engine::Systems::Collision2DSystem>(finalDesc);
+    finalDesc.Reset();
+    finalDesc.AddComponentType(transform.GetAsBitset());
+    finalDesc.AddComponentType(boxCollider2D.GetAsBitset());
+    finalDesc.AddComponentType(rigidbody2D.GetAsBitset());
+    m_Scene->RegisterSystem<Wheel::Engine::Systems::Physics2DSystem>(finalDesc);
+
 }
 
 void Start::CreateEntities()
@@ -61,6 +71,9 @@ void Start::CreateEntities()
             m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
         Wheel::Components::BoxCollider2D& collider =
             m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
+        Wheel::Components::Rigidbody2D& rigidbody =
+            m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
+        rigidbody.mass = 1.0f; rigidbody.friction = 0.5f; rigidbody.restitution = 0.5f;
         collider.SetWidth(0.5f); collider.SetHeight(0.3f);
         transform.SetPosition((float)random(-3, 3), (float)random(-3, 3));
         transform.SetScale(1.0f, 1.0f);
@@ -120,4 +133,5 @@ void Start::Update()
         Wheel::Engine::Debugger::get().SetFrameTime(deltaTime);
 #endif
     }
+
 }

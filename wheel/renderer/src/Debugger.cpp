@@ -141,7 +141,7 @@ void Wheel::Engine::Debugger::DrawEntityList()
 
 void Wheel::Engine::Debugger::DrawWindowStats()
 {
-    ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+    ImGui::Text("FPS: %f", m_LastFrameTime);
     ImGui::Text("Current collisions: ");
     if (!m_ActiveCollisions.empty()) {
         if (ImGui::BeginListBox("##CollisionList", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
