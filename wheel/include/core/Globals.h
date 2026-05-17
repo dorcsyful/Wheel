@@ -2,7 +2,7 @@
 #define MAX_ENTITIES 1000
 #define MAX_COMPONENT_TYPES 16
 #define MAX_SYSTEMS 16
-
+#define MAX_CONSTRAINT_ITERATION 3
 /**
  * @brief The location of all assets relative to the EXECUTABLE. You can change this if you want to put your assets in a different location
  */

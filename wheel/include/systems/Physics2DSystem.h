@@ -2,6 +2,11 @@
 #include "core/System.h"
 #include "math/Vector2.h"
 
+namespace Wheel::Engine::Collision
+{
+    struct Collision2DManifold;
+}
+
 namespace Wheel::EventSystem
 {
     struct SubscriptionToken;
@@ -32,10 +37,13 @@ namespace Wheel
                 void ApplyGravity(Components::Rigidbody2D& a_Rigidbody2D,float deltaTime);
                 void IntegrateVelocity(Components::Rigidbody2D& a_Rigidbody2D,float deltaTime);
                 void IntegratePosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D,float deltaTime);
+                float CalculateInertia(const Components::BoxCollider2D& a_Collider, const Components::Transform2D& a_Transform, float mass);
+                void SolveConstraints(float a_DeltaTime);
                 Math::Vector2 m_Gravity{0.0f, -9.81f};
                 ComponentPool<Wheel::Components::Transform2D>* m_TransformPool = nullptr;
                 ComponentPool<Wheel::Components::BoxCollider2D>* m_ColliderPool = nullptr;
                 ComponentPool<Wheel::Components::Rigidbody2D>* m_RigidbodyPool = nullptr;
+                std::vector<Collision::Collision2DManifold>* m_Manifolds = nullptr;
 
             };
         }

@@ -3,6 +3,7 @@
 #include "core/ComponentPool.h"
 #include "components/Collider2D.h"
 #include "components/Transform2D.h"
+#include "helpers/Collision2DManifold.h"
 
 namespace Wheel
 {
@@ -17,10 +18,11 @@ namespace Wheel
                 ~Collision2DSystem() override = default;
 
                 void Update(float deltaTime) override;
+                std::vector<Collision::Collision2DManifold>* GetManifolds() { return &m_Manifolds; }
 
             private:
                 void CheckNarrowPhase();
-
+                std::vector<Collision::Collision2DManifold> m_Manifolds;
                 ComponentPool<Components::BoxCollider2D>* m_ColliderPool  = nullptr;
                 ComponentPool<Components::Transform2D>*   m_TransformPool = nullptr;
             };

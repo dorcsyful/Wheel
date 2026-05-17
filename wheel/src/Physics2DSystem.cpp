@@ -3,12 +3,18 @@
 #include "components/Transform2D.h"
 #include "components/Collider2D.h"
 #include "components/Rigidbody2D.h"
+#include "systems/Collision2DSystem.h"
+#include "systems/subsystems/ConstraintSolver.h"
+
 void Wheel::Engine::Systems::Physics2DSystem::Update(float deltaTime)
 {
     if (!m_TransformPool || !m_ColliderPool || !m_RigidbodyPool) {
         m_TransformPool = m_Scene->GetComponentPool<Components::Transform2D>();
         m_ColliderPool  = m_Scene->GetComponentPool<Components::BoxCollider2D>();
         m_RigidbodyPool = m_Scene->GetComponentPool<Components::Rigidbody2D>();
+    }
+    if (!m_Manifolds) {
+        m_Manifolds = m_Scene->GetSystem<Collision2DSystem>()->GetManifolds();
     }
 
     for (auto id : m_EntityIDs)
@@ -17,34 +23,96 @@ void Wheel::Engine::Systems::Physics2DSystem::Update(float deltaTime)
         auto& collider  = m_ColliderPool->GetComponent(id);
         auto& rigidbody = m_RigidbodyPool->GetComponent(id);
 
-        if (transform.isDirty)
-            collider.isDirty = true;
-        if (rigidbody.rigidbodyType == Components::Rigidbody2DType::STATIC)
+        if (transform.isDirty || collider.isDirty || rigidbody.isDirty)
+        {
+            rigidbody.SetInertia(CalculateInertia(collider, transform, rigidbody.GetMass()));
+            rigidbody.isDirty = false;
+            transform.isDirty = false;
+            collider.isDirty = false;
+        }
+        if (rigidbody.GetType() == Components::Rigidbody2DType::STATIC)
             continue;
         if (!rigidbody.active)
             continue;
-        ApplyGravity(rigidbody, deltaTime);
+
+        if (rigidbody.affectedByGravity) ApplyGravity(rigidbody, deltaTime);
         IntegrateVelocity(rigidbody, deltaTime);
-        IntegratePosition(transform, rigidbody, deltaTime);
         rigidbody.ClearForces();
+
     }
+    SolveConstraints(deltaTime);
+    for (uint32_t id : m_EntityIDs)
+    {
+        Components::Rigidbody2D rigidbody2D = m_RigidbodyPool->GetComponent(id);
+        if (!rigidbody2D.active || rigidbody2D.GetType() == Components::Rigidbody2DType::STATIC)
+            continue;
+        IntegratePosition(m_TransformPool->GetComponent(id), rigidbody2D, deltaTime);
+    }
+
 }
 
 void Wheel::Engine::Systems::Physics2DSystem::ApplyGravity(Components::Rigidbody2D& a_Rigidbody2D,float deltaTime)
 {
-        a_Rigidbody2D.AddForce(m_Gravity * a_Rigidbody2D.mass);
+        a_Rigidbody2D.AddForce(m_Gravity * a_Rigidbody2D.GetMass());
 }
 
 void Wheel::Engine::Systems::Physics2DSystem::IntegrateVelocity(Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
-    a_Rigidbody2D.linearVelocity = a_Rigidbody2D.linearVelocity +(a_Rigidbody2D.GetForce() / a_Rigidbody2D.mass) * deltaTime;
-    a_Rigidbody2D.angularVelocity += (a_Rigidbody2D.GetTorque() / a_Rigidbody2D.inertia) * deltaTime;
+    a_Rigidbody2D.linearVelocity = a_Rigidbody2D.linearVelocity +(a_Rigidbody2D.GetForce() * a_Rigidbody2D.GetInverseMass()) * deltaTime;
+    a_Rigidbody2D.angularVelocity += (a_Rigidbody2D.GetTorque() / a_Rigidbody2D.GetInertia()) * deltaTime;
     a_Rigidbody2D.linearVelocity *= (1.0f - a_Rigidbody2D.linearDamping * deltaTime);
     a_Rigidbody2D.angularVelocity *= (1.0f - a_Rigidbody2D.angularDamping * deltaTime);
 }
 
 void Wheel::Engine::Systems::Physics2DSystem::IntegratePosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
+    constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
     a_Transform2D.SetPosition(a_Transform2D.GetPosition() + a_Rigidbody2D.linearVelocity * deltaTime);
-    a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.angularVelocity * deltaTime);
+    a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.angularVelocity * RAD_TO_DEG * deltaTime);
+}
+
+float Wheel::Engine::Systems::Physics2DSystem::CalculateInertia(const Components::BoxCollider2D& a_Collider,
+    const Components::Transform2D& a_Transform, float mass)
+{
+    if (a_Collider.type == Components::E_COLLIDER2_D::BOX)
+    {
+        float width = a_Collider.GetWidth() * a_Transform.GetScale().x;
+        float height = a_Collider.GetHeight() * a_Transform.GetScale().y;
+        return (1.f/12.f) * mass * (std::pow(width,2) + std::pow(height,2));
+    }
+    return 0.0f;
+}
+
+void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime)
+{
+    //Collision constraints
+    for (int i = 0; i < MAX_CONSTRAINT_ITERATION; i++)
+    {
+        for (int j = 0; j < m_Manifolds->size(); j++)
+        {
+            if (!m_Manifolds->at(j).isColliding)
+                continue;
+            auto& manifold = (*m_Manifolds)[j];
+            Math::Vector2 noContact(FLT_MAX, FLT_MAX);
+            if ((manifold.penetrationDepth[0] != FLT_MAX && manifold.penetrationDepth[1] == FLT_MAX))
+            {
+                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(manifold.contactPoint[0], manifold.collisionNormal,
+                manifold.penetrationDepth[0], a_DeltaTime,
+                m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
+                m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
+            }
+            else if (manifold.penetrationDepth[0] == FLT_MAX && manifold.penetrationDepth[1] != FLT_MAX)
+            {
+                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(manifold.contactPoint[1], manifold.collisionNormal,
+                    manifold.penetrationDepth[1], a_DeltaTime,
+                    m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
+                    m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
+            }
+            else
+            {
+                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(manifold, a_DeltaTime,
+                    m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
+                    m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));}
+        }
+    }
 }

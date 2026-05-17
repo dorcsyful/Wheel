@@ -3,6 +3,7 @@
 
 #include "DebugDescriptor.h"
 #include "../math/Vector2.h"
+#include "math/Matrix2x2.h"
 
 namespace Wheel::Engine { template <typename T> class ComponentPool; }
 
@@ -68,14 +69,19 @@ namespace Wheel
             void SetPosition(float x, float y) { position.x = x; position.y = y; isDirty = true; }
             void SetScale(const Wheel::Math::Vector2& s){ scale = s; isDirty = true; }
             void SetScale(float x, float y) { scale.x = x; scale.y = y; isDirty = true; }
-            void SetRotation(float rot) { rotation = rot; isDirty = true; }
+            void SetRotation(float rot)
+            {
+                rotation = rot; isDirty = true;
+                m_RotationMatrix.CreateRotation(rotation);
+            }
+            Math::Matrix2x2 GetRotationMatrix() const { return m_RotationMatrix; }
 
         private:
             //Hate it but required so the user cannot change EntityId
             template <typename T> friend class Engine::ComponentPool;
 
             void SetEntityId(uint32_t id) { m_Id = id; name = "Entity " + std::to_string(id); }
-
+            Math::Matrix2x2 m_RotationMatrix;
             uint32_t m_Id = UINT32_MAX;
             Wheel::Math::Vector2 position;
             Wheel::Math::Vector2 scale;

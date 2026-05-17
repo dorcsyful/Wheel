@@ -62,24 +62,57 @@ void Start::CreateEntities()
     Wheel::Engine::Debugger::get().SetCameraEntity(cameraId);
 #endif
     m_CameraId = cameraId;
-    for (int i = 0; i < 2; i++)
+
+    {
+        uint32_t ground = m_Scene->AddEntity();
+        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(ground);
+        auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(ground);
+        auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(ground);
+        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(ground);
+        rigidbody.SetMass(100.0f); rigidbody.friction = 0.5f; rigidbody.restitution = 0.5f; rigidbody.SetType(Wheel::Components::Rigidbody2DType::STATIC);
+        collider.SetWidth(13.f); collider.SetHeight(2.f);
+        transform.SetPosition(0.0f, -3.0f);
+        transform.SetScale(1.0f, 1.0f);
+        transform.SetRotation(0);
+        render.width = 13.f; render.height = 2.f;
+    }
+
     {
         uint32_t id = m_Scene->AddEntity();
-        Wheel::Components::Transform2D& transform =
-            m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
-        Wheel::Components::Render2DComponent& render =
-            m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
-        Wheel::Components::BoxCollider2D& collider =
-            m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
-        Wheel::Components::Rigidbody2D& rigidbody =
-            m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
-        rigidbody.mass = 1.0f; rigidbody.friction = 0.5f; rigidbody.restitution = 0.5f;
-        collider.SetWidth(0.5f); collider.SetHeight(0.3f);
-        transform.SetPosition((float)random(-3, 3), (float)random(-3, 3));
+        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
+        auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
+        auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
+        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
+        rigidbody.SetMass(10.0f); rigidbody.friction = 0.5f; rigidbody.restitution = 0.5f;
+        float w = 0.9;
+        collider.SetWidth(w);
+        float h = 0.5f;
+        collider.SetHeight(h);
+        float x = 0;
+        float y =2;
+        transform.SetPosition(x, y);
         transform.SetScale(1.0f, 1.0f);
-        transform.SetRotation((float)random(-180, 180));
-        render.width = 0.5f; render.height = 0.3f;
+        transform.SetRotation(0);
+        render.width = w; render.height = h;
     }
+
+    {
+        uint32_t id = m_Scene->AddEntity();
+        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
+        auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
+        auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
+        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
+        rigidbody.SetMass(1.0f); rigidbody.friction = 0.5f; rigidbody.restitution = 0.5f;
+        float w = 1.1f;
+        collider.SetWidth(w);
+        float h = 0.8f;
+        collider.SetHeight(h);
+        transform.SetPosition(-0.2, 12.0f);
+        transform.SetScale(1.0f, 1.0f);
+        transform.SetRotation(0);
+        render.width = w; render.height = h;
+    }
+
 }
 
 void Start::Init()

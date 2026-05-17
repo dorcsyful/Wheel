@@ -18,6 +18,7 @@ void Wheel::Engine::Systems::Collision2DSystem::Update(float deltaTime)
 
 void Wheel::Engine::Systems::Collision2DSystem::CheckNarrowPhase()
 {
+    m_Manifolds.clear();
     if (!m_ColliderPool) {
         m_ColliderPool  = m_Scene->GetComponentPool<Components::BoxCollider2D>();
         m_TransformPool = m_Scene->GetComponentPool<Components::Transform2D>();
@@ -42,11 +43,12 @@ void Wheel::Engine::Systems::Collision2DSystem::CheckNarrowPhase()
             Collision::Collision2DManifold manifold = Collision::BoxBoxCollision2D::BoxBoxCollision(collider1, transform1, collider2, transform2);
             if (manifold.isColliding)
             {
+                m_Manifolds.push_back(manifold);
                 Wheel::EventSystem::EventBus::Publish(Events::CollisionEnterEvent(manifold));
             }
         }
     }
 
     for (auto id : m_EntityIDs)
-        m_TransformPool->GetComponent(id).isDirty = false;
+        m_ColliderPool->GetComponent(id).isDirty = false;
 }

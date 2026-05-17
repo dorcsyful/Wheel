@@ -15,7 +15,7 @@ namespace Wheel
                 m_Values[1][0] = a_10; m_Values[1][1] = a_11;
             }
             float& First() { return m_Values[0][0]; }
-            Matrix2x2 operator*(const Matrix2x2& a_Other) const
+            Matrix2x2 operator*(const Matrix2x2& a_Other)
             {
                 Matrix2x2 result;
                 for (int i = 0; i < 2; ++i)
@@ -27,13 +27,15 @@ namespace Wheel
                     }
                 return result;
             }
-            Vector2 operator*(const Vector2& a_Other) const
+            Vector2 operator*(const Vector2& a_Other)
             {
                 Vector2 result;
                 result.x = m_Values[0][0] * a_Other.x + m_Values[0][1] * a_Other.y;
                 result.y = m_Values[1][0] * a_Other.x + m_Values[1][1] * a_Other.y;
                 return result;
             }
+
+            Math::Vector2& operator[](int index) { return m_Values[index]; }
 
             void CreateRotation(float a_Angle)
             {
@@ -43,10 +45,20 @@ namespace Wheel
                 m_Values[1][0] = s; m_Values[1][1] = c;
             }
 
-            
+            Matrix2x2 Inverse() const
+            {
+                float det = m_Values[0][0] * m_Values[1][1] - m_Values[0][1] * m_Values[1][0];
+                if (det == 0.0f)
+                    return Matrix2x2(); // Return identity if not invertible
+                float invDet = 1.0f / det;
+                return Matrix2x2(
+                    m_Values[1][1] * invDet, -m_Values[0][1] * invDet,
+                    -m_Values[1][0] * invDet, m_Values[0][0] * invDet
+                );
+            }
 
         private:
-            float m_Values[2][2];
+            Vector2 m_Values[2];
         };
     }
 }

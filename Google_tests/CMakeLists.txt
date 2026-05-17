@@ -10,5 +10,4 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 add_executable(Google_Tests_run Ecs.cpp
         Events.cpp
         Vector2.cpp)
-target_include_directories(Google_Tests_run PRIVATE ${CMAKE_SOURCE_DIR}/wheel/EventSystem)
-target_link_libraries(Google_Tests_run gtest gtest_main)
+target_link_libraries(Google_Tests_run gtest gtest_main wheel_engine)

@@ -49,12 +49,10 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Collision::BoxBoxCo
 
     if (minOverlap1 < minOverlap2)
     {
-        manifold.penetrationDepth = minOverlap1;
         manifold.collisionNormal = a_Collider1.cachedNormals[bestAxis1];
     }
     else
     {
-        manifold.penetrationDepth = minOverlap2;
         manifold.collisionNormal = a_Collider2.cachedNormals[bestAxis2];
     }
     Math::Vector2 direction = a_Transform2.GetPosition() - a_Transform1.GetPosition();
@@ -72,10 +70,20 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Collision::BoxBoxCo
     manifold.contactPoint[1] = vertices1[(bestAxis1 + 1) % 4];
     manifold.isColliding = true;
 
+    Math::Vector2 refVertex;
     if (minOverlap1 <= minOverlap2)
+    {
         GetContactPoints(a_Collider1, a_Collider2, bestAxis1, bestAxis2, manifold.contactPoint);
+        refVertex = a_Collider1.cachedVertices[bestAxis1];
+    }
     else
+    {
         GetContactPoints(a_Collider2, a_Collider1, bestAxis2, bestAxis1, manifold.contactPoint);
+        refVertex = a_Collider2.cachedVertices[bestAxis2];
+    }
+
+    for (int i = 0; i < 2; i++)
+        manifold.penetrationDepth[i] = std::max(0.0f, -manifold.collisionNormal.Dot(manifold.contactPoint[i] - refVertex));
 
     return manifold;
 }
@@ -142,12 +150,12 @@ void Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Compone
     if (maxProj < 0)
     {
         a_ContactPoints[0] = referenceVertex1;
-        a_ContactPoints[1] = referenceVertex1;
+        //a_ContactPoints[1] = referenceVertex1;
         return;
     }
     if (minProj > refLength)
     {
-        a_ContactPoints[0] = referenceVertex2;
+        //a_ContactPoints[0] = referenceVertex2;
         a_ContactPoints[1] = referenceVertex2;
         return;
     }
