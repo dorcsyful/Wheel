@@ -76,8 +76,16 @@ namespace Wheel
 
             template <typename TEvent>
             static std::vector<Handler<TEvent>>& GetHandlers() {
-                static std::vector<Handler<TEvent>> handlers;
-                return handlers;
+                // Heap-allocated and intentionally never freed. SubscriptionTokens
+                // can be destroyed during static destruction (e.g. the Debugger
+                // Meyers singleton's m_Tokens), which happens *after* a normal
+                // function-local static vector would already be gone. Leaking this
+                // storage guarantees the unsubscribe lambdas always operate on a
+                // live vector instead of a destroyed one. The OS reclaims the
+                // memory at process exit, so this is not a real leak.
+                static std::vector<Handler<TEvent>>* handlers =
+                    new std::vector<Handler<TEvent>>();
+                return *handlers;
             }
         };
 

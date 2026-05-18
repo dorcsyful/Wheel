@@ -36,7 +36,8 @@ namespace Wheel
             explicit Texture(const std::string& a_Path, FilterType a_FilterType = FilterType::Linear, RepeatType a_RepeatType = RepeatType::Repeat)
              : m_FilterType(a_FilterType), m_RepeatType(a_RepeatType)
             {
-                m_Path = ASSETS_LOCATION + a_Path;
+                m_Name = a_Path;
+                m_Path = a_Path;
                 m_ID = -1;
             }
             ~Texture() = default;
@@ -51,11 +52,14 @@ namespace Wheel
                 m_FilterType = a_Type;
             }
 
+            std::string GetName() const { return m_Name; }
+
             std::pair<std::string, unsigned int> LoadTexture();
 
             friend class Renderer;
 
         private:
+            std::string m_Name;
             std::string m_Path;
             FilterType m_FilterType = FilterType::Linear;
             RepeatType m_RepeatType = RepeatType::Repeat;

@@ -143,6 +143,12 @@ void Wheel::Engine::Debugger::DrawWindowStats()
 {
     ImGui::Text("FPS: %f", m_LastFrameTime);
     ImGui::Text("Current collisions: ");
+    std::string temp = m_RunSimulation ? "Running" : "Paused";
+    if (ImGui::Button(temp.c_str()))
+    {
+        m_RunSimulation = !m_RunSimulation;
+        Wheel::EventSystem::EventBus::Publish(Wheel::Events::RunSimulation(m_RunSimulation));
+    }
     if (!m_ActiveCollisions.empty()) {
         if (ImGui::BeginListBox("##CollisionList", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
             bool isSelected = false;
@@ -178,23 +184,37 @@ void Wheel::Engine::Debugger::DrawCollisions(ImDrawList* dl, const Wheel::Compon
 {
     for (int i = 0; i < m_ActiveCollisions.size(); ++i)
     {
-        ImVec2 p1 = ToScreen(m_ActiveCollisions[i].contactPoint[0], a_CameraTransform, a_CameraComponent);
-        ImVec2 p2 = ToScreen(m_ActiveCollisions[i].contactPoint[1], a_CameraTransform, a_CameraComponent);
-        Math::Vector2 middle = Math::Vector2::Lerp(m_ActiveCollisions[i].contactPoint[0],m_ActiveCollisions[i].contactPoint[1],0.5f);
-        Math::Vector2 normalTarget = middle + (m_ActiveCollisions[i].collisionNormal);
-        Math::Vector2 normalPerp = normalTarget + Math::Vector2(-normalTarget.y, normalTarget.x).Normalized() * 0.1;
-        dl->AddCircleFilled(p1, 5.0f, GetColor(DebugColor::Yellow));
-        dl->AddCircleFilled(p2, 5.0f, GetColor(DebugColor::Yellow));
-        ImVec2 normalStart = ToScreen(middle, a_CameraTransform,a_CameraComponent);
-        ImVec2 normalEnd = ToScreen(normalTarget, a_CameraTransform,a_CameraComponent);
+        const auto& col = m_ActiveCollisions[i];
+        bool twoContacts = col.contactPoint[0] != col.contactPoint[1];
+
+        ImVec2 p1 = ToScreen(col.contactPoint[0], a_CameraTransform, a_CameraComponent);
+        dl->AddCircleFilled(p1, 2.0f, GetColor(DebugColor::Yellow));
+
+        Math::Vector2 middle;
+        if (twoContacts)
+        {
+            ImVec2 p2 = ToScreen(col.contactPoint[1], a_CameraTransform, a_CameraComponent);
+            dl->AddCircleFilled(p2, 2.0f, GetColor(DebugColor::Yellow));
+            middle = Math::Vector2::Lerp(col.contactPoint[0], col.contactPoint[1], 0.5f);
+        }
+        else
+        {
+            middle = col.contactPoint[0];
+        }
+
+        Math::Vector2 normalTarget = middle + col.collisionNormal * 0.4f;
+        ImVec2 normalStart = ToScreen(middle, a_CameraTransform, a_CameraComponent);
+        ImVec2 normalEnd   = ToScreen(normalTarget, a_CameraTransform, a_CameraComponent);
         dl->AddLine(normalStart, normalEnd, GetColor(DebugColor::Yellow));
 
-        ImVec2 left = AddImVec2(normalStart,MultiplyImVec2WithScalar(NormalizeImVec2(ImVec2(-normalStart.y,normalStart.x)), 30.f));
-        left = AddImVec2(left,MultiplyImVec2WithScalar(SubtractImVec2(normalEnd,left), 0.8f));
-        ImVec2 right = AddImVec2(normalStart,MultiplyImVec2WithScalar(NormalizeImVec2(ImVec2(normalStart.y,-normalStart.x)), 30.f));
-        right = AddImVec2(right,MultiplyImVec2WithScalar(SubtractImVec2(normalEnd,right), 0.8f));
-        dl->AddLine(normalEnd,left, GetColor(DebugColor::Red));
-        dl->AddLine(normalEnd, right, GetColor(DebugColor::Green));
+        ImVec2 arrowDir  = NormalizeImVec2(SubtractImVec2(normalEnd, normalStart));
+        ImVec2 arrowPerp = ImVec2(-arrowDir.y, arrowDir.x);
+        const float headLen = 8.0f;
+        ImVec2 arrowBase  = SubtractImVec2(normalEnd, MultiplyImVec2WithScalar(arrowDir, headLen));
+        ImVec2 arrowLeft  = AddImVec2(arrowBase, MultiplyImVec2WithScalar(arrowPerp,  headLen * 0.5f));
+        ImVec2 arrowRight = SubtractImVec2(arrowBase, MultiplyImVec2WithScalar(arrowPerp, headLen * 0.5f));
+        dl->AddLine(normalEnd, arrowLeft,  GetColor(DebugColor::Yellow));
+        dl->AddLine(normalEnd, arrowRight, GetColor(DebugColor::Yellow));
     }
 }
 

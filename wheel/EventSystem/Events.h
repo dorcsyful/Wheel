@@ -80,6 +80,13 @@ namespace Wheel
             CollisionEnterEvent(const Engine::Collision::Collision2DManifold& a_Manifold) : manifold(a_Manifold) {}
             const Engine::Collision::Collision2DManifold manifold;
         };
+
+      struct RunSimulation
+      {
+          RunSimulation(bool a_Enable) : enable(a_Enable) {};
+          bool enable;
+      };
+
     }
 }
 

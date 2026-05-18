@@ -1,6 +1,5 @@
 #include "Renderer.h"
 
-#include <cassert>
 #include <iostream>
 
 #include "Shader.h"
@@ -25,7 +24,6 @@ Wheel::Renderer::Renderer::~Renderer()
     for (auto element : m_Shaders)
     {
         glDeleteProgram(element->GetID());
-
         delete element;
     }
     for (auto element : m_Textures)
@@ -37,7 +35,6 @@ Wheel::Renderer::Renderer::~Renderer()
 
 void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title)
 {
-
     glfwSetErrorCallback(&glfwError);
 
     if (!glfwInit())
@@ -67,48 +64,56 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     }
     glViewport(0, 0, a_Width, a_Height);
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
-    m_Shaders.push_back(new Shader("base.vert", "base.frag"));
-    unsigned int program = m_Shaders[0]->GetID();
-    glUseProgram(program);
-    m_PosLoc     = glGetAttribLocation(program, "a_position");
-    m_TexLoc     = glGetAttribLocation(program, "a_texCoord");
-    m_MvpLoc     = glGetUniformLocation(program, "u_mvpMatrix");
-    m_SamplerLoc = glGetUniformLocation(program, "s_texture");
-    glUseProgram(0);
 
-    Texture* texture = new Texture("textures/logo.png");
-    LoadTexture(texture);
+    // Base shader — Shader constructor calls CacheLocations() internally
+    AddShader("base.vert", "base.frag");
+
     CreateTestSquare();
 
 #ifdef DEBUG_BUILD
     Engine::Debugger::get().Initialize(m_Window);
-     Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::ENTITY_LIST);
+    Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::ENTITY_LIST);
     Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::WINDOW_STATS);
 #endif
 }
 
 void Wheel::Renderer::Renderer::Update()
 {
-    if (!m_RenderedObjects) return;
+    if (!m_RenderedObjects || m_RenderedObjects->empty()) return;
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(m_Shaders[0]->GetID());
-
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO2D);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO2D);
-    glBindTexture(GL_TEXTURE_2D, m_Textures[0]->m_ID);
 
-    glUniform1i(m_SamplerLoc, 0);
-    glVertexAttribPointer(m_PosLoc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
-    glVertexAttribPointer(m_TexLoc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(m_PosLoc);
-    glEnableVertexAttribArray(m_TexLoc);
+    uint32_t activeShaderId = UINT32_MAX;
+    uint32_t activeTexId    = UINT32_MAX;
+    Shader*  activeShader   = nullptr;
 
-    for (int i = 0; i < (int)m_RenderedObjects->size(); i++)
+    for (const auto& ro : *m_RenderedObjects)
     {
-        auto mvp = m_RenderedObjects->at(i).modelMatrix.Transpose();
-        glUniformMatrix4fv(m_MvpLoc, 1, GL_FALSE, &mvp.First());
+        if (ro.shaderId != activeShaderId)
+        {
+            activeShader   = m_Shaders[ro.shaderId];
+            activeShaderId = ro.shaderId;
+            glUseProgram(activeShader->GetID());
+            glVertexAttribPointer(activeShader->GetPosLoc(), 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
+            glVertexAttribPointer(activeShader->GetTexLoc(), 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+            glEnableVertexAttribArray(activeShader->GetPosLoc());
+            glEnableVertexAttribArray(activeShader->GetTexLoc());
+            glUniform1i(activeShader->GetSamplerLoc(), 0);
+        }
+
+        if (ro.textureId != activeTexId)
+        {
+            glBindTexture(GL_TEXTURE_2D, m_Textures[ro.textureId]->m_ID);
+            activeTexId = ro.textureId;
+        }
+
+        glUniform4f(activeShader->GetColorLoc(), ro.color.x, ro.color.y, ro.color.z, ro.color.w);
+        auto mvp = ro.modelMatrix.Transpose();
+        glUniformMatrix4fv(activeShader->GetMvpLoc(), 1, GL_FALSE, &mvp.First());
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
     }
 
@@ -130,26 +135,31 @@ void Wheel::Renderer::Renderer::CreateTestSquare()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO2D);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2D), indices2D, GL_STATIC_DRAW);
 
-    // Don't call glVertexAttribPointer here at all — do it in Update with buffers bound
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 }
 
-void Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
+uint32_t Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
 {
-    assert(std::find(m_Textures.begin(), m_Textures.end(), a_Texture) == m_Textures.end() && "Texture already loaded.");
+    assert(m_TextureIndex.find(a_Texture->GetName()) == m_TextureIndex.end() && "Texture already loaded.");
+    uint32_t id = static_cast<uint32_t>(m_Textures.size());
     m_Textures.push_back(a_Texture);
+    m_TextureIndex[a_Texture->GetName()] = id;
     a_Texture->LoadTexture();
-
+    return id;
 }
 
-
-void Wheel::Renderer::Renderer::AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader)
+uint32_t Wheel::Renderer::Renderer::AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader)
 {
-    auto it = std::find_if(m_Shaders.begin(), m_Shaders.end(),
-                       [temp = a_VertexShader.substr(0, a_VertexShader.find_last_of('.'))] (Shader* a_Shader) -> bool {
-                          return a_Shader->GetName() == temp;
-                       });
-    m_Shaders.push_back(new Shader(a_VertexShader, a_FragmentShader));
+    Shader* shader = new Shader(a_VertexShader, a_FragmentShader);
+    auto it = m_ShaderIndex.find(shader->GetName());
+    if (it != m_ShaderIndex.end())
+    {
+        delete shader;
+        return it->second;
+    }
+    uint32_t id = static_cast<uint32_t>(m_Shaders.size());
+    m_Shaders.push_back(shader);
+    m_ShaderIndex[shader->GetName()] = id;
+    return id;
 }

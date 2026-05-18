@@ -18,8 +18,9 @@ std::pair<std::string, unsigned int> Wheel::Renderer::Texture::LoadTexture()
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+    std::string basicString = ASSETS_LOCATION + m_Path;
     // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char *data = stbi_load((ASSETS_LOCATION + m_Path).c_str(), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(basicString.c_str(), &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);

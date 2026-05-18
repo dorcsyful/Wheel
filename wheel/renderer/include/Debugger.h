@@ -79,6 +79,8 @@ namespace Wheel
             ImVec2 MultiplyImVec2WithScalar(const ImVec2& a, float scalar) { return ImVec2(a.x * scalar, a.y * scalar); }
             float LengthImVec2(const ImVec2& a) { return sqrt(a.x * a.x + a.y * a.y); }
             ImVec2 NormalizeImVec2(const ImVec2& a) { float temp = LengthImVec2(a); return ImVec2(a.x / temp, a.y / temp); }
+
+            bool m_RunSimulation = true;
             uint32_t m_CameraEntity = UINT32_MAX;
             std::vector<Collision::Collision2DManifold> m_ActiveCollisions {};
             std::vector<EventSystem::SubscriptionToken> m_Tokens{};

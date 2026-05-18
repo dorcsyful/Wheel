@@ -61,9 +61,22 @@ Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::stri
     glAttachShader(m_ID, fragment);
     glLinkProgram(m_ID);
     checkCompileErrors(m_ID, "PROGRAM");
+    CacheLocations();
     //We don't need no shaders no more
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+
+}
+
+void Wheel::Renderer::Shader::CacheLocations()
+{
+    unsigned int program = m_ID;
+    glUseProgram(program);
+    m_PosLoc     = glGetAttribLocation(program, "a_position");
+    m_TexLoc     = glGetAttribLocation(program, "a_texCoord");
+    m_MvpLoc     = glGetUniformLocation(program, "u_mvpMatrix");
+    m_SamplerLoc = glGetUniformLocation(program, "s_texture");
+    m_ColorLoc   = glGetUniformLocation(program, "u_color");
 
 }
 

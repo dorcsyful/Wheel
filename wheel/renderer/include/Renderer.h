@@ -1,6 +1,7 @@
 #pragma once
 #include <glad.h>
-#include <map>
+#include <cassert>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include "RenderedObject.h"
@@ -24,27 +25,14 @@ namespace Wheel
             ~Renderer();
 
             /**
-             *
              * @brief This gets called when the scene is initialized. You do not have to manually call it.
              */
             void Init(int a_Width, int a_Height, const char* a_Title);
+
             /**
              * @brief Only handles the DRAW phase. Does not update game state or polls input
              */
             void Update();
-
-            /**
-             * @brief All shaders in assets/shaders get loaded on startup. You can refer to them by their filename. Call this function if you're not sure your shader has been loaded
-             */
-            [[nodiscard]] std::vector<std::string> GetShaders() const
-            {
-                std::vector<std::string> shaders(m_Shaders.size());
-                for (auto& shader : m_Shaders)
-                {
-                    shaders.push_back(shader->GetName());
-                }
-                return shaders;
-            }
 
             /**
              * @brief You have direct access to the GLFW window. Don't make me regret it
@@ -52,29 +40,60 @@ namespace Wheel
             GLFWwindow* GetWindow() { return m_Window; }
 
             /**
-             * @brief Load all textures at startup to avoid lag mid-game
+             * @brief Load a texture at startup. Returns the integer ID used for fast lookup at draw time.
              */
-            void LoadTexture(Texture* a_Texture);
+            uint32_t LoadTexture(Texture* a_Texture);
 
+            /**
+             * @brief Load a shader pair at startup. Returns the integer ID used for fast lookup at draw time.
+             */
+            uint32_t AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader);
+
+            /**
+             * @brief Resolve a texture name to its integer ID. Called once per entity per frame in RenderSystem — never in the draw loop.
+             */
+            uint32_t GetTextureId(const std::string& a_Name) const
+            {
+                auto it = m_TextureIndex.find(a_Name);
+                assert(it != m_TextureIndex.end() && "Texture not loaded. Call LoadTexture() before use.");
+                return it->second;
+            }
+
+            /**
+             * @brief Resolve a shader name to its integer ID. Called once per entity per frame in RenderSystem — never in the draw loop.
+             */
+            uint32_t GetShaderId(const std::string& a_Name) const
+            {
+                auto it = m_ShaderIndex.find(a_Name);
+                assert(it != m_ShaderIndex.end() && "Shader not loaded. Call AddShader() before use.");
+                return it->second;
+            }
+
+            [[nodiscard]] std::vector<std::string> GetShaders() const
+            {
+                std::vector<std::string> names;
+                names.reserve(m_Shaders.size());
+                for (auto& shader : m_Shaders)
+                    names.push_back(shader->GetName());
+                return names;
+            }
 
             void GetRenderedObjects(std::vector<RenderedObject>* a_ROs) { m_RenderedObjects = a_ROs; }
 
         private:
-            void AddShader(const std::string& a_VertexShader, const std::string& a_FragmentShader);
             void CreateTestSquare();
 
             GLFWwindow* m_Window{};
-            std::vector<Shader*> m_Shaders;
+
+            // Indexed by integer ID — O(1) access in the draw loop
+            std::vector<Shader*>  m_Shaders;
             std::vector<Texture*> m_Textures;
-            //Using a vector instead of regular array to have access to sort() & co.
-            std::vector<RenderedObject>* m_RenderedObjects;
 
+            // Name → ID maps — only touched at load time, never inside Update()
+            std::unordered_map<std::string, uint32_t> m_ShaderIndex;
+            std::unordered_map<std::string, uint32_t> m_TextureIndex;
 
-            // Cached shader locations — queried once at init, not per draw call
-            GLint m_PosLoc     = -1;
-            GLint m_TexLoc     = -1;
-            GLint m_MvpLoc     = -1;
-            GLint m_SamplerLoc = -1;
+            std::vector<RenderedObject>* m_RenderedObjects = nullptr;
 
             //Flat squares for rendering 2D
             unsigned int m_EBO2D{};
@@ -92,4 +111,3 @@ namespace Wheel
         };
     }
 }
-

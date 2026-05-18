@@ -6,6 +6,7 @@
 #include "components/Render2DComponent.h"
 #include "components/Transform2D.h"
 #include "math/Matrix4x4.h"
+#include "math/Vector4.h"
 
 namespace Wheel
 {
@@ -52,16 +53,33 @@ namespace Wheel
                                 const Components::Transform2D& a_Transform,
                                 const Math::Matrix4x4& a_ViewProj)
             {
+                Build(a_Render, a_EntityId, a_Transform.GetPosition(), a_Transform.GetRotation(),
+                      a_Transform.GetScale(), a_ViewProj);
+            }
+
+            // Same as Add2DComponent but takes raw pos/rot/scale so the caller can pass
+            // values interpolated between two fixed-timestep physics states.
+            void Add2DComponentInterpolated(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
+                                            const Math::Vector2& a_Position, float a_RotationDeg,
+                                            const Math::Vector2& a_Scale, const Math::Matrix4x4& a_ViewProj)
+            {
+                Build(a_Render, a_EntityId, a_Position, a_RotationDeg, a_Scale, a_ViewProj);
+            }
+
+            void Build(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
+                       const Math::Vector2& a_Position, float a_RotationDeg,
+                       const Math::Vector2& a_Scale, const Math::Matrix4x4& a_ViewProj)
+            {
                 entityId = a_EntityId;
-                textureId = a_Render.TextureName;
+                color    = a_Render.color;
 
                 constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-                float cos_r = std::cos(a_Transform.GetRotation() * DEG_TO_RAD);
-                float sin_r = std::sin(a_Transform.GetRotation() * DEG_TO_RAD);
-                float sx = a_Render.width  * a_Transform.GetScale().x;
-                float sy = a_Render.height * a_Transform.GetScale().y;
-                float px = a_Transform.GetPosition().x;
-                float py = a_Transform.GetPosition().y;
+                float cos_r = std::cos(a_RotationDeg * DEG_TO_RAD);
+                float sin_r = std::sin(a_RotationDeg * DEG_TO_RAD);
+                float sx = a_Render.width  * a_Scale.x;
+                float sy = a_Render.height * a_Scale.y;
+                float px = a_Position.x;
+                float py = a_Position.y;
 
                 Math::Matrix4x4 model(
                     sx * cos_r, -sy * sin_r, 0.0f, px,
@@ -73,9 +91,10 @@ namespace Wheel
                 modelMatrix = a_ViewProj * model;
             }
 
-            size_t entityId;
-            size_t textureId;
-            size_t shaderId;
+            uint32_t entityId  = 0;
+            uint32_t textureId = 0;
+            uint32_t shaderId  = 0;
+            Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             Math::Matrix4x4 modelMatrix;
         };
     }

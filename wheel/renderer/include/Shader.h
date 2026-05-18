@@ -25,9 +25,23 @@ namespace Wheel
             {
                 return m_Name;
             }
+            void CacheLocations();
+
+            GLint GetPosLoc() const { return m_PosLoc; }
+            GLint GetTexLoc() const { return m_TexLoc; }
+            GLint GetMvpLoc() const { return m_MvpLoc; }
+            GLint GetSamplerLoc() const { return m_SamplerLoc; }
+            GLint GetColorLoc() const { return m_ColorLoc; }
 
         private:
             void checkCompileErrors(unsigned int shader, const std::string& type);
+
+            GLint m_PosLoc     = -1;
+            GLint m_TexLoc     = -1;
+            GLint m_MvpLoc     = -1;
+            GLint m_SamplerLoc = -1;
+            GLint m_ColorLoc   = -1;
+
             std::string m_Name;
             unsigned int m_ID;
         };

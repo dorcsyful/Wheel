@@ -11,7 +11,8 @@ namespace Wheel
         {
             bool active = true;
             uint32_t ID = 999999;
-            size_t TextureName = 0;
+            std::string TextureName = "";
+            std::string ShaderName  = "base";
             /**
              * @brief In world units
              */
@@ -20,6 +21,10 @@ namespace Wheel
              * @brief In world units
              */
             float height = 0;
+            /**
+             * @brief: You can give the texture a tint. If there is no texture assigned, this will be the color of the mesh
+             */
+            Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
             REFLECT_BEGIN(Render2DComponent)
             FIELD(active)

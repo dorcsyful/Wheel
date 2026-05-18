@@ -1,9 +1,10 @@
-﻿#include "Start.h"
+#include "Start.h"
 #include "Debugger.h"
 #include "systems/Collision2DSystem.h"
 #include "components/Collider2D.h"
 #include "components/Rigidbody2D.h"
 #include "systems/Physics2DSystem.h"
+#include "Texture.h"
 
 void Start::RegisterComponents()
 {
@@ -74,7 +75,7 @@ void Start::CreateEntities()
         transform.SetPosition(0.0f, -3.0f);
         transform.SetScale(1.0f, 1.0f);
         transform.SetRotation(0);
-        render.width = 13.f; render.height = 2.f;
+        render.width = 13.f; render.height = 2.f; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     {
@@ -93,7 +94,7 @@ void Start::CreateEntities()
         transform.SetPosition(x, y);
         transform.SetScale(1.0f, 1.0f);
         transform.SetRotation(0);
-        render.width = w; render.height = h;
+        render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     {
@@ -110,13 +111,14 @@ void Start::CreateEntities()
         transform.SetPosition(-0.2, 12.0f);
         transform.SetScale(1.0f, 1.0f);
         transform.SetRotation(0);
-        render.width = w; render.height = h;
+        render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
 }
 
 void Start::Init()
 {
+    m_RunSimulation = true;
     m_Renderer = std::make_unique<Wheel::Renderer::Renderer>();
     m_Renderer->Init(1280, 720, "Wheel Engine");
     m_Scene = std::make_unique<Wheel::Engine::Scene>();
@@ -125,45 +127,55 @@ void Start::Init()
     RegisterSystems();
     CreateEntities();
     m_SubscriptionTokens.emplace_back();
-    Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::LeftMouseButtonPressEvent>(
-        [this](const Wheel::Events::LeftMouseButtonPressEvent& e)
-        {
-            SpawnAtMousePosition(Wheel::Math::Vector2(e.x,e.y));
-        },m_SubscriptionTokens[0]);
+
+    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/square.png"));
+    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/logo.png"));
+
+
+#ifdef DEBUG_BUILD
+    Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::RunSimulation>(
+        [&](const Wheel::Events::RunSimulation& e) { m_RunSimulation = e.enable; }, m_SubscriptionTokens.back());
+#endif
 }
 
-void Start::SpawnAtMousePosition(Wheel::Math::Vector2 mousePosition)
-{
-    uint32_t id = m_Scene->AddEntity();
-    Wheel::Components::Transform2D& transform =
-        m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
-    Wheel::Components::Render2DComponent& render =
-        m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
-    Wheel::Engine::Systems::InputSystem* inputSystem = m_Scene->GetSystem<Wheel::Engine::Systems::InputSystem>();
-    Wheel::Math::Vector2 worldPosition = inputSystem->ScreenToWorldPoint(mousePosition);
-    transform.SetPosition(worldPosition);
-    transform.SetScale(1.0f, 1.0f);
-    transform.SetRotation((float)random(-180, 180));
-    render.width = 0.5f; render.height = 0.3f;
-
-}
 
 void Start::Update()
 {
+    
+    constexpr float kFixedDt = 1.0f / 60.0f;   // physics steps per simulated second (decoupled from render fps)
     double lastTime = glfwGetTime();
+    float accumulator = 0.0f;
 
     while (!glfwWindowShouldClose(m_Renderer->GetWindow()))
     {
         double now = glfwGetTime();
-        float deltaTime = static_cast<float>(now - lastTime);
+        float frameTime = static_cast<float>(now - lastTime);
         lastTime = now;
+        if (frameTime > 0.25f) frameTime = 0.25f;   // clamp to avoid the spiral of death after a hitch
 
         glfwPollEvents();
-        m_Scene->Update(deltaTime);
+
+        if (m_RunSimulation)
+        {
+            accumulator += frameTime;
+            while (accumulator >= kFixedDt)
+            {
+                // Only the snapshot taken right before the FINAL step is used
+                // for this frame's interpolation, so skip redundant ones while
+                // catching up after a hitch.
+                if (accumulator - kFixedDt < kFixedDt)
+                    m_RenderSystem->SavePreviousTransforms();
+                m_Scene->Update(kFixedDt);                  // every physics step sees an identical dt
+                accumulator -= kFixedDt;
+            }
+        }
+
+        float alpha = m_RunSimulation ? (accumulator / kFixedDt) : 1.0f;
+        m_RenderSystem->Render(alpha);
         m_Renderer->Update();
 
 #ifdef DEBUG_BUILD
-        Wheel::Engine::Debugger::get().SetFrameTime(deltaTime);
+        Wheel::Engine::Debugger::get().SetFrameTime(frameTime);
 #endif
     }
 
