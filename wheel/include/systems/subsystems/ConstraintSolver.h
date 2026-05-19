@@ -26,6 +26,9 @@ namespace Wheel
             class ConstraintSolver
             {
             public:
+                static void SolvePseudoVelocities(const Collision::Collision2DManifold& a_Manifold, float a_DeltaTime,
+                    const Components::Transform2D& a_ATransform, const Components::Transform2D& a_BTransform,
+                    Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B);
                 static void Solve2ContactConstraint(const Collision::Collision2DManifold& a_Manifold, float a_DeltaTime,
                     const Components::Transform2D& a_ATransform, const Components::Transform2D& a_BTransform,
                     Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B);
@@ -34,6 +37,12 @@ namespace Wheel
                     const Components::Transform2D& a_ATransform, const Components::Transform2D& a_BTransform,
                     Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B);
             private:
+                static void CalculateImpulses(Math::Vector2 normal, Math::Matrix2x2 k, float b1, float b2,
+                    Math::Vector2& impulse_on_a, Math::Vector2& impulse_on_b,
+                    Math::Vector2& lambda);
+                static void SolveFrictionConstraint(const Math::Vector2& a_ContactPoint, const Math::Vector2& a_CollisionNormal,
+                    float a_DeltaTime, const Components::Transform2D& a_ATransform, const Components::Transform2D& a_BTransform,
+                    Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B);
             };
         }
     }

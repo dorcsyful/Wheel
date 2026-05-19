@@ -68,21 +68,22 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Collision::BoxBoxCo
 
     manifold.contactPoint[0] = vertices1[bestAxis1];
     manifold.contactPoint[1] = vertices1[(bestAxis1 + 1) % 4];
+    manifold.tangentNormal = manifold.collisionNormal.Perpendicular();
     manifold.isColliding = true;
 
     Math::Vector2 refVertex;
     if (minOverlap1 <= minOverlap2)
     {
-        GetContactPoints(a_Collider1, a_Collider2, bestAxis1, bestAxis2, manifold.contactPoint);
+        manifold.contactCount = GetContactPoints(a_Collider1, a_Collider2, bestAxis1, bestAxis2, manifold.contactPoint);
         refVertex = a_Collider1.cachedVertices[bestAxis1];
     }
     else
     {
-        GetContactPoints(a_Collider2, a_Collider1, bestAxis2, bestAxis1, manifold.contactPoint);
+        manifold.contactCount = GetContactPoints(a_Collider2, a_Collider1, bestAxis2, bestAxis1, manifold.contactPoint);
         refVertex = a_Collider2.cachedVertices[bestAxis2];
     }
 
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < manifold.contactCount; i++)
         manifold.penetrationDepth[i] = std::max(0.0f, -manifold.collisionNormal.Dot(manifold.contactPoint[i] - refVertex));
 
     return manifold;
@@ -124,7 +125,7 @@ const Wheel::Math::Vector2* Wheel::Engine::Collision::BoxBoxCollision2D::GetVert
     return a_Collider.cachedVertices;
 }
 
-void Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Components::BoxCollider2D& a_Collider1,
+int Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Components::BoxCollider2D& a_Collider1,
     const Components::BoxCollider2D& a_Collider2, int a_Normal1, int a_Normal2, Math::Vector2* a_ContactPoints)
 {
     float lowestDot = FLT_MAX;
@@ -147,22 +148,21 @@ void Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Compone
     float proj2 = (incidentVertex2 - referenceVertex1).Dot(refTangent);
     float minProj = std::min(proj1, proj2);
     float maxProj = std::max(proj1, proj2);
+    // Single-contact cases always write slot [0] so the solver can read
+    // contactPoint[0] uniformly when contactCount == 1.
     if (maxProj < 0)
     {
         a_ContactPoints[0] = referenceVertex1;
-        //a_ContactPoints[1] = referenceVertex1;
-        return;
+        return 1;
     }
     if (minProj > refLength)
     {
-        //a_ContactPoints[0] = referenceVertex2;
-        a_ContactPoints[1] = referenceVertex2;
-        return;
+        a_ContactPoints[0] = referenceVertex2;
+        return 1;
     }
     Math::Vector2 clippedPoints[2];
     ClipSegmentToLine(incidentVertex1, incidentVertex2, refTangent*(-1), referenceVertex1, clippedPoints);
     ClipSegmentToLine(clippedPoints[0], clippedPoints[1], refTangent, referenceVertex2, clippedPoints);
-    std::vector<Math::Vector2> finalPoints;
     int counter = 0;
     for (const auto& v : clippedPoints) {
         if (a_Collider1.cachedNormals[a_Normal1].Dot(v - referenceVertex1) <= 0.002) {
@@ -172,6 +172,7 @@ void Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Compone
     }
     if (counter == 1)
         a_ContactPoints[1] = a_ContactPoints[0];
+    return counter;
 }
 
 void Wheel::Engine::Collision::BoxBoxCollision2D::ClipSegmentToLine(const Math::Vector2& a_P1,

@@ -13,7 +13,6 @@ namespace Wheel
         {
         public:
             bool active = true;
-
             float friction = 0.5f;
             float restitution = 0.2f;
             float linearDamping = 0.02f;
@@ -22,22 +21,9 @@ namespace Wheel
             bool affectedByGravity = true;
             Math::Vector2 linearVelocity = Math::Vector2(0.0f, 0.0f);
             float angularVelocity = 0.0f;
-
+            Math::Vector2 pseudoLinearVelocity = Math::Vector2(0.0f, 0.0f);
+            float pseudoAngularVelocity = 0.0f;
             bool isDirty = true;
-
-            REFLECT_BEGIN(Rigidbody2D)
-            FIELD(active)
-            FIELD(invMass)
-            FIELD(friction)
-            FIELD(restitution)
-            FIELD(linearDamping)
-            FIELD(angularDamping)
-            FIELD(invInertia)
-            FIELD(rigidbodyType)
-            FIELD(centerOfMass)
-            FIELD(linearVelocity)
-            FIELD(angularVelocity)
-            REFLECT_END(Rigidbody2D, "Rigidbody2D")
 
             float GetInertia() const { return invInertia != 0.0f ? 1.0f / invInertia : 0.0f; }
             float GetMass() const { return invMass != 0.0f ? 1.0f / invMass : 0.0f; }
@@ -72,9 +58,23 @@ namespace Wheel
             void ClearForces() { force = Math::Vector2(0.0f, 0.0f); torque = 0.0f; }
             Math::Vector2 GetForce() const { return force; }
             float GetTorque() const { return torque; }
+
+
+            REFLECT_BEGIN(Rigidbody2D)
+            FIELD(active)
+            FIELD(invMass)
+            FIELD(friction)
+            FIELD(restitution)
+            FIELD(linearDamping)
+            FIELD(angularDamping)
+            FIELD(invInertia)
+            FIELD(rigidbodyType)
+            FIELD(centerOfMass)
+            FIELD(linearVelocity)
+            FIELD(angularVelocity)
+            REFLECT_END(Rigidbody2D, "Rigidbody2D")
         private:
             Rigidbody2DType rigidbodyType = Rigidbody2DType::DYNAMIC;
-
             float invInertia = 1.0f;
             float invMass = 1.0f;
             Math::Vector2 force;

@@ -40,12 +40,14 @@ void Wheel::Engine::Systems::Physics2DSystem::Update(float deltaTime)
         rigidbody.ClearForces();
 
     }
+
     SolveConstraints(deltaTime);
     for (uint32_t id : m_EntityIDs)
     {
-        Components::Rigidbody2D rigidbody2D = m_RigidbodyPool->GetComponent(id);
+        Components::Rigidbody2D& rigidbody2D = m_RigidbodyPool->GetComponent(id);
         if (!rigidbody2D.active || rigidbody2D.GetType() == Components::Rigidbody2DType::STATIC)
             continue;
+        IntegratePseudoPosition(m_TransformPool->GetComponent(id), rigidbody2D, deltaTime);
         IntegratePosition(m_TransformPool->GetComponent(id), rigidbody2D, deltaTime);
     }
 
@@ -62,6 +64,17 @@ void Wheel::Engine::Systems::Physics2DSystem::IntegrateVelocity(Components::Rigi
     a_Rigidbody2D.angularVelocity += (a_Rigidbody2D.GetTorque() / a_Rigidbody2D.GetInertia()) * deltaTime;
     a_Rigidbody2D.linearVelocity *= (1.0f - a_Rigidbody2D.linearDamping * deltaTime);
     a_Rigidbody2D.angularVelocity *= (1.0f - a_Rigidbody2D.angularDamping * deltaTime);
+}
+
+void Wheel::Engine::Systems::Physics2DSystem::IntegratePseudoPosition(Components::Transform2D& a_Transform2D,
+    Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
+{
+    constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
+    a_Transform2D.SetPosition(a_Transform2D.GetPosition() + a_Rigidbody2D.pseudoLinearVelocity * deltaTime);
+    a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.pseudoAngularVelocity * RAD_TO_DEG * deltaTime);
+    a_Rigidbody2D.pseudoLinearVelocity = Math::Vector2(0.0f, 0.0f);
+    a_Rigidbody2D.pseudoAngularVelocity = 0.0f;
+
 }
 
 void Wheel::Engine::Systems::Physics2DSystem::IntegratePosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
@@ -85,6 +98,10 @@ float Wheel::Engine::Systems::Physics2DSystem::CalculateInertia(const Components
 
 void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime)
 {
+    for (int i = 0; i < m_Manifolds->size(); i++)
+    {
+
+    }
     //Collision constraints
     for (int i = 0; i < MAX_CONSTRAINT_ITERATION; i++)
     {
@@ -92,27 +109,26 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
         {
             if (!m_Manifolds->at(j).isColliding)
                 continue;
+            if (i == 0)
+            {
+                Physics::ConstraintSolver::SolvePseudoVelocities((*m_Manifolds)[j], a_DeltaTime,
+        m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
+        m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2));
+            }
             auto& manifold = (*m_Manifolds)[j];
-            Math::Vector2 noContact(FLT_MAX, FLT_MAX);
-            if ((manifold.penetrationDepth[0] != FLT_MAX && manifold.penetrationDepth[1] == FLT_MAX))
+            if (manifold.contactCount == 1)
             {
                 Engine::Physics::ConstraintSolver::Solve1ContactConstraint(manifold.contactPoint[0], manifold.collisionNormal,
                 manifold.penetrationDepth[0], a_DeltaTime,
                 m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
                 m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
             }
-            else if (manifold.penetrationDepth[0] == FLT_MAX && manifold.penetrationDepth[1] != FLT_MAX)
-            {
-                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(manifold.contactPoint[1], manifold.collisionNormal,
-                    manifold.penetrationDepth[1], a_DeltaTime,
-                    m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
-                    m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
-            }
-            else
+            else if (manifold.contactCount == 2)
             {
                 Engine::Physics::ConstraintSolver::Solve2ContactConstraint(manifold, a_DeltaTime,
                     m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
-                    m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));}
+                    m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
+            }
         }
     }
 }

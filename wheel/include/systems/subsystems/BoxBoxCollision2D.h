@@ -16,7 +16,7 @@ namespace Wheel
                 static const Math::Vector2* GetVertices(const Components::BoxCollider2D& a_Collider, const Components::Transform2D& a_Transform2D);
 
             private:
-                static void GetContactPoints(const Components::BoxCollider2D& a_Collider1, const Components::BoxCollider2D& a_Collider2, int a_Normal1, int a_Normal2, Math::Vector2* a_ContactPoints);
+                static int GetContactPoints(const Components::BoxCollider2D& a_Collider1, const Components::BoxCollider2D& a_Collider2, int a_Normal1, int a_Normal2, Math::Vector2* a_ContactPoints);
                 static void ClipSegmentToLine(const Math::Vector2& a_P1, const Math::Vector2& a_P2, const Math::Vector2& a_Normal, Math::Vector2 a_Offset, Math::Vector2* a_Contact);
                 static void ProjectOntoAxis(const Math::Vector2* a_Vertices, const Math::Vector2& a_Axis, float& a_Min, float& a_Max);
             };

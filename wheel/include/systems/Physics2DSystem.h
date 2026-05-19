@@ -36,6 +36,7 @@ namespace Wheel
             private:
                 void ApplyGravity(Components::Rigidbody2D& a_Rigidbody2D,float deltaTime);
                 void IntegrateVelocity(Components::Rigidbody2D& a_Rigidbody2D,float deltaTime);
+                void IntegratePseudoPosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime);
                 void IntegratePosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D,float deltaTime);
                 float CalculateInertia(const Components::BoxCollider2D& a_Collider, const Components::Transform2D& a_Transform, float mass);
                 void SolveConstraints(float a_DeltaTime);
