@@ -50,25 +50,27 @@ namespace Wheel
             }
 
             void Add2DComponent(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
-                                const Components::Transform2D& a_Transform,
-                                const Math::Matrix4x4& a_ViewProj)
+                                const Components::Transform2D& a_Transform)
             {
                 Build(a_Render, a_EntityId, a_Transform.GetPosition(), a_Transform.GetRotation(),
-                      a_Transform.GetScale(), a_ViewProj);
+                      a_Transform.GetScale());
             }
 
             // Same as Add2DComponent but takes raw pos/rot/scale so the caller can pass
             // values interpolated between two fixed-timestep physics states.
             void Add2DComponentInterpolated(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
                                             const Math::Vector2& a_Position, float a_RotationDeg,
-                                            const Math::Vector2& a_Scale, const Math::Matrix4x4& a_ViewProj)
+                                            const Math::Vector2& a_Scale)
             {
-                Build(a_Render, a_EntityId, a_Position, a_RotationDeg, a_Scale, a_ViewProj);
+                Build(a_Render, a_EntityId, a_Position, a_RotationDeg, a_Scale);
             }
 
+            // Builds only the compact per-object 2D affine. The view-projection
+            // is shared by the whole frame and applied in the vertex shader, so
+            // it is no longer folded in here (no per-object 4x4 multiply).
             void Build(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
                        const Math::Vector2& a_Position, float a_RotationDeg,
-                       const Math::Vector2& a_Scale, const Math::Matrix4x4& a_ViewProj)
+                       const Math::Vector2& a_Scale)
             {
                 entityId = a_EntityId;
                 color    = a_Render.color;
@@ -78,24 +80,24 @@ namespace Wheel
                 float sin_r = std::sin(a_RotationDeg * DEG_TO_RAD);
                 float sx = a_Render.width  * a_Scale.x;
                 float sy = a_Render.height * a_Scale.y;
-                float px = a_Position.x;
-                float py = a_Position.y;
 
-                Math::Matrix4x4 model(
-                    sx * cos_r, -sy * sin_r, 0.0f, px,
-                    sx * sin_r,  sy * cos_r, 0.0f, py,
-                    0.0f,        0.0f,       1.0f, 0.0f,
-                    0.0f,        0.0f,       0.0f, 1.0f
-                );
-
-                modelMatrix = a_ViewProj * model;
+                // Math 2x2 is [[sx*cos, -sy*sin], [sx*sin, sy*cos]]. Stored
+                // column-major so it feeds straight into glUniformMatrix2fv:
+                // {col0.x, col0.y, col1.x, col1.y}.
+                linear[0] =  sx * cos_r;   // col0.x
+                linear[1] =  sx * sin_r;   // col0.y
+                linear[2] = -sy * sin_r;   // col1.x
+                linear[3] =  sy * cos_r;   // col1.y
+                translate[0] = a_Position.x;
+                translate[1] = a_Position.y;
             }
 
             uint32_t entityId  = 0;
             uint32_t textureId = 0;
             uint32_t shaderId  = 0;
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-            Math::Matrix4x4 modelMatrix;
+            float linear[4]    = { 1.0f, 0.0f, 0.0f, 1.0f };
+            float translate[2] = { 0.0f, 0.0f };
         };
     }
 }

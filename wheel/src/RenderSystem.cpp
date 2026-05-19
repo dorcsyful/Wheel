@@ -1,5 +1,7 @@
 #include "../include/systems/RenderSystem.h"
 
+#include <cmath>
+
 #include "RenderedObject.h"
 #include "Renderer.h"
 #include "EventBus.h"
@@ -65,9 +67,11 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
 
     m_RenderObjects.clear();
 
+
     const Components::Transform2D&    camTransform  = m_TransformPool->GetComponent(m_CameraEntity);
     const Components::CameraComponent& camComponent = m_CameraPool->GetComponent(m_CameraEntity);
     const Math::Matrix4x4 viewProj = Renderer::RenderedObject::ComputeViewProj(camTransform, camComponent);
+    m_Renderer->SetViewProj(viewProj);
 
     for (unsigned int entityId : m_EntityIDs)
     {
@@ -86,12 +90,19 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
         {
             const TransformSnapshot& prev = m_PrevTransforms[entityId];
             pos = prev.position + (pos - prev.position) * a_Alpha;
-            rot = prev.rotation + (rot - prev.rotation) * a_Alpha;
+
+            // Interpolate along the shortest arc: wrap the delta into
+            // [-180,180] so e.g. 359 -> 1 spins +2 deg, not -358.
+            float dRot = std::fmod(rot - prev.rotation + 180.0f, 360.0f);
+            if (dRot < 0.0f) dRot += 360.0f;
+            dRot -= 180.0f;
+            rot = prev.rotation + dRot * a_Alpha;
+
             scale = prev.scale + (scale - prev.scale) * a_Alpha;
         }
 
         Renderer::RenderedObject ro{};
-        ro.Add2DComponentInterpolated(render, entityId, pos, rot, scale, viewProj);
+        ro.Add2DComponentInterpolated(render, entityId, pos, rot, scale);
         ro.textureId = m_Renderer->GetTextureId(render.TextureName);
         ro.shaderId  = m_Renderer->GetShaderId(render.ShaderName);
         m_RenderObjects.push_back(ro);

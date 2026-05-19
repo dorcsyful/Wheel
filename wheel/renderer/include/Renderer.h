@@ -80,6 +80,13 @@ namespace Wheel
 
             void GetRenderedObjects(std::vector<RenderedObject>* a_ROs) { m_RenderedObjects = a_ROs; }
 
+            /**
+             * @brief Set the frame-wide view-projection. Call once per frame
+             * before Update(). Stored transposed (GLES2 forbids the transpose
+             * flag) and uploaded once per shader bind, not per object.
+             */
+            void SetViewProj(const Math::Matrix4x4& a_ViewProj) { m_ViewProjGL = a_ViewProj.Transpose(); }
+
         private:
             void CreateTestSquare();
 
@@ -94,6 +101,9 @@ namespace Wheel
             std::unordered_map<std::string, uint32_t> m_TextureIndex;
 
             std::vector<RenderedObject>* m_RenderedObjects = nullptr;
+
+            // Transposed (column-major) view-proj for the current frame.
+            Math::Matrix4x4 m_ViewProjGL;
 
             //Flat squares for rendering 2D
             unsigned int m_EBO2D{};

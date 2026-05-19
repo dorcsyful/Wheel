@@ -103,6 +103,9 @@ void Wheel::Renderer::Renderer::Update()
             glEnableVertexAttribArray(activeShader->GetPosLoc());
             glEnableVertexAttribArray(activeShader->GetTexLoc());
             glUniform1i(activeShader->GetSamplerLoc(), 0);
+            // Shared by every object drawn with this program — upload once
+            // per bind, not once per object.
+            glUniformMatrix4fv(activeShader->GetViewProjLoc(), 1, GL_FALSE, &m_ViewProjGL.First());
         }
 
         if (ro.textureId != activeTexId)
@@ -112,8 +115,8 @@ void Wheel::Renderer::Renderer::Update()
         }
 
         glUniform4f(activeShader->GetColorLoc(), ro.color.x, ro.color.y, ro.color.z, ro.color.w);
-        auto mvp = ro.modelMatrix.Transpose();
-        glUniformMatrix4fv(activeShader->GetMvpLoc(), 1, GL_FALSE, &mvp.First());
+        glUniformMatrix2fv(activeShader->GetModelLoc(), 1, GL_FALSE, ro.linear);
+        glUniform2f(activeShader->GetTranslateLoc(), ro.translate[0], ro.translate[1]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
     }
 

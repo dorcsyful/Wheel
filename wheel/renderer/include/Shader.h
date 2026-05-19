@@ -29,18 +29,22 @@ namespace Wheel
 
             GLint GetPosLoc() const { return m_PosLoc; }
             GLint GetTexLoc() const { return m_TexLoc; }
-            GLint GetMvpLoc() const { return m_MvpLoc; }
+            GLint GetViewProjLoc() const { return m_ViewProjLoc; }
+            GLint GetModelLoc() const { return m_ModelLoc; }
+            GLint GetTranslateLoc() const { return m_TranslateLoc; }
             GLint GetSamplerLoc() const { return m_SamplerLoc; }
             GLint GetColorLoc() const { return m_ColorLoc; }
 
         private:
             void checkCompileErrors(unsigned int shader, const std::string& type);
 
-            GLint m_PosLoc     = -1;
-            GLint m_TexLoc     = -1;
-            GLint m_MvpLoc     = -1;
-            GLint m_SamplerLoc = -1;
-            GLint m_ColorLoc   = -1;
+            GLint m_PosLoc       = -1;
+            GLint m_TexLoc       = -1;
+            GLint m_ViewProjLoc  = -1;
+            GLint m_ModelLoc     = -1;
+            GLint m_TranslateLoc = -1;
+            GLint m_SamplerLoc   = -1;
+            GLint m_ColorLoc     = -1;
 
             std::string m_Name;
             unsigned int m_ID;

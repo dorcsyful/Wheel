@@ -72,11 +72,13 @@ void Wheel::Renderer::Shader::CacheLocations()
 {
     unsigned int program = m_ID;
     glUseProgram(program);
-    m_PosLoc     = glGetAttribLocation(program, "a_position");
-    m_TexLoc     = glGetAttribLocation(program, "a_texCoord");
-    m_MvpLoc     = glGetUniformLocation(program, "u_mvpMatrix");
-    m_SamplerLoc = glGetUniformLocation(program, "s_texture");
-    m_ColorLoc   = glGetUniformLocation(program, "u_color");
+    m_PosLoc       = glGetAttribLocation(program, "a_position");
+    m_TexLoc       = glGetAttribLocation(program, "a_texCoord");
+    m_ViewProjLoc  = glGetUniformLocation(program, "u_viewProj");
+    m_ModelLoc     = glGetUniformLocation(program, "u_model");
+    m_TranslateLoc = glGetUniformLocation(program, "u_translate");
+    m_SamplerLoc   = glGetUniformLocation(program, "s_texture");
+    m_ColorLoc     = glGetUniformLocation(program, "u_color");
 
 }
 
