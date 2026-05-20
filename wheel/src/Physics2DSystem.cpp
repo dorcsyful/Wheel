@@ -69,7 +69,6 @@ void Wheel::Engine::Systems::Physics2DSystem::IntegrateVelocity(Components::Rigi
 void Wheel::Engine::Systems::Physics2DSystem::IntegratePseudoPosition(Components::Transform2D& a_Transform2D,
     Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
-    constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
     a_Transform2D.SetPosition(a_Transform2D.GetPosition() + a_Rigidbody2D.pseudoLinearVelocity * deltaTime);
     a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.pseudoAngularVelocity * RAD_TO_DEG * deltaTime);
     a_Rigidbody2D.pseudoLinearVelocity = Math::Vector2(0.0f, 0.0f);
@@ -79,7 +78,7 @@ void Wheel::Engine::Systems::Physics2DSystem::IntegratePseudoPosition(Components
 
 void Wheel::Engine::Systems::Physics2DSystem::IntegratePosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
-    constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
+
     a_Transform2D.SetPosition(a_Transform2D.GetPosition() + a_Rigidbody2D.linearVelocity * deltaTime);
     a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.angularVelocity * RAD_TO_DEG * deltaTime);
 }
@@ -109,25 +108,22 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
         {
             if (!m_Manifolds->at(j).isColliding)
                 continue;
+            Physics::TempCalculations calculations = Physics::ConstraintSolver::PrepareConstraintSolver((*m_Manifolds)[j],
+                m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
+                m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2),
+                a_DeltaTime);
             if (i == 0)
             {
-                Physics::ConstraintSolver::SolvePseudoVelocities((*m_Manifolds)[j], a_DeltaTime,
-        m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
-        m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2));
+                Physics::ConstraintSolver::SolvePseudoVelocities(calculations);
             }
             auto& manifold = (*m_Manifolds)[j];
             if (manifold.contactCount == 1)
             {
-                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(manifold.contactPoint[0], manifold.collisionNormal,
-                manifold.penetrationDepth[0], a_DeltaTime,
-                m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
-                m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
+                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(calculations);
             }
             else if (manifold.contactCount == 2)
             {
-                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(manifold, a_DeltaTime,
-                    m_TransformPool->GetComponent(manifold.collider1), m_TransformPool->GetComponent(manifold.collider2),
-                    m_RigidbodyPool->GetComponent(manifold.collider1), m_RigidbodyPool->GetComponent(manifold.collider2));
+                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(calculations);
             }
         }
     }
