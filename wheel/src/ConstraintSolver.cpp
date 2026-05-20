@@ -71,7 +71,10 @@ void Wheel::Engine::Physics::ConstraintSolver::SolvePseudoVelocities(const Colli
     const float SLOP = 0.01f;
     for (int i = 0; i < a_Manifold.contactCount; i++)
     {
-        float biasVel = (1.0f / a_DeltaTime) * std::max(a_Manifold.penetrationDepth[i] - SLOP, 0.0f);
+        const float MAX_LINEAR_CORRECTION = 0.2f;
+        float corr = std::min(std::max(a_Manifold.penetrationDepth[i] - SLOP, 0.0f),
+                              MAX_LINEAR_CORRECTION);
+        float biasVel = corr / a_DeltaTime;
         float lambda  = biasVel / k[i][i];   // biasVel >= 0, so lambda >= 0
 
         // Same structure (and signs) as Solve1ContactConstraint, written
