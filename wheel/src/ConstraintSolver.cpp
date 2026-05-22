@@ -130,8 +130,16 @@ void Wheel::Engine::Physics::ConstraintSolver::Solve2ContactConstraint(TempCalcu
 
     if (tempCalc.Manifold.restitutionBias[0] == FLT_MAX)
     {
-        tempCalc.Manifold.restitutionBias[0] = std::max(tempCalc.a_Rigidbody.restitution, tempCalc.b_Rigidbody.restitution) * -jq1;
-        tempCalc.Manifold.restitutionBias[1] = std::max(tempCalc.a_Rigidbody.restitution, tempCalc.b_Rigidbody.restitution) * -jq2;
+        if (jq1 > 1.0f || jq2 > 1.0f) // Only apply restitution if the contact points are approaching fast enough
+        {
+            tempCalc.Manifold.restitutionBias[0] = std::max(tempCalc.a_Rigidbody.restitution, tempCalc.b_Rigidbody.restitution) * -jq1;
+            tempCalc.Manifold.restitutionBias[1] = std::max(tempCalc.a_Rigidbody.restitution, tempCalc.b_Rigidbody.restitution) * -jq2;
+        }
+        else
+        {
+            tempCalc.Manifold.restitutionBias[0] = 0.0f;
+            tempCalc.Manifold.restitutionBias[1] = 0.0f;
+        }
     }
 
     if (std::abs(det) < 1e-8f)
@@ -190,7 +198,14 @@ void Wheel::Engine::Physics::ConstraintSolver::Solve1ContactConstraint(const Tem
     //calculating restitution bias if it's the first round:
     if (tempCalc.Manifold.restitutionBias[0] == FLT_MAX)
     {
-        tempCalc.Manifold.restitutionBias[0] = std::max(tempCalc.a_Rigidbody.restitution, tempCalc.b_Rigidbody.restitution) * -jq;
+        if (jq > 1.0f) // Only apply restitution if the contact point is approaching fast enough
+        {
+            tempCalc.Manifold.restitutionBias[0] = std::max(tempCalc.a_Rigidbody.restitution, tempCalc.b_Rigidbody.restitution) * -jq;
+        }
+        else
+        {
+            tempCalc.Manifold.restitutionBias[0] = 0.0f;
+        }
     }
 
     float lambda = std::max((-jq + tempCalc.Manifold.restitutionBias[0]) / denominator,0.f);

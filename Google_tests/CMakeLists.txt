@@ -9,5 +9,6 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 # 'test1.cpp test2.cpp' are source files with tests
 add_executable(Google_Tests_run Ecs.cpp
         Events.cpp
-        Vector2.cpp)
+        Vector2.cpp
+        Collisions2D.cpp)
 target_link_libraries(Google_Tests_run gtest gtest_main wheel_engine)

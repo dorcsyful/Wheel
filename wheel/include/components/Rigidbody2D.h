@@ -14,7 +14,7 @@ namespace Wheel
         public:
             bool active = true;
             float friction = 0.5f;
-            float restitution = 0.2f;
+            float restitution = 0.02f;
             float linearDamping = 0.02f;
             float angularDamping = 0.05f;
             Wheel::Math::Vector2 centerOfMass = Wheel::Math::Vector2(0.0f, 0.0f);

@@ -101,6 +101,7 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
     //Collision constraints
     for (int i = 0; i < MAX_CONSTRAINT_ITERATION; i++)
     {
+        size_t tcIdx = 0;
         for (int j = 0; j < m_Manifolds->size(); j++)
         {
             if (!m_Manifolds->at(j).isColliding)
@@ -116,12 +117,13 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
             auto& manifold = (*m_Manifolds)[j];
             if (manifold.contactCount == 1)
             {
-                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(tempCalcs.back());
+                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(tempCalcs[tcIdx]);
             }
             else if (manifold.contactCount == 2)
             {
-                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(tempCalcs.back());
+                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(tempCalcs[tcIdx]);
             }
+            tcIdx++;
         }
     }
 }
