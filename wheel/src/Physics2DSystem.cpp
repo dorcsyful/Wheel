@@ -97,10 +97,7 @@ float Wheel::Engine::Systems::Physics2DSystem::CalculateInertia(const Components
 
 void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime)
 {
-    for (int i = 0; i < m_Manifolds->size(); i++)
-    {
-
-    }
+    std::vector<Physics::TempCalculations> tempCalcs = {};
     //Collision constraints
     for (int i = 0; i < MAX_CONSTRAINT_ITERATION; i++)
     {
@@ -108,22 +105,22 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
         {
             if (!m_Manifolds->at(j).isColliding)
                 continue;
-            Physics::TempCalculations calculations = Physics::ConstraintSolver::PrepareConstraintSolver((*m_Manifolds)[j],
-                m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
-                m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2),
-                a_DeltaTime);
             if (i == 0)
             {
-                Physics::ConstraintSolver::SolvePseudoVelocities(calculations);
+                tempCalcs.push_back(Physics::ConstraintSolver::PrepareConstraintSolver((*m_Manifolds)[j],
+                m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
+                m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2),
+                a_DeltaTime));
+                Physics::ConstraintSolver::SolvePseudoVelocities(tempCalcs.back());
             }
             auto& manifold = (*m_Manifolds)[j];
             if (manifold.contactCount == 1)
             {
-                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(calculations);
+                Engine::Physics::ConstraintSolver::Solve1ContactConstraint(tempCalcs.back());
             }
             else if (manifold.contactCount == 2)
             {
-                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(calculations);
+                Engine::Physics::ConstraintSolver::Solve2ContactConstraint(tempCalcs.back());
             }
         }
     }

@@ -39,6 +39,8 @@ namespace Wheel
                 Math::Matrix2x2 k;
                 Math::Vector2 b_distance_from_com[2];
                 Math::Vector2 a_distance_from_com[2];
+                float a_cross_n[2] = { 0.0f, 0.0f };
+                float b_cross_n[2] = { 0.0f, 0.0f };
             };
 
 
@@ -51,14 +53,12 @@ namespace Wheel
                     float a_DeltaTime);
                 static void SolvePseudoVelocities(TempCalculations& tempCalc);
                 static void Solve2ContactConstraint(TempCalculations& tempCalc);
-                static void Solve1ContactConstraint(TempCalculations& tempCalc);
+                static void Solve1ContactConstraint(const TempCalculations& tempCalc);
             private:
-                static void CalculateImpulses(Math::Vector2 normal, Math::Matrix2x2 k, float b1, float b2,
+                static void CalculateImpulses(const Math::Vector2& normal, Math::Matrix2x2 k, float b1, float b2,
                     Math::Vector2& impulse_on_a, Math::Vector2& impulse_on_b,
                     Math::Vector2& lambda);
-                static void SolveFrictionConstraint(const Math::Vector2& a_ContactPoint, const Math::Vector2& a_CollisionNormal,
-                    float a_DeltaTime, const Components::Transform2D& a_ATransform, const Components::Transform2D& a_BTransform,
-                    Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B);
+                static void SolveFrictionConstraint(TempCalculations& a_TempCalc);
             };
         }
     }
