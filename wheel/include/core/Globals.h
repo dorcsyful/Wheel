@@ -2,7 +2,7 @@
 #define MAX_ENTITIES 1000
 #define MAX_COMPONENT_TYPES 16
 #define MAX_SYSTEMS 16
-#define MAX_CONSTRAINT_ITERATION 3
+#define MAX_CONSTRAINT_ITERATION 10
 constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
 /**
  * @brief The location of all assets relative to the EXECUTABLE. You can change this if you want to put your assets in a different location

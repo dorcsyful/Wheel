@@ -108,7 +108,7 @@ void Start::CreateEntities()
         collider.SetWidth(w);
         float h = 0.8f;
         collider.SetHeight(h);
-        transform.SetPosition(-0.2, 12.0f);
+        transform.SetPosition(-0.35f, 12.0f);
         transform.SetScale(1.0f, 1.0f);
         transform.SetRotation(0);
         render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);

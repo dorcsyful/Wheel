@@ -123,7 +123,23 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
             {
                 Engine::Physics::ConstraintSolver::Solve2ContactConstraint(tempCalcs[tcIdx]);
             }
+            if (i + 1 == MAX_CONSTRAINT_ITERATION)
+            {
+                if (m_Manifolds->at(j).contactCount == 1) Physics::ConstraintSolver::SolveFrictionConstraint(tempCalcs[tcIdx],0);
+                else
+                {
+                    Physics::ConstraintSolver::SolveFrictionConstraint(tempCalcs[tcIdx],0);
+                    Physics::ConstraintSolver::SolveFrictionConstraint(tempCalcs[tcIdx],1);
+                }
+            }
             tcIdx++;
+
         }
+    }
+    for (auto& tc : tempCalcs)
+    {
+        int contactCount = tc.Manifold.contactCount;
+        for (int i = 0; i < contactCount; i++)
+            Physics::ConstraintSolver::SolveFrictionConstraint(tc, i);
     }
 }
