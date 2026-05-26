@@ -25,7 +25,7 @@ namespace
     {
         Transform2D t;
         t.SetScale(scale);
-        t.SetRotation(rotationDeg);
+        t.SetRotationInDegrees(rotationDeg);
         t.SetPosition(x, y);
         return t;
     }

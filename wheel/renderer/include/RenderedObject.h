@@ -22,9 +22,8 @@ namespace Wheel
             static Math::Matrix4x4 ComputeViewProj(const Components::Transform2D& a_CameraTransform,
                                                    const Components::CameraComponent& a_Camera)
             {
-                constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-                float cos_cr = std::cos(a_CameraTransform.GetRotation() * DEG_TO_RAD);
-                float sin_cr = std::sin(a_CameraTransform.GetRotation() * DEG_TO_RAD);
+                float cos_cr = std::cos(a_CameraTransform.GetRotationInRadians());
+                float sin_cr = std::sin(a_CameraTransform.GetRotationInRadians());
                 float cx = a_CameraTransform.GetPosition().x;
                 float cy = a_CameraTransform.GetPosition().y;
 
@@ -52,32 +51,31 @@ namespace Wheel
             void Add2DComponent(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
                                 const Components::Transform2D& a_Transform)
             {
-                Build(a_Render, a_EntityId, a_Transform.GetPosition(), a_Transform.GetRotation(),
+                Build(a_Render, a_EntityId, a_Transform.GetPosition(), a_Transform.GetRotationInRadians(),
                       a_Transform.GetScale());
             }
 
             // Same as Add2DComponent but takes raw pos/rot/scale so the caller can pass
             // values interpolated between two fixed-timestep physics states.
             void Add2DComponentInterpolated(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
-                                            const Math::Vector2& a_Position, float a_RotationDeg,
+                                            const Math::Vector2& a_Position, float a_Rotation,
                                             const Math::Vector2& a_Scale)
             {
-                Build(a_Render, a_EntityId, a_Position, a_RotationDeg, a_Scale);
+                Build(a_Render, a_EntityId, a_Position, a_Rotation, a_Scale);
             }
 
             // Builds only the compact per-object 2D affine. The view-projection
             // is shared by the whole frame and applied in the vertex shader, so
             // it is no longer folded in here (no per-object 4x4 multiply).
             void Build(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
-                       const Math::Vector2& a_Position, float a_RotationDeg,
+                       const Math::Vector2& a_Position, float a_Rotation,
                        const Math::Vector2& a_Scale)
             {
                 entityId = a_EntityId;
                 color    = a_Render.color;
 
-                constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-                float cos_r = std::cos(a_RotationDeg * DEG_TO_RAD);
-                float sin_r = std::sin(a_RotationDeg * DEG_TO_RAD);
+                float cos_r = std::cos(a_Rotation);
+                float sin_r = std::sin(a_Rotation);
                 float sx = a_Render.width  * a_Scale.x;
                 float sy = a_Render.height * a_Scale.y;
 

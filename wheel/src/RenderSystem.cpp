@@ -53,7 +53,7 @@ void Wheel::Engine::Systems::RenderSystem::SavePreviousTransforms()
         if (!m_Scene->HasComponent<Components::Render2DComponent>(entityId)) continue;
 
         const Components::Transform2D& t = m_TransformPool->GetComponent(entityId);
-        m_PrevTransforms[entityId] = { t.GetPosition(), t.GetRotation(), t.GetScale() };
+        m_PrevTransforms[entityId] = { t.GetPosition(), t.GetRotationInRadians(), t.GetScale() };
         m_PrevValid[entityId] = 1;
     }
 }
@@ -83,7 +83,7 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
         // Fall back to the current transform if there is no prior snapshot yet
         // (first frame, just-spawned entity, or while the sim is paused).
         Math::Vector2 pos= curr.GetPosition();
-        float rot = curr.GetRotation();
+        float rot = curr.GetRotationInRadians();
         Math::Vector2 scale= curr.GetScale();
 
         if (m_PrevValid[entityId])
@@ -93,9 +93,9 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
 
             // Interpolate along the shortest arc: wrap the delta into
             // [-180,180] so e.g. 359 -> 1 spins +2 deg, not -358.
-            float dRot = std::fmod(rot - prev.rotation + 180.0f, 360.0f);
-            if (dRot < 0.0f) dRot += 360.0f;
-            dRot -= 180.0f;
+            float dRot = std::fmod(rot - prev.rotation + PI, 2 * PI);
+            if (dRot < 0.0f) dRot += 2 * PI;
+            dRot -= PI;
             rot = prev.rotation + dRot * a_Alpha;
 
             scale = prev.scale + (scale - prev.scale) * a_Alpha;
@@ -117,4 +117,59 @@ bool Wheel::Engine::Systems::RenderSystem::ROSorter(Renderer::RenderedObject& a_
     if (a_A.shaderId > a_B.shaderId) return false;
     if (a_A.textureId < a_B.textureId) return true;
     return false;
+}
+
+Wheel::Math::Vector2 Wheel::Engine::Systems::RenderSystem::WorldToScreen(const Math::Vector2& a_World)
+{
+    EnsurePools();
+    return WorldToScreen(a_World,
+                         m_TransformPool->GetComponent(m_CameraEntity),
+                         m_CameraPool->GetComponent(m_CameraEntity));
+}
+
+Wheel::Math::Vector2 Wheel::Engine::Systems::RenderSystem::ScreenToWorld(const Math::Vector2& a_Screen)
+{
+    EnsurePools();
+    return ScreenToWorld(a_Screen,
+                         m_TransformPool->GetComponent(m_CameraEntity),
+                         m_CameraPool->GetComponent(m_CameraEntity));
+}
+
+Wheel::Math::Vector2 Wheel::Engine::Systems::RenderSystem::WorldToScreen(const Math::Vector2& a_World,
+    const Components::Transform2D& a_CameraTransform,
+    const Components::CameraComponent& a_CameraComponent)
+{
+    float cos_r = std::cos(a_CameraTransform.GetRotationInRadians());
+    float sin_r = std::sin(a_CameraTransform.GetRotationInRadians());
+    float ppu   = static_cast<float>(PIXELS_PER_UNIT);
+
+    float dx = a_World.x - a_CameraTransform.GetPosition().x;
+    float dy = a_World.y - a_CameraTransform.GetPosition().y;
+    float vx =  cos_r * dx + sin_r * dy;
+    float vy = -sin_r * dx + cos_r * dy;
+    float ndcX = vx * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.width;
+    float ndcY = vy * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.height;
+    return Math::Vector2((ndcX + 1.0f) * a_CameraComponent.width  * 0.5f,
+                         (1.0f - ndcY) * a_CameraComponent.height * 0.5f);
+}
+
+Wheel::Math::Vector2 Wheel::Engine::Systems::RenderSystem::ScreenToWorld(const Math::Vector2& a_Screen,
+    const Components::Transform2D& a_CameraTransform,
+    const Components::CameraComponent& a_CameraComponent)
+{
+    float cos_r = std::cos(a_CameraTransform.GetRotationInRadians());
+    float sin_r = std::sin(a_CameraTransform.GetRotationInRadians());
+    float ppu   = static_cast<float>(PIXELS_PER_UNIT);
+
+    float ndcX =        (a_Screen.x / (a_CameraComponent.width  * 0.5f)) - 1.0f;
+    float ndcY = 1.0f - (a_Screen.y / (a_CameraComponent.height * 0.5f));
+
+    float vx = ndcX * a_CameraComponent.width  / (2.0f * ppu * a_CameraComponent.zoom);
+    float vy = ndcY * a_CameraComponent.height / (2.0f * ppu * a_CameraComponent.zoom);
+
+    float dx = cos_r * vx - sin_r * vy;
+    float dy = sin_r * vx + cos_r * vy;
+
+    return Math::Vector2(dx + a_CameraTransform.GetPosition().x,
+                         dy + a_CameraTransform.GetPosition().y);
 }

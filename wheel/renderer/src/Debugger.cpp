@@ -272,9 +272,8 @@ bool Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescrip
 
 ImVec2 Wheel::Engine::Debugger::ToScreen(const Math::Vector2& a_World, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent)
 {
-    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-    float cos_r = std::cos(a_CameraTransform.GetRotation() * DEG_TO_RAD);
-    float sin_r = std::sin(a_CameraTransform.GetRotation() * DEG_TO_RAD);
+    float cos_r = std::cos(a_CameraTransform.GetRotationInRadians());
+    float sin_r = std::sin(a_CameraTransform.GetRotationInRadians());
     float ppu   = static_cast<float>(PIXELS_PER_UNIT);
 
     float dx = a_World.x - a_CameraTransform.GetPosition().x;

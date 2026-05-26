@@ -3,6 +3,7 @@
 
 #include "DebugDescriptor.h"
 #include "../math/Vector2.h"
+#include "core/Globals.h"
 #include "math/Matrix2x2.h"
 
 namespace Wheel::Engine { template <typename T> class ComponentPool; }
@@ -63,13 +64,19 @@ namespace Wheel
 
             const Math::Vector2& GetPosition() const { return position; }
             const Math::Vector2& GetScale() const { return scale; }
-            float GetRotation() const { return rotation; }
+            float GetRotationInRadians() const { return rotation; }
+            float GetRotationInDegrees() const { return rotation * RAD_TO_DEG; }
 
             void SetPosition(const Wheel::Math::Vector2& pos) { position = pos; isDirty = true; }
             void SetPosition(float x, float y) { position.x = x; position.y = y; isDirty = true; }
             void SetScale(const Wheel::Math::Vector2& s){ scale = s; isDirty = true; }
             void SetScale(float x, float y) { scale.x = x; scale.y = y; isDirty = true; }
-            void SetRotation(float rot)
+            void SetRotationInDegrees(float rot)
+            {
+                rotation = rot * DEG_TO_RAD; isDirty = true;
+                m_RotationMatrix.CreateRotation(rotation);
+            }
+            void SetRotationInRadians(float rot)
             {
                 rotation = rot; isDirty = true;
                 m_RotationMatrix.CreateRotation(rotation);

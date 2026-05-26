@@ -110,7 +110,7 @@ const Wheel::Math::Vector2* Wheel::Engine::Collision::BoxBoxCollision2D::GetVert
 
     constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
     Math::Matrix2x2 rotationMatrix;
-    rotationMatrix.CreateRotation(a_Transform2D.GetRotation() * DEG_TO_RAD);
+    rotationMatrix.CreateRotation(a_Transform2D.GetRotationInRadians());
     for (int i = 0; i < 4; i++)
     {
         a_Collider.cachedVertices[i] = rotationMatrix * local[i] + offset + position;

@@ -169,6 +169,19 @@ namespace Wheel
                 return names;
             }
 
+            /**
+             * Removes all entities, components and systems from the scene. Use this if you want to reset the scene without destroying it and creating a new one. Note that you still have to re-register all components and systems after calling this function, as well as re-creating all entities.
+             */
+            void Reset()
+            {
+                delete m_ComponentManager;
+                delete m_SystemManager;
+                delete m_EntityManager;
+                m_EntityManager = new EntityManager();
+                m_ComponentManager = new ComponentManager();
+                m_SystemManager = new SystemManager();
+            }
+
 
         private:
             EntityManager* m_EntityManager;

@@ -44,6 +44,22 @@ void Start::RegisterSystems()
 
 }
 
+void Start::SpawnObject(float x, float y, float w, float h)
+{
+    uint32_t id = m_Scene->AddEntity();
+    auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
+    auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
+    auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
+    auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
+    rigidbody.SetMass(10.0f); rigidbody.friction = 0.5f;
+    collider.SetWidth(w);
+    collider.SetHeight(h);
+    transform.SetPosition(x, y);
+    transform.SetScale(1.0f, 1.0f);
+    transform.SetRotationInDegrees(0);
+    render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
 void Start::CreateEntities()
 {
     // Camera entity — has Transform2D + CameraComponent but no Render2DComponent
@@ -74,45 +90,17 @@ void Start::CreateEntities()
         collider.SetWidth(13.f); collider.SetHeight(2.f);
         transform.SetPosition(0.0f, -3.0f);
         transform.SetScale(1.0f, 1.0f);
-        transform.SetRotation(0);
+        transform.SetRotationInDegrees(0);
         render.width = 13.f; render.height = 2.f; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
-    {
-        uint32_t id = m_Scene->AddEntity();
-        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
-        auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
-        auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
-        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
-        rigidbody.SetMass(10.0f); rigidbody.friction = 0.5f;
         float w = 0.9;
-        collider.SetWidth(w);
         float h = 0.5f;
-        collider.SetHeight(h);
-        float x = 0;
         float y =2;
-        transform.SetPosition(x, y);
-        transform.SetScale(1.0f, 1.0f);
-        transform.SetRotation(0);
-        render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-    }
+        float x = 0;
+        SpawnObject(x, y, w, h);
+        SpawnObject(-0.35f,12,1.1,0.8f);
 
-    {
-        uint32_t id = m_Scene->AddEntity();
-        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
-        auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
-        auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
-        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
-        rigidbody.SetMass(1.0f); rigidbody.friction = 0.5f;
-        float w = 1.1f;
-        collider.SetWidth(w);
-        float h = 0.8f;
-        collider.SetHeight(h);
-        transform.SetPosition(-0.35f, 12.0f);
-        transform.SetScale(1.0f, 1.0f);
-        transform.SetRotation(0);
-        render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-    }
 
 }
 
@@ -136,6 +124,9 @@ void Start::Init()
     Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::RunSimulation>(
         [&](const Wheel::Events::RunSimulation& e) { m_RunSimulation = e.enable; }, m_SubscriptionTokens.back());
 #endif
+    Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::LeftMouseButtonPressEvent>(
+    [&](const Wheel::Events::LeftMouseButtonPressEvent& e) { Wheel::Math::Vector2 world = m_Scene->GetSystem<Wheel::Engine::Systems::RenderSystem>()->ScreenToWorld(e.x,e.y); SpawnObject(world.x,world.y); }, m_SubscriptionTokens.back());
+
 }
 
 

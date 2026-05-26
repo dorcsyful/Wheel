@@ -3,7 +3,10 @@
 #define MAX_COMPONENT_TYPES 16
 #define MAX_SYSTEMS 16
 #define MAX_CONSTRAINT_ITERATION 10
-constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
+#define PI 3.14159265358979323846f
+constexpr float RAD_TO_DEG = 180.0f / PI;
+constexpr float DEG_TO_RAD = PI / 180.0f;
+
 /**
  * @brief The location of all assets relative to the EXECUTABLE. You can change this if you want to put your assets in a different location
  */
@@ -14,10 +17,12 @@ constexpr float RAD_TO_DEG = 180.0f / 3.14159265358979323846f;
 #define PIXELS_PER_UNIT 100
 #include <random>
 
-template<typename T>
-T random(T range_from, T range_to) {
-    std::random_device                  rand_dev;
-    std::mt19937                        generator(rand_dev());
-    std::uniform_int_distribution<T>    distr(range_from, range_to);
-    return distr(generator);
+namespace Wheel {
+    template<typename T>
+    T Random(T range_from, T range_to) {
+        static std::random_device rand_dev;
+        static std::mt19937 generator{rand_dev()};
+        std::uniform_int_distribution<T> distr(range_from, range_to);
+        return distr(generator);
+    }
 }

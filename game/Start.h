@@ -24,6 +24,7 @@ public:
 
     void RegisterComponents();
     void RegisterSystems();
+    void SpawnObject(float x, float y, float w = 0.9f, float h = 0.5f);
     void CreateEntities();
     void Init();
 

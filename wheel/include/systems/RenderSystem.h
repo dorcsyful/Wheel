@@ -33,7 +33,7 @@ namespace Wheel
                  * @return A pointer to the renderer. Use this to load resources.
                  */
                 void GetRenderer(Renderer::Renderer* a_Renderer) { m_Renderer = a_Renderer; }
-                // No-op: render-list construction is driven once per frame via Render(),
+                // render-list construction is driven once per frame via Render(),
                 // not per fixed physics step through the SystemManager.
                 void Update(float deltaTime) override {}
                 /**
@@ -48,6 +48,23 @@ namespace Wheel
                 void Render(float a_Alpha);
                 void SetCameraEntity(uint32_t a_Id) { m_CameraEntity = a_Id; }
                 static bool ROSorter(Renderer::RenderedObject& a_A, Renderer::RenderedObject& a_B);
+
+                /**
+                 * @brief Convert a world-space point to screen-space pixels using the currently active camera.
+                 */
+                Math::Vector2 WorldToScreen(const Math::Vector2& a_World);
+                /**
+                 * @brief Convert a screen-space pixel point to world-space using the currently active camera.
+                 */
+                Math::Vector2 ScreenToWorld(const Math::Vector2& a_Screen);
+                Math::Vector2 ScreenToWorld(float a_X, float a_Y) { return ScreenToWorld(Math::Vector2(a_X, a_Y)); }
+
+                static Math::Vector2 WorldToScreen(const Math::Vector2& a_World,
+                                                   const Components::Transform2D& a_CameraTransform,
+                                                   const Components::CameraComponent& a_CameraComponent);
+                static Math::Vector2 ScreenToWorld(const Math::Vector2& a_Screen,
+                                                   const Components::Transform2D& a_CameraTransform,
+                                                   const Components::CameraComponent& a_CameraComponent);
             private:
                 struct TransformSnapshot
                 {

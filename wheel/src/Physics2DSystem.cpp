@@ -70,7 +70,7 @@ void Wheel::Engine::Systems::Physics2DSystem::IntegratePseudoPosition(Components
     Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
     a_Transform2D.SetPosition(a_Transform2D.GetPosition() + a_Rigidbody2D.pseudoLinearVelocity * deltaTime);
-    a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.pseudoAngularVelocity * RAD_TO_DEG * deltaTime);
+    a_Transform2D.SetRotationInRadians(a_Transform2D.GetRotationInRadians() + a_Rigidbody2D.pseudoAngularVelocity * deltaTime);
     a_Rigidbody2D.pseudoLinearVelocity = Math::Vector2(0.0f, 0.0f);
     a_Rigidbody2D.pseudoAngularVelocity = 0.0f;
 
@@ -80,7 +80,7 @@ void Wheel::Engine::Systems::Physics2DSystem::IntegratePosition(Components::Tran
 {
 
     a_Transform2D.SetPosition(a_Transform2D.GetPosition() + a_Rigidbody2D.linearVelocity * deltaTime);
-    a_Transform2D.SetRotation(a_Transform2D.GetRotation() + a_Rigidbody2D.angularVelocity * RAD_TO_DEG * deltaTime);
+    a_Transform2D.SetRotationInRadians(a_Transform2D.GetRotationInRadians() + a_Rigidbody2D.angularVelocity * deltaTime);
 }
 
 float Wheel::Engine::Systems::Physics2DSystem::CalculateInertia(const Components::BoxCollider2D& a_Collider,
