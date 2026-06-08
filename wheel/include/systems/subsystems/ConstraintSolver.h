@@ -41,7 +41,11 @@ namespace Wheel
                 Math::Vector2 a_distance_from_com[2];
                 float a_cross_n[2] = { 0.0f, 0.0f };
                 float b_cross_n[2] = { 0.0f, 0.0f };
-                float impulses[2] = {0.0f, 0.0f};
+                // Accumulated normal and friction impulses, kept as running totals so
+                // each solver iteration clamps against them and they can be cached for
+                // next-frame warm starting.
+                float impulses[2]         = { 0.0f, 0.0f };
+                float frictionImpulses[2] = { 0.0f, 0.0f };
             };
 
 
@@ -52,14 +56,13 @@ namespace Wheel
                     Components::Transform2D& a_ATransform, Components::Transform2D& a_BTransform,
                     Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B,
                     float a_DeltaTime);
+                // Applies last frame's accumulated impulses to the bodies and seeds the
+                // accumulators, so the iterative solve starts near its converged state.
+                static void WarmStart(TempCalculations& tempCalc, const float* a_NormalImpulse, const float* a_FrictionImpulse);
                 static void SolvePseudoVelocities(TempCalculations& tempCalc);
                 static void Solve2ContactConstraint(TempCalculations& tempCalc);
                 static void Solve1ContactConstraint(TempCalculations& tempCalc);
                 static void SolveFrictionConstraint(TempCalculations& a_TempCalc, int i);
-            private:
-                static void CalculateImpulses(const Math::Vector2& normal, Math::Matrix2x2 k, float b1, float b2,
-                    Math::Vector2& impulse_on_a, Math::Vector2& impulse_on_b,
-                    Math::Vector2& lambda);
             };
         }
     }

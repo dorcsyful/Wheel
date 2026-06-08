@@ -1,10 +1,25 @@
 #pragma once
+#include <cstdint>
+#include <unordered_map>
+
 #include "core/System.h"
 #include "math/Vector2.h"
 
 namespace Wheel::Engine::Collision
 {
     struct Collision2DManifold;
+}
+
+namespace Wheel::Engine::Physics
+{
+    // Per-pair impulse memory for warm starting, keyed by contact feature ID so a
+    // contact is matched to the same physical feature across frames.
+    struct CachedContact
+    {
+        uint16_t id[2]              = { 0xFFFF, 0xFFFF };
+        float    normalImpulse[2]   = { 0.0f, 0.0f };
+        float    frictionImpulse[2] = { 0.0f, 0.0f };
+    };
 }
 
 namespace Wheel::EventSystem
@@ -45,6 +60,9 @@ namespace Wheel
                 ComponentPool<Wheel::Components::BoxCollider2D>* m_ColliderPool = nullptr;
                 ComponentPool<Wheel::Components::Rigidbody2D>* m_RigidbodyPool = nullptr;
                 std::vector<Collision::Collision2DManifold>* m_Manifolds = nullptr;
+                // Survives across frames to warm start each contact (physics-owned;
+                // the collision system never sees it).
+                std::unordered_map<uint64_t, Physics::CachedContact> m_ContactCache;
 
             };
         }

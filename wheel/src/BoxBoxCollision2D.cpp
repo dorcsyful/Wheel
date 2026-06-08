@@ -72,19 +72,30 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Collision::BoxBoxCo
     manifold.isColliding = true;
 
     Math::Vector2 refVertex;
+    // flip == true when collider2 supplies the reference face. It both keeps the
+    // contact ID distinct across a reference/incident role swap and selects the
+    // correct outward normal for the penetration measurement below.
+    bool flip = !(minOverlap1 <= minOverlap2);
     if (minOverlap1 <= minOverlap2)
     {
-        manifold.contactCount = GetContactPoints(a_Collider1, a_Collider2, bestAxis1, bestAxis2, manifold.contactPoint);
+        manifold.contactCount = GetContactPoints(a_Collider1, a_Collider2, bestAxis1, bestAxis2, manifold.contactPoint, manifold.contactId, flip);
         refVertex = a_Collider1.cachedVertices[bestAxis1];
     }
     else
     {
-        manifold.contactCount = GetContactPoints(a_Collider2, a_Collider1, bestAxis2, bestAxis1, manifold.contactPoint);
+        manifold.contactCount = GetContactPoints(a_Collider2, a_Collider1, bestAxis2, bestAxis1, manifold.contactPoint, manifold.contactId, flip);
         refVertex = a_Collider2.cachedVertices[bestAxis2];
     }
 
+    // Penetration is measured along the REFERENCE face's outward normal, which
+    // points from the reference box toward the incident box. collisionNormal points
+    // collider1 -> collider2, so that matches only when collider1 is the reference;
+    // when collider2 is the reference (flip) the sign is reversed. Using
+    // collisionNormal unconditionally made every collider2-reference contact report
+    // zero penetration, so the position solver silently let it sink.
+    Math::Vector2 refNormal = flip ? manifold.collisionNormal * -1.0f : manifold.collisionNormal;
     for (int i = 0; i < manifold.contactCount; i++)
-        manifold.penetrationDepth[i] = std::max(0.0f, -manifold.collisionNormal.Dot(manifold.contactPoint[i] - refVertex));
+        manifold.penetrationDepth[i] = std::max(0.0f, -refNormal.Dot(manifold.contactPoint[i] - refVertex));
 
     return manifold;
 }
@@ -108,7 +119,6 @@ const Wheel::Math::Vector2* Wheel::Engine::Collision::BoxBoxCollision2D::GetVert
         {-halfWidth * scale.x,  halfHeight * scale.y}
     };
 
-    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
     Math::Matrix2x2 rotationMatrix;
     rotationMatrix.CreateRotation(a_Transform2D.GetRotationInRadians());
     for (int i = 0; i < 4; i++)
@@ -126,7 +136,7 @@ const Wheel::Math::Vector2* Wheel::Engine::Collision::BoxBoxCollision2D::GetVert
 }
 
 int Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Components::BoxCollider2D& a_Collider1,
-    const Components::BoxCollider2D& a_Collider2, int a_Normal1, int a_Normal2, Math::Vector2* a_ContactPoints)
+    const Components::BoxCollider2D& a_Collider2, int a_Normal1, int a_Normal2, Math::Vector2* a_ContactPoints, uint16_t* a_ContactIds, bool a_Flip)
 {
     float lowestDot = FLT_MAX;
     int incidentIndex = 0;
@@ -134,6 +144,11 @@ int Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Componen
         float dot = a_Collider1.cachedNormals[a_Normal1].Dot(a_Collider2.cachedNormals[i]);
         if (dot < lowestDot) { lowestDot = dot; incidentIndex = i; }
     }
+
+    // Building a 6 bit ID to be able to identify the collision in the next frame for warm starting
+    auto packId = [&](int endpoint) -> uint16_t {
+        return (uint16_t)(((a_Flip ? 1 : 0) << 5) | ((a_Normal1 & 3) << 3) | ((incidentIndex & 3) << 1) | (endpoint & 1));
+    };
 
     Math::Vector2 referenceVertex1 = a_Collider1.cachedVertices[a_Normal1];
     Math::Vector2 referenceVertex2 = a_Collider1.cachedVertices[(a_Normal1 + 1) % 4];
@@ -148,30 +163,38 @@ int Wheel::Engine::Collision::BoxBoxCollision2D::GetContactPoints(const Componen
     float proj2 = (incidentVertex2 - referenceVertex1).Dot(refTangent);
     float minProj = std::min(proj1, proj2);
     float maxProj = std::max(proj1, proj2);
-    // Single-contact cases always write slot [0] so the solver can read
-    // contactPoint[0] uniformly when contactCount == 1.
+
+
     if (maxProj < 0)
     {
         a_ContactPoints[0] = referenceVertex1;
+        a_ContactIds[0] = packId(0);
         return 1;
     }
     if (minProj > refLength)
     {
         a_ContactPoints[0] = referenceVertex2;
+        a_ContactIds[0] = packId(1);
         return 1;
     }
     Math::Vector2 clippedPoints[2];
     ClipSegmentToLine(incidentVertex1, incidentVertex2, refTangent*(-1), referenceVertex1, clippedPoints);
     ClipSegmentToLine(clippedPoints[0], clippedPoints[1], refTangent, referenceVertex2, clippedPoints);
     int counter = 0;
-    for (const auto& v : clippedPoints) {
+
+    for (int k = 0; k < 2; k++) {
+        const Math::Vector2& v = clippedPoints[k];
         if (a_Collider1.cachedNormals[a_Normal1].Dot(v - referenceVertex1) <= 0.002) {
             a_ContactPoints[counter] = v;
+            a_ContactIds[counter] = packId(k);
             counter++;
         }
     }
     if (counter == 1)
+    {
         a_ContactPoints[1] = a_ContactPoints[0];
+        a_ContactIds[1] = a_ContactIds[0];
+    }
     return counter;
 }
 

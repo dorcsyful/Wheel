@@ -5,34 +5,28 @@
 #include "components/Rigidbody2D.h"
 #include "helpers/Collision2DManifold.h"
 
-void Wheel::Engine::Physics::ConstraintSolver::CalculateImpulses(const Wheel::Math::Vector2& normal, Wheel::Math::Matrix2x2 k, float b1, float b2, Wheel::Math::Vector2& impulse_on_a, Wheel::Math::Vector2& impulse_on_b, Wheel::Math::Vector2& lambda)
+void Wheel::Engine::Physics::ConstraintSolver::WarmStart(TempCalculations& tempCalc, const float* a_NormalImpulse, const float* a_FrictionImpulse)
 {
-    if (lambda[0] > 0 && lambda[1] > 0)
-    {
-        impulse_on_a = -normal * (lambda[0] + lambda[1]);
-        impulse_on_b = normal * (lambda[0] + lambda[1]);
-    }
-    else if (lambda[0] > 0 && lambda[1] <= 0)
-    {
-        lambda[0] = std::max(b1 / k[0][0], 0.0f); // No impulse at contact point 2
-        lambda[1] = 0.0f;
-        impulse_on_a = -normal * (lambda[0] + lambda[1]);
-        impulse_on_b = normal * (lambda[0] + lambda[1]);
+    Math::Vector2 normal  = tempCalc.Manifold.collisionNormal;
+    Math::Vector2 tangent = tempCalc.Manifold.tangentNormal;
+    float invMassA = tempCalc.a_Rigidbody.GetInverseMass();
+    float invMassB = tempCalc.b_Rigidbody.GetInverseMass();
+    float invInertiaA = tempCalc.a_Rigidbody.GetInverseInertia();
+    float invInertiaB = tempCalc.b_Rigidbody.GetInverseInertia();
 
-    }
-    else if (lambda[0] <= 0 && lambda[1] > 0)
+    for (int i = 0; i < tempCalc.Manifold.contactCount; i++)
     {
-        lambda[1] = std::max(b2 / k[1][1], 0.0f); // No impulse at contact point 1
-        lambda[0] = 0.0f;
-        impulse_on_a = -normal * (lambda[0] + lambda[1]);
-        impulse_on_b = normal * (lambda[0] + lambda[1]);
-    }
-    else
-    {
-        lambda[0] = 0.0f;
-        lambda[1] = 0.0f;
-        impulse_on_a = Math::Vector2(0.0f, 0.0f);
-        impulse_on_b = Math::Vector2(0.0f, 0.0f);
+        float pn = a_NormalImpulse[i];
+        float pt = a_FrictionImpulse[i];
+
+        tempCalc.impulses[i] = pn;
+        tempCalc.frictionImpulses[i] = pt;
+
+        Math::Vector2 P = normal * pn + tangent * pt;
+        tempCalc.a_Rigidbody.linearVelocity  -= P * invMassA;
+        tempCalc.a_Rigidbody.angularVelocity -= tempCalc.a_distance_from_com[i].Cross(P) * invInertiaA;
+        tempCalc.b_Rigidbody.linearVelocity  += P * invMassB;
+        tempCalc.b_Rigidbody.angularVelocity += tempCalc.b_distance_from_com[i].Cross(P) * invInertiaB;
     }
 }
 
@@ -45,15 +39,18 @@ void Wheel::Engine::Physics::ConstraintSolver::SolveFrictionConstraint(TempCalcu
         b_cross_tangent * b_cross_tangent * a_TempCalc.b_Rigidbody.GetInverseInertia();
     float dvn = (a_TempCalc.b_Rigidbody.linearVelocity - a_TempCalc.a_Rigidbody.linearVelocity).Dot(a_TempCalc.Manifold.tangentNormal);
     float jq1 = dvn + b_cross_tangent * a_TempCalc.b_Rigidbody.angularVelocity - a_cross_tangent * a_TempCalc.a_Rigidbody.angularVelocity;
-    float lambda = -jq1 /k;
+    float lambda = -jq1 / k;
 
     float max_force = std::sqrt(a_TempCalc.a_Rigidbody.friction * a_TempCalc.b_Rigidbody.friction) * a_TempCalc.impulses[i];
-    lambda = std::clamp(lambda, -max_force, max_force);
+    float oldImpulse = a_TempCalc.frictionImpulses[i];
+    float newImpulse = std::clamp(oldImpulse + lambda, -max_force, max_force);
+    lambda = newImpulse - oldImpulse;
+    a_TempCalc.frictionImpulses[i] = newImpulse;
+
     a_TempCalc.a_Rigidbody.linearVelocity += a_TempCalc.Manifold.tangentNormal * -lambda * a_TempCalc.a_Rigidbody.GetInverseMass();
     a_TempCalc.b_Rigidbody.linearVelocity += a_TempCalc.Manifold.tangentNormal * lambda * a_TempCalc.b_Rigidbody.GetInverseMass();
     a_TempCalc.a_Rigidbody.angularVelocity -= a_cross_tangent * lambda * a_TempCalc.a_Rigidbody.GetInverseInertia();
     a_TempCalc.b_Rigidbody.angularVelocity += b_cross_tangent * lambda * a_TempCalc.b_Rigidbody.GetInverseInertia();
-
 }
 
 Wheel::Engine::Physics::TempCalculations Wheel::Engine::Physics::ConstraintSolver::PrepareConstraintSolver(Collision::Collision2DManifold& a_Manifold,
@@ -98,7 +95,9 @@ void Wheel::Engine::Physics::ConstraintSolver::SolvePseudoVelocities(TempCalcula
     // Position-only solve: the pseudo correction depends solely on the
     // geometric overlap, never on real velocity (the velocity solver owns
     // that). SLOP leaves a small allowed penetration so resting bodies
-    // don't fight sub-millimetre jitter every frame.
+    // don't fight sub-millimetre jitter every frame. Subtracting the current
+    // relative pseudo velocity makes this safe to run every iteration: a contact
+    // already corrected by a neighbour contributes nothing more.
     for (int i = 0; i < tempCalc.Manifold.contactCount; i++)
     {
         const float SLOP = 0.01f;
@@ -106,10 +105,18 @@ void Wheel::Engine::Physics::ConstraintSolver::SolvePseudoVelocities(TempCalcula
         float corr = std::min(std::max(tempCalc.Manifold.penetrationDepth[i] - SLOP, 0.0f),
                               MAX_LINEAR_CORRECTION);
         float biasVel = corr / tempCalc.DeltaTime;
-        float lambda  = biasVel / tempCalc.k[i][i];   // biasVel >= 0, so lambda >= 0
+
         float invMassA = tempCalc.a_Rigidbody.GetInverseMass();
         float invMassB = tempCalc.b_Rigidbody.GetInverseMass();
         Math::Vector2 normal = tempCalc.Manifold.collisionNormal;
+
+        float pseudo_dvn =
+                (tempCalc.b_Rigidbody.pseudoLinearVelocity - tempCalc.a_Rigidbody.pseudoLinearVelocity).Dot(normal)
+              + tempCalc.b_cross_n[i] * tempCalc.b_Rigidbody.pseudoAngularVelocity
+              - tempCalc.a_cross_n[i] * tempCalc.a_Rigidbody.pseudoAngularVelocity;
+
+        // Only the remaining violation needs correction; clamp so we never pull apart.
+        float lambda = std::max((biasVel - pseudo_dvn) / tempCalc.k[i][i], 0.0f);
 
         // Same structure (and signs) as Solve1ContactConstraint, written
         // into the throwaway pseudo channel instead of real velocity.
@@ -166,37 +173,57 @@ void Wheel::Engine::Physics::ConstraintSolver::Solve2ContactConstraint(TempCalcu
         Solve1ContactConstraint(tempCalc);
         return;
     }
-    const float BETA = 0.2f;     // 0.1–0.3 is the usual range
-    const float SLOP = 0.01f;
-    float posBias[2] = {
-        BETA * std::max(tempCalc.Manifold.penetrationDepth[0] - SLOP, 0.0f) / tempCalc.DeltaTime,
-        BETA * std::max(tempCalc.Manifold.penetrationDepth[1] - SLOP, 0.0f) / tempCalc.DeltaTime
-    };
-    float b1 = -jq1 + tempCalc.Manifold.restitutionBias[0] + posBias[0];
-    float b2 = -jq2 + tempCalc.Manifold.restitutionBias[1] + posBias[1];
+    Math::Matrix2x2 K = tempCalc.k;
+    Math::Matrix2x2 k_inverse = K.Inverse();
 
-    Math::Matrix2x2 k_inverse = tempCalc.k.Inverse();
-    Math::Vector2 impulse_on_a;
-    Math::Vector2 impulse_on_b;
-    Math::Vector2 lambda = k_inverse * Math::Vector2(b1, b2);
+    Math::Vector2 oldImpulse(tempCalc.impulses[0], tempCalc.impulses[1]);
 
-    CalculateImpulses(normal, tempCalc.k, b1, b2, impulse_on_a, impulse_on_b, lambda);
-    tempCalc.impulses[0] += std::max(lambda.x, 0.0f);
-    tempCalc.impulses[1] += std::max(lambda.y, 0.0f);
+    Math::Vector2 b(jq1 - tempCalc.Manifold.restitutionBias[0],
+                    jq2 - tempCalc.Manifold.restitutionBias[1]);
+    b = b - K * oldImpulse;
 
+    Math::Vector2 x;
+    // Case 1: both contacts pushing.
+    x = (k_inverse * b) * -1.0f;
+    if (x.x < 0.0f || x.y < 0.0f)
+    {
+        // Case 2: only contact 0 (force contact 1 to zero).
+        x.x = -b.x / K[0][0];
+        x.y = 0.0f;
+        float vn2 = K[1][0] * x.x + b.y;
+        if (x.x < 0.0f || vn2 < 0.0f)
+        {
+            // Case 3: only contact 1 (force contact 0 to zero).
+            x.x = 0.0f;
+            x.y = -b.y / K[1][1];
+            float vn1 = K[0][1] * x.y + b.x;
+            if (x.y < 0.0f || vn1 < 0.0f)
+            {
+                // Case 4: both contacts separating -> no normal impulse.
+                x.x = 0.0f;
+                x.y = 0.0f;
+            }
+        }
+    }
+
+    // Apply only the change relative to the accumulated impulse, and store the new
+    // total for friction clamping and next-frame warm starting.
+    Math::Vector2 d = x - oldImpulse;
+    tempCalc.impulses[0] = x.x;
+    tempCalc.impulses[1] = x.y;
+
+    Math::Vector2 P = normal * (d.x + d.y);
     if (invMassA > 0.0f)
     {
         float invInertiaA = tempCalc.a_Rigidbody.GetInverseInertia();
-        tempCalc.a_Rigidbody.linearVelocity += impulse_on_a * invMassA;
-        tempCalc.a_Rigidbody.angularVelocity -= tempCalc.a_cross_n[0] * lambda.x * invInertiaA;
-        tempCalc.a_Rigidbody.angularVelocity -= tempCalc.a_cross_n[1] * lambda.y * invInertiaA;
+        tempCalc.a_Rigidbody.linearVelocity  -= P * invMassA;
+        tempCalc.a_Rigidbody.angularVelocity -= (tempCalc.a_cross_n[0] * d.x + tempCalc.a_cross_n[1] * d.y) * invInertiaA;
     }
     if (invMassB > 0.0f)
     {
         float invInertiaB = tempCalc.b_Rigidbody.GetInverseInertia();
-        tempCalc.b_Rigidbody.linearVelocity += impulse_on_b * invMassB;
-        tempCalc.b_Rigidbody.angularVelocity += tempCalc.b_cross_n[0] * lambda.x * invInertiaB;
-        tempCalc.b_Rigidbody.angularVelocity += tempCalc.b_cross_n[1] * lambda.y * invInertiaB;
+        tempCalc.b_Rigidbody.linearVelocity  += P * invMassB;
+        tempCalc.b_Rigidbody.angularVelocity += (tempCalc.b_cross_n[0] * d.x + tempCalc.b_cross_n[1] * d.y) * invInertiaB;
     }
 }
 
@@ -212,9 +239,6 @@ void Wheel::Engine::Physics::ConstraintSolver::Solve1ContactConstraint(TempCalcu
 
     float invMassA = tempCalc.a_Rigidbody.GetInverseMass();
     float invMassB = tempCalc.b_Rigidbody.GetInverseMass();
-    const float BETA = 0.2f;     // 0.1–0.3 is the usual range
-    const float SLOP = 0.01f;
-    float posBias = BETA * std::max(tempCalc.Manifold.penetrationDepth[0] - SLOP, 0.0f) / tempCalc.DeltaTime;
     float aCN = tempCalc.a_cross_n[0];
     float bCN = tempCalc.b_cross_n[0];
     float denominator = invMassA + invMassB +
@@ -235,11 +259,15 @@ void Wheel::Engine::Physics::ConstraintSolver::Solve1ContactConstraint(TempCalcu
         }
     }
 
-    float lambda = std::max((-jq + tempCalc.Manifold.restitutionBias[0] + posBias) / denominator,0.f);
+    // Unclamped impulse increment toward the target velocity.
+    float lambda = (-jq + tempCalc.Manifold.restitutionBias[0]) / denominator;
+    float oldImpulse = tempCalc.impulses[0];
+    float newImpulse = std::max(oldImpulse + lambda, 0.0f);
+    lambda = newImpulse - oldImpulse;
+    tempCalc.impulses[0] = newImpulse;
 
     Math::Vector2 impulse_on_a = -normal * lambda;
     Math::Vector2 impulse_on_b = normal * lambda;
-    tempCalc.impulses[0] = lambda;
 
     if (invMassA > 0.0f)
     {

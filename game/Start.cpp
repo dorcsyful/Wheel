@@ -98,8 +98,15 @@ void Start::CreateEntities()
         float h = 0.5f;
         float y =2;
         float x = 0;
-        SpawnObject(x, y, w, h);
-        SpawnObject(-0.35f,12,1.1,0.8f);
+        for (int i = 0; i < 4; i++)
+        {
+            SpawnObject(x,y,w,h);
+            y+= 0.5f;
+        }
+
+
+
+
 
 
 }

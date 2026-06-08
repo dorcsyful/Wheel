@@ -6,6 +6,17 @@
 #include "systems/Collision2DSystem.h"
 #include "systems/subsystems/ConstraintSolver.h"
 
+namespace Wheel::Engine::Physics
+{
+    // Order-independent key for a colliding pair
+    uint64_t MakeContactKey(uint32_t a_First, uint32_t a_Second)
+    {
+        uint32_t lo = a_First < a_Second ? a_First : a_Second;
+        uint32_t hi = a_First < a_Second ? a_Second : a_First;
+        return (static_cast<uint64_t>(hi) << 32) | static_cast<uint64_t>(lo);
+    }
+}
+
 void Wheel::Engine::Systems::Physics2DSystem::Update(float deltaTime)
 {
     if (!m_TransformPool || !m_ColliderPool || !m_RigidbodyPool) {
@@ -112,8 +123,29 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
                 m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
                 m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2),
                 a_DeltaTime));
-                Physics::ConstraintSolver::SolvePseudoVelocities(tempCalcs.back());
+
+                // Warm start: seed this contact with the impulse the matching feature
+                // converged to last frame (matched by stable contact ID).
+                Collision::Collision2DManifold& wsManifold = (*m_Manifolds)[j];
+                float seedNormal[2]   = { 0.0f, 0.0f };
+                float seedFriction[2] = { 0.0f, 0.0f };
+                auto cacheIt = m_ContactCache.find(MakeContactKey(wsManifold.collider1, wsManifold.collider2));
+                if (cacheIt != m_ContactCache.end())
+                {
+                    for (int c = 0; c < wsManifold.contactCount; c++)
+                        for (int p = 0; p < 2; p++)
+                            if (cacheIt->second.id[p] == wsManifold.contactId[c])
+                            {
+                                seedNormal[c]   = cacheIt->second.normalImpulse[p];
+                                seedFriction[c] = cacheIt->second.frictionImpulse[p];
+                                break;
+                            }
+                }
+                Physics::ConstraintSolver::WarmStart(tempCalcs[tcIdx], seedNormal, seedFriction);
             }
+
+            Physics::ConstraintSolver::SolvePseudoVelocities(tempCalcs[tcIdx]);
+
             auto& manifold = (*m_Manifolds)[j];
             if (manifold.contactCount == 1)
             {
@@ -142,4 +174,21 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
         for (int i = 0; i < contactCount; i++)
             Physics::ConstraintSolver::SolveFrictionConstraint(tc, i);
     }
+
+    // Persist this frame's impulses for next-frame warm starting.
+    std::unordered_map<uint64_t, Physics::CachedContact> nextCache;
+    nextCache.reserve(tempCalcs.size());
+    for (auto& tc : tempCalcs)
+    {
+        Collision::Collision2DManifold& manifold = tc.Manifold;
+        Physics::CachedContact cached;
+        for (int i = 0; i < manifold.contactCount; i++)
+        {
+            cached.id[i]              = manifold.contactId[i];
+            cached.normalImpulse[i]   = tc.impulses[i];
+            cached.frictionImpulse[i] = tc.frictionImpulses[i];
+        }
+        nextCache[MakeContactKey(manifold.collider1, manifold.collider2)] = cached;
+    }
+    m_ContactCache.swap(nextCache);
 }
