@@ -6,7 +6,7 @@ Wheel::Engine::Collision::Collision2DManifold Wheel::Engine::Physics::CircleCirc
 CheckCircleCircleCollision(const Components::Transform2D& a_ATransform, const Components::Transform2D& a_BTransform,
     const Components::CircleCollider2D& a_ACollider, const Components::CircleCollider2D& a_BCollider)
 {
-    assert(std::abs(a_ATransform.GetScale().x - a_ATransform.GetScale().y) > 0.00001f && "Non-uniform scaling is not supported for circle colliders.");
+    assert(std::abs(a_ATransform.GetScale().x - a_ATransform.GetScale().y) < 0.00001f && "Non-uniform scaling is not supported for circle colliders.");
     Collision::Collision2DManifold manifold(a_ATransform.GetEntityId(), a_BTransform.GetEntityId());
 
     Math::Vector2 a_center = a_ATransform.GetPosition() + a_ACollider.offset;

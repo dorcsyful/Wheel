@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+
+#include "Material.h"
 #include "RenderedObject.h"
 #include "Shader.h"
 #include "GLFW/glfw3.h"
@@ -44,6 +46,17 @@ namespace Wheel
              */
             uint32_t LoadTexture(Texture* a_Texture);
 
+            Material* CreateMaterial(const std::string& a_ShaderName, const std::string& a_TextureName);
+
+            /**
+             * @brief Resolve a material id (stored on a Sprite) to its material.
+             * Called once per entity per frame in RenderSystem — never in the draw loop.
+             */
+            Material* GetMaterial(uint32_t a_Id) const
+            {
+                assert(a_Id < m_Materials.size() && "Material id out of range. Call CreateMaterial() before use.");
+                return m_Materials[a_Id];
+            }
             /**
              * @brief Load a shader pair at startup. Returns the integer ID used for fast lookup at draw time.
              */
@@ -95,10 +108,12 @@ namespace Wheel
             // Indexed by integer ID — O(1) access in the draw loop
             std::vector<Shader*>  m_Shaders;
             std::vector<Texture*> m_Textures;
+            std::vector<Material*> m_Materials;
 
             // Name → ID maps — only touched at load time, never inside Update()
             std::unordered_map<std::string, uint32_t> m_ShaderIndex;
             std::unordered_map<std::string, uint32_t> m_TextureIndex;
+            std::unordered_map<std::string, uint32_t> m_MaterialIndex;
 
             std::vector<RenderedObject>* m_RenderedObjects = nullptr;
 

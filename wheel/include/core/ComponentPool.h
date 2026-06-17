@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include "Globals.h"
+#include "Description.h"
 #include <array>
 namespace Wheel
 {
@@ -30,9 +31,9 @@ namespace Wheel
             struct HasSetEntityId<U, std::void_t<decltype(std::declval<U>().SetEntityId(uint32_t{}))>> : std::true_type {};
 
         public:
-
-            ComponentPool()
+            ComponentPool(const Description& a_Description)
             {
+                m_Description = a_Description;
                 m_EntityToComponent = std::unordered_map<uint32_t, uint32_t>();
                 m_ComponentToEntity = std::unordered_map<uint32_t, uint32_t>();
             }
@@ -108,13 +109,16 @@ namespace Wheel
 
                 return components;
             }
-
+            Description GetDescription() const
+            {
+                return m_Description;
+            }
         private:
             //T m_Components[MAX_ENTITIES];
             std::array<T, MAX_ENTITIES> m_Components;
             std::unordered_map<uint32_t, uint32_t> m_EntityToComponent;
             std::unordered_map<uint32_t, uint32_t> m_ComponentToEntity;
-
+            Description m_Description;
             uint32_t m_Size = 0;
         };
     }

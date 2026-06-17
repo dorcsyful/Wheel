@@ -39,7 +39,7 @@ void Wheel::Engine::Systems::RenderSystem::EnsurePools()
 {
     if (!m_TransformPool) {
         m_TransformPool = m_Scene->GetComponentPool<Components::Transform2D>();
-        m_RenderPool    = m_Scene->GetComponentPool<Components::Render2DComponent>();
+        m_RenderPool    = m_Scene->GetComponentPool<Components::Sprite>();
         m_CameraPool    = m_Scene->GetComponentPool<Components::CameraComponent>();
     }
 }
@@ -50,7 +50,7 @@ void Wheel::Engine::Systems::RenderSystem::SavePreviousTransforms()
     for (unsigned int entityId : m_EntityIDs)
     {
         // Guards the ECS hole where RemoveComponent doesn't update m_EntityIDs.
-        if (!m_Scene->HasComponent<Components::Render2DComponent>(entityId)) continue;
+        if (!m_Scene->HasComponent<Components::Sprite>(entityId)) continue;
 
         const Components::Transform2D& t = m_TransformPool->GetComponent(entityId);
         m_PrevTransforms[entityId] = { t.GetPosition(), t.GetRotationInRadians(), t.GetScale() };
@@ -75,7 +75,7 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
 
     for (unsigned int entityId : m_EntityIDs)
     {
-        if (!m_Scene->HasComponent<Components::Render2DComponent>(entityId)) continue;
+        if (!m_Scene->HasComponent<Components::Sprite>(entityId)) continue;
 
         const auto& render = m_RenderPool->GetComponent(entityId);
         const Components::Transform2D& curr = m_TransformPool->GetComponent(entityId);
@@ -101,10 +101,13 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
             scale = prev.scale + (scale - prev.scale) * a_Alpha;
         }
 
+        const Renderer::Material* material = m_Renderer->GetMaterial(render.MaterialName);
+
         Renderer::RenderedObject ro{};
         ro.Add2DComponentInterpolated(render, entityId, pos, rot, scale);
-        ro.textureId = m_Renderer->GetTextureId(render.TextureName);
-        ro.shaderId  = m_Renderer->GetShaderId(render.ShaderName);
+        ro.textureId  = material->textureId;
+        ro.shaderId   = material->shaderId;
+        ro.materialId = render.MaterialName;
         m_RenderObjects.push_back(ro);
     }
     std::sort(m_RenderObjects.begin(), m_RenderObjects.end(), ROSorter);

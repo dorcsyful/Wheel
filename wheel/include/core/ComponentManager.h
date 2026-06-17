@@ -32,14 +32,15 @@ namespace Wheel
                 std::string name = typeid(T).name();
                 assert(m_ComponentPools.find(name) == m_ComponentPools.end() &&
                         "Component type already registered.");
-
-                ComponentPool<T>* componentPool = new ComponentPool<T>();
-                 m_ComponentPools.insert(std::make_pair(name, componentPool));
                 std::bitset<MAX_COMPONENT_TYPES> componentBitset;
-                componentBitset[m_ComponentPools.size() -1].flip();
-                auto descriptionPair = std::make_pair(name, Description());
-                descriptionPair.second.AddComponentType(componentBitset);
-                m_Descriptions.emplace(std::move(descriptionPair));
+                componentBitset[m_ComponentPools.size()].flip();
+
+                Description description;
+                description.AddComponentType(componentBitset);
+
+                ComponentPool<T>* componentPool = new ComponentPool<T>(description);
+                m_ComponentPools.insert(std::make_pair(name, componentPool));
+                m_Descriptions.emplace(name, description);
             }
 
             template <typename T>

@@ -35,6 +35,9 @@ public:
 private:
     bool m_RunSimulation;
     uint32_t m_CameraId;
+
+    uint32_t m_BoxMaterial    = 0;
+    uint32_t m_CircleMaterial = 0;
     std::unique_ptr<Wheel::Renderer::Renderer> m_Renderer;
     std::unique_ptr<Wheel::Engine::Scene> m_Scene;
     Wheel::Engine::Systems::RenderSystem* m_RenderSystem = nullptr;

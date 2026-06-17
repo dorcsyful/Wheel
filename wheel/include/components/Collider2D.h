@@ -48,7 +48,7 @@ namespace Wheel
             float radius = 0.0f;
             Math::Vector2 offset = { 0.0f, 0.0f };
             E_COLLIDER2_D type = E_COLLIDER2_D::CIRCLE;
-
+            mutable bool isDirty = true;
             REFLECT_BEGIN(CircleCollider2D)
             FIELD(radius)
             FIELD(offset)

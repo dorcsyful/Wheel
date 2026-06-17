@@ -45,12 +45,10 @@ namespace
         return c;
     }
 
-    // Circle helpers use a slightly non-uniform scale because the production code's
-    // uniform-scale guard is inverted (asserts on uniform). The math still uses
-    // scale.x = 1.0, so geometry is unchanged.
+    // Circle colliders require uniform scaling (the production code asserts it).
     Transform2D MakeCircleTransform(float x, float y)
     {
-        return MakeTransform(x, y, 0.0f, Vector2(1.0f, 1.5f));
+        return MakeTransform(x, y, 0.0f, Vector2(1.0f, 1.0f));
     }
 
     // Circle-box uses the box collider's cached vertices, which are populated by

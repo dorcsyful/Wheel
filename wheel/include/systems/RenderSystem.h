@@ -6,7 +6,7 @@
 #include "core/System.h"
 #include "core/ComponentPool.h"
 #include "components/Transform2D.h"
-#include "components/Render2DComponent.h"
+#include "components/Sprite.h"
 #include "components/CameraComponent.h"
 #include "math/Vector2.h"
 
@@ -89,7 +89,7 @@ namespace Wheel
                 std::vector<EventSystem::SubscriptionToken> m_Tokens = {};
 
                 ComponentPool<Components::Transform2D>*      m_TransformPool = nullptr;
-                ComponentPool<Components::Render2DComponent>* m_RenderPool   = nullptr;
+                ComponentPool<Components::Sprite>* m_RenderPool   = nullptr;
                 ComponentPool<Components::CameraComponent>*  m_CameraPool    = nullptr;
             };
 

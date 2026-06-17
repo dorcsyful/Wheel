@@ -7,12 +7,11 @@ namespace Wheel
 {
     namespace Components
     {
-        struct Render2DComponent
+        struct Sprite
         {
             bool active = true;
             uint32_t ID = 999999;
-            std::string TextureName = "";
-            std::string ShaderName  = "base";
+            uint32_t MaterialName = 0;
             /**
              * @brief In world units
              */
@@ -26,13 +25,13 @@ namespace Wheel
              */
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
-            REFLECT_BEGIN(Render2DComponent)
+            REFLECT_BEGIN(Sprite)
             FIELD(active)
             FIELD(ID)
-            FIELD(TextureName)
+            FIELD(MaterialName)
             FIELD(width)
             FIELD(height)
-            REFLECT_END(Render2DComponent, "Render2DComponent")
+            REFLECT_END(Sprite, "Sprite")
         };
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <unordered_map>
 
 #include "glad.h"
 
@@ -7,6 +8,14 @@ namespace Wheel
 {
     namespace Renderer
     {
+        struct VarInfo {
+            VarInfo(const std::string& a_Name, GLint a_Location, int a_TypeInfo)
+                : name(a_Name), location(a_Location), typeInfo(a_TypeInfo) {}
+            std::string name;
+            GLint location;
+            int typeInfo;
+        };
+
         class Shader
         {
         public:
@@ -26,25 +35,16 @@ namespace Wheel
                 return m_Name;
             }
             void CacheLocations();
-
-            GLint GetPosLoc() const { return m_PosLoc; }
-            GLint GetTexLoc() const { return m_TexLoc; }
-            GLint GetViewProjLoc() const { return m_ViewProjLoc; }
-            GLint GetModelLoc() const { return m_ModelLoc; }
-            GLint GetTranslateLoc() const { return m_TranslateLoc; }
-            GLint GetSamplerLoc() const { return m_SamplerLoc; }
-            GLint GetColorLoc() const { return m_ColorLoc; }
-
+            void AddPerBind(const std::string& a_Name);
+            void AddPerObject(const std::string& a_Name);
+            std::vector<VarInfo>& GetPerBinds() { return m_PerBind; }
+            std::vector<VarInfo>& GetPerObjects() { return m_PerObject; }
+            std::vector<VarInfo>& GetAttributes() { return m_Attributes; }
         private:
             void checkCompileErrors(unsigned int shader, const std::string& type);
-
-            GLint m_PosLoc       = -1;
-            GLint m_TexLoc       = -1;
-            GLint m_ViewProjLoc  = -1;
-            GLint m_ModelLoc     = -1;
-            GLint m_TranslateLoc = -1;
-            GLint m_SamplerLoc   = -1;
-            GLint m_ColorLoc     = -1;
+            std::vector<VarInfo> m_Attributes;
+            std::vector<VarInfo> m_PerBind;
+            std::vector<VarInfo> m_PerObject;
 
             std::string m_Name;
             unsigned int m_ID;

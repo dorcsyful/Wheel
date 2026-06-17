@@ -1,38 +1,82 @@
-#pragma once
 #include "systems/subsystems/CircleBoxCollision2D.h"
 
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 
 using namespace Wheel::Engine::Collision;
 
 Collision2DManifold CircleBoxCollision2D::CheckCircleBoxCollision(const Components::Transform2D& a_CircleTransform,
     const Components::CircleCollider2D& a_CircleCollider, const Components::Transform2D& a_BoxTransform, const Components::BoxCollider2D& a_BoxCollider)
 {
-    assert(std::abs(a_CircleTransform.GetScale().x - a_CircleTransform.GetScale().y) > 0.00001f && "Non-uniform scaling is not supported for circle colliders.");
+    assert(std::abs(a_CircleTransform.GetScale().x - a_CircleTransform.GetScale().y) < 0.00001f && "Non-uniform scaling is not supported for circle colliders.");
 
     Collision2DManifold manifold = Collision2DManifold(a_CircleTransform.GetEntityId(), a_BoxTransform.GetEntityId());
-    Math::Vector2 boxCenter = Math::Vector2::Lerp(a_BoxCollider.cachedVertices[0], a_BoxCollider.cachedVertices[2], 0.5f);
-    Math::Vector2 boxWidth = a_BoxCollider.cachedVertices[1] - a_BoxCollider.cachedVertices[0];
-    Math::Vector2 boxHeight = a_BoxCollider.cachedVertices[3] - a_BoxCollider.cachedVertices[0];
-    Math::Vector2 circleCenter = a_CircleTransform.GetPosition() + a_CircleCollider.offset;
-    auto closestX = std::max(boxCenter.x, std::min(circleCenter.x, boxWidth.x));
-    auto closestY = std::max(boxCenter.y, std::min(circleCenter.y, boxWidth.y));
 
-    auto distanceX = circleCenter.x - closestX;
-    auto distanceY = circleCenter.y - closestY;
-    auto distanceSquared = distanceX * distanceX + distanceY * distanceY;
-    float radius = a_CircleCollider.radius * a_CircleTransform.GetScale().x; // Assuming uniform scaling
-    if (distanceSquared > radius * radius)
+    // Build the box's local frame from its cached (already rotated + scaled) vertices.
+    // Winding: [0]=bottom-left, [1]=bottom-right, [2]=top-right, [3]=top-left, so
+    // [1]-[0] is the width edge and [3]-[0] the height edge.
+    Math::Vector2 boxCenter  = Math::Vector2::Lerp(a_BoxCollider.cachedVertices[0], a_BoxCollider.cachedVertices[2], 0.5f);
+    Math::Vector2 widthEdge  = a_BoxCollider.cachedVertices[1] - a_BoxCollider.cachedVertices[0];
+    Math::Vector2 heightEdge = a_BoxCollider.cachedVertices[3] - a_BoxCollider.cachedVertices[0];
+    float halfWidth  = widthEdge.Length()  * 0.5f;
+    float halfHeight = heightEdge.Length() * 0.5f;
+    Math::Vector2 xAxis = widthEdge.Normalized();
+    Math::Vector2 yAxis = heightEdge.Normalized();
+
+    Math::Vector2 circleCenter = a_CircleTransform.GetPosition() + a_CircleCollider.offset;
+    float radius = a_CircleCollider.radius * a_CircleTransform.GetScale().x; // uniform scale (asserted above)
+
+    // Project the circle centre onto the box's axes, then clamp to the extents to
+    // get the closest point on the box. Works for a rotated box because we measure
+    // along its own axes rather than the world axes.
+    Math::Vector2 d = circleCenter - boxCenter;
+    float localX = d.Dot(xAxis);
+    float localY = d.Dot(yAxis);
+    float clampedX = std::max(-halfWidth,  std::min(localX, halfWidth));
+    float clampedY = std::max(-halfHeight, std::min(localY, halfHeight));
+
+    // If the clamp changed nothing the centre is inside (or exactly on) the box.
+    bool inside = (clampedX == localX && clampedY == localY);
+
+    if (inside)
     {
-        return manifold; // No collision
-    }
-    else
-    {
+        // Eject through the nearest face: the axis with the least distance left to
+        // a face gives the smallest push-out. Normal points circle (A) -> box (B),
+        // i.e. opposite the ejection direction so the solver pushes the circle out.
+        float xPen = halfWidth  - std::abs(localX);
+        float yPen = halfHeight - std::abs(localY);
         manifold.isColliding = true;
-        manifold.collisionNormal = Math::Vector2(distanceX, distanceY).Normalized();
-        manifold.penetrationDepth[0] = radius - std::sqrt(distanceSquared);
-        manifold.contactPoint[0] = Math::Vector2(closestX, closestY);
         manifold.contactCount = 1;
+        if (xPen < yPen)
+        {
+            float faceSign = (localX < 0.0f) ? -1.0f : 1.0f;
+            clampedX = faceSign * halfWidth;
+            manifold.collisionNormal = xAxis * -faceSign;
+            manifold.penetrationDepth[0] = radius + xPen;
+        }
+        else
+        {
+            float faceSign = (localY < 0.0f) ? -1.0f : 1.0f;
+            clampedY = faceSign * halfHeight;
+            manifold.collisionNormal = yAxis * -faceSign;
+            manifold.penetrationDepth[0] = radius + yPen;
+        }
+        manifold.contactPoint[0] = boxCenter + xAxis * clampedX + yAxis * clampedY;
         return manifold;
     }
+
+    Math::Vector2 closestPoint = boxCenter + xAxis * clampedX + yAxis * clampedY;
+    Math::Vector2 toBox = closestPoint - circleCenter; // points circle (A) -> box (B)
+    float distanceSquared = toBox.LengthSquared();
+    if (distanceSquared > radius * radius)
+        return manifold; // No collision
+
+    float distance = std::sqrt(distanceSquared);
+    manifold.isColliding = true;
+    manifold.contactCount = 1;
+    manifold.contactPoint[0] = closestPoint;
+    manifold.collisionNormal = toBox / distance;
+    manifold.penetrationDepth[0] = radius - distance;
+    return manifold;
 }

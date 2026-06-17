@@ -47,6 +47,11 @@ namespace Wheel
                 return m_EntityDescriptions[a_EntityID];
             }
 
+            const std::array<Description, MAX_ENTITIES>* GetEntityDescriptions() const
+            {
+                return &m_EntityDescriptions;
+            }
+
         private:
             std::array<Description, MAX_ENTITIES> m_EntityDescriptions;
             std::queue<uint32_t> m_AvailableEntities;

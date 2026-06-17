@@ -85,6 +85,11 @@ namespace Wheel
                 return m_ComponentManager->GetComponentRaw(a_Entity, a_Description);
             }
 
+            const std::array<Description, MAX_ENTITIES>* GetEntityDescriptions() const
+            {
+                return m_EntityManager->GetEntityDescriptions();
+            }
+
             template<typename T>
             T* GetSystem()
             {

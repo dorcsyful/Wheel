@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "../../wheel/include/core/Globals.h"
 #include "components/CameraComponent.h"
-#include "components/Render2DComponent.h"
+#include "components/Sprite.h"
 #include "components/Transform2D.h"
 #include "math/Matrix4x4.h"
 #include "math/Vector4.h"
@@ -48,7 +48,7 @@ namespace Wheel
                 return proj * view;
             }
 
-            void Add2DComponent(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
+            void Add2DComponent(const Components::Sprite& a_Render, uint32_t a_EntityId,
                                 const Components::Transform2D& a_Transform)
             {
                 Build(a_Render, a_EntityId, a_Transform.GetPosition(), a_Transform.GetRotationInRadians(),
@@ -57,7 +57,7 @@ namespace Wheel
 
             // Same as Add2DComponent but takes raw pos/rot/scale so the caller can pass
             // values interpolated between two fixed-timestep physics states.
-            void Add2DComponentInterpolated(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
+            void Add2DComponentInterpolated(const Components::Sprite& a_Render, uint32_t a_EntityId,
                                             const Math::Vector2& a_Position, float a_Rotation,
                                             const Math::Vector2& a_Scale)
             {
@@ -67,7 +67,7 @@ namespace Wheel
             // Builds only the compact per-object 2D affine. The view-projection
             // is shared by the whole frame and applied in the vertex shader, so
             // it is no longer folded in here (no per-object 4x4 multiply).
-            void Build(const Components::Render2DComponent& a_Render, uint32_t a_EntityId,
+            void Build(const Components::Sprite& a_Render, uint32_t a_EntityId,
                        const Math::Vector2& a_Position, float a_Rotation,
                        const Math::Vector2& a_Scale)
             {
@@ -93,6 +93,7 @@ namespace Wheel
             uint32_t entityId  = 0;
             uint32_t textureId = 0;
             uint32_t shaderId  = 0;
+            uint32_t materialId = 0;
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             float linear[4]    = { 1.0f, 0.0f, 0.0f, 1.0f };
             float translate[2] = { 0.0f, 0.0f };

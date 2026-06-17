@@ -17,11 +17,39 @@ namespace Wheel::Engine::Physics
     }
 }
 
+bool Wheel::Engine::Systems::Physics2DSystem::UpdateRigidbodyInertia(std::vector<unsigned>::value_type id, Wheel::Components::Transform2D& transform, Wheel::Components::Rigidbody2D& rigidbody)
+{
+    if (m_Scene->HasComponent<Components::BoxCollider2D>(id))
+    {
+        auto& collider = m_BoxColliderPool->GetComponent(id);
+        if (transform.isDirty || collider.isDirty || rigidbody.isDirty)
+        {
+            rigidbody.SetInertia(CalculateBoxInertia(collider, transform, rigidbody.GetMass()));
+            rigidbody.isDirty = false;
+            transform.isDirty = false;
+            collider.isDirty = false;            }
+    }
+    else if (m_Scene->HasComponent<Components::CircleCollider2D>(id))
+    {
+        auto& collider = m_CircleColliderPool->GetComponent(id);
+        rigidbody.SetInertia(CalculateCircleInertia(collider, transform, rigidbody.GetMass()));
+        rigidbody.isDirty = false;
+        transform.isDirty = false;
+        collider.isDirty = false;
+    }
+    else
+    {
+        return true; //No collider, skip
+    }
+    return false;
+}
+
 void Wheel::Engine::Systems::Physics2DSystem::Update(float deltaTime)
 {
-    if (!m_TransformPool || !m_ColliderPool || !m_RigidbodyPool) {
+    if (!m_TransformPool || !m_BoxColliderPool || !m_CircleColliderPool || !m_RigidbodyPool) {
         m_TransformPool = m_Scene->GetComponentPool<Components::Transform2D>();
-        m_ColliderPool  = m_Scene->GetComponentPool<Components::BoxCollider2D>();
+        m_BoxColliderPool  = m_Scene->GetComponentPool<Components::BoxCollider2D>();
+        m_CircleColliderPool  = m_Scene->GetComponentPool<Components::CircleCollider2D>();
         m_RigidbodyPool = m_Scene->GetComponentPool<Components::Rigidbody2D>();
     }
     if (!m_Manifolds) {
@@ -31,16 +59,10 @@ void Wheel::Engine::Systems::Physics2DSystem::Update(float deltaTime)
     for (auto id : m_EntityIDs)
     {
         auto& transform = m_TransformPool->GetComponent(id);
-        auto& collider  = m_ColliderPool->GetComponent(id);
         auto& rigidbody = m_RigidbodyPool->GetComponent(id);
 
-        if (transform.isDirty || collider.isDirty || rigidbody.isDirty)
-        {
-            rigidbody.SetInertia(CalculateInertia(collider, transform, rigidbody.GetMass()));
-            rigidbody.isDirty = false;
-            transform.isDirty = false;
-            collider.isDirty = false;
-        }
+        if (UpdateRigidbodyInertia(id, transform, rigidbody)) continue;
+
         if (rigidbody.GetType() == Components::Rigidbody2DType::STATIC)
             continue;
         if (!rigidbody.active)
@@ -94,16 +116,20 @@ void Wheel::Engine::Systems::Physics2DSystem::IntegratePosition(Components::Tran
     a_Transform2D.SetRotationInRadians(a_Transform2D.GetRotationInRadians() + a_Rigidbody2D.angularVelocity * deltaTime);
 }
 
-float Wheel::Engine::Systems::Physics2DSystem::CalculateInertia(const Components::BoxCollider2D& a_Collider,
+float Wheel::Engine::Systems::Physics2DSystem::CalculateBoxInertia(const Components::BoxCollider2D& a_Collider,
     const Components::Transform2D& a_Transform, float mass)
 {
-    if (a_Collider.type == Components::E_COLLIDER2_D::BOX)
-    {
-        float width = a_Collider.GetWidth() * a_Transform.GetScale().x;
-        float height = a_Collider.GetHeight() * a_Transform.GetScale().y;
-        return (1.f/12.f) * mass * (std::pow(width,2) + std::pow(height,2));
-    }
-    return 0.0f;
+    float width = a_Collider.GetWidth() * a_Transform.GetScale().x;
+    float height = a_Collider.GetHeight() * a_Transform.GetScale().y;
+    return (1.f/12.f) * mass * (std::pow(width,2) + std::pow(height,2));
+}
+
+float Wheel::Engine::Systems::Physics2DSystem::CalculateCircleInertia(const Components::CircleCollider2D& a_Collider,
+    const Components::Transform2D& a_Transform, float mass)
+{
+    // Solid disk: I = 1/2 * m * r^2 (uniform scale applied to the radius).
+    float radius = a_Collider.radius * a_Transform.GetScale().x;
+    return 0.5f * mass * radius * radius;
 }
 
 void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime)
@@ -129,7 +155,7 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
                 Collision::Collision2DManifold& wsManifold = (*m_Manifolds)[j];
                 float seedNormal[2]   = { 0.0f, 0.0f };
                 float seedFriction[2] = { 0.0f, 0.0f };
-                auto cacheIt = m_ContactCache.find(MakeContactKey(wsManifold.collider1, wsManifold.collider2));
+                auto cacheIt = m_ContactCache.find(Wheel::Engine::Physics::MakeContactKey(wsManifold.collider1, wsManifold.collider2));
                 if (cacheIt != m_ContactCache.end())
                 {
                     for (int c = 0; c < wsManifold.contactCount; c++)
@@ -188,7 +214,7 @@ void Wheel::Engine::Systems::Physics2DSystem::SolveConstraints(float a_DeltaTime
             cached.normalImpulse[i]   = tc.impulses[i];
             cached.frictionImpulse[i] = tc.frictionImpulses[i];
         }
-        nextCache[MakeContactKey(manifold.collider1, manifold.collider2)] = cached;
+        nextCache[Wheel::Engine::Physics::MakeContactKey(manifold.collider1, manifold.collider2)] = cached;
     }
     m_ContactCache.swap(nextCache);
 }

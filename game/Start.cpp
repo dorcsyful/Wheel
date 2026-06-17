@@ -9,19 +9,19 @@
 void Start::RegisterComponents()
 {
     m_Scene->RegisterComponentType<Wheel::Components::Transform2D>();
-    m_Scene->RegisterComponentType<Wheel::Components::Render2DComponent>();
+    m_Scene->RegisterComponentType<Wheel::Components::Sprite>();
     m_Scene->RegisterComponentType<Wheel::Components::CameraComponent>();
     m_Scene->RegisterComponentType<Wheel::Components::BoxCollider2D>();
+    m_Scene->RegisterComponentType<Wheel::Components::CircleCollider2D>();
     m_Scene->RegisterComponentType<Wheel::Components::Rigidbody2D>();
 }
 
 void Start::RegisterSystems()
 {
     Wheel::Engine::Description transform = m_Scene->GetComponentDescription<Wheel::Components::Transform2D>();
-    Wheel::Engine::Description render = m_Scene->GetComponentDescription<Wheel::Components::Render2DComponent>();
+    Wheel::Engine::Description render = m_Scene->GetComponentDescription<Wheel::Components::Sprite>();
     Wheel::Engine::Description finalDesc = Wheel::Engine::Description();
     Wheel::Engine::Description cameraDesc = m_Scene->GetComponentDescription<Wheel::Components::CameraComponent>();
-    Wheel::Engine::Description boxCollider2D = m_Scene->GetComponentDescription<Wheel::Components::BoxCollider2D>();
     Wheel::Engine::Description rigidbody2D = m_Scene->GetComponentDescription<Wheel::Components::Rigidbody2D>();
     finalDesc.AddComponentType(transform.GetAsBitset());
     finalDesc.AddComponentType(render.GetAsBitset());
@@ -34,11 +34,9 @@ void Start::RegisterSystems()
     m_InputSystem->Initialize(m_Renderer->GetWindow());
     finalDesc.Reset();
     finalDesc.AddComponentType(transform.GetAsBitset());
-    finalDesc.AddComponentType(boxCollider2D.GetAsBitset());
     m_Scene->RegisterSystem<Wheel::Engine::Systems::Collision2DSystem>(finalDesc);
     finalDesc.Reset();
     finalDesc.AddComponentType(transform.GetAsBitset());
-    finalDesc.AddComponentType(boxCollider2D.GetAsBitset());
     finalDesc.AddComponentType(rigidbody2D.GetAsBitset());
     m_Scene->RegisterSystem<Wheel::Engine::Systems::Physics2DSystem>(finalDesc);
 
@@ -48,21 +46,21 @@ void Start::SpawnObject(float x, float y, float w, float h)
 {
     uint32_t id = m_Scene->AddEntity();
     auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
-    auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(id);
-    auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(id);
+    auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(id);
+    auto& collider  = m_Scene->AddComponent<Wheel::Components::CircleCollider2D>(id);
     auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
     rigidbody.SetMass(10.0f); rigidbody.friction = 0.5f;
-    collider.SetWidth(w);
-    collider.SetHeight(h);
+    collider.radius = w / 2.0f;
     transform.SetPosition(x, y);
     transform.SetScale(1.0f, 1.0f);
     transform.SetRotationInDegrees(0);
-    render.width = w; render.height = h; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+    render.width = w; render.height = h; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+    render.MaterialName = m_CircleMaterial;
 }
 
 void Start::CreateEntities()
 {
-    // Camera entity — has Transform2D + CameraComponent but no Render2DComponent
+    // Camera entity — has Transform2D + CameraComponent but no Sprite
     uint32_t cameraId = m_Scene->AddEntity();
     m_Scene->AddComponent<Wheel::Components::Transform2D>(cameraId);
     Wheel::Components::CameraComponent& cam =
@@ -83,7 +81,7 @@ void Start::CreateEntities()
     {
         uint32_t ground = m_Scene->AddEntity();
         auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(ground);
-        auto& render    = m_Scene->AddComponent<Wheel::Components::Render2DComponent>(ground);
+        auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(ground);
         auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(ground);
         auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(ground);
         rigidbody.SetMass(100.0f); rigidbody.friction = 0.5f; rigidbody.SetType(Wheel::Components::Rigidbody2DType::STATIC);
@@ -91,23 +89,19 @@ void Start::CreateEntities()
         transform.SetPosition(0.0f, -3.0f);
         transform.SetScale(1.0f, 1.0f);
         transform.SetRotationInDegrees(0);
-        render.width = 13.f; render.height = 2.f; render.TextureName = "textures/square.png"; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        render.width = 13.f; render.height = 2.f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        render.MaterialName = m_BoxMaterial;
     }
 
-        float w = 0.9;
-        float h = 0.5f;
-        float y =2;
-        float x = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            SpawnObject(x,y,w,h);
-            y+= 0.5f;
-        }
-
-
-
-
-
+    float w = 0.9;
+    float h = 0.5f;
+    float y = 1;
+    float x = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        SpawnObject(x,y,w,h);
+        y += 1.0f; // > radius sum (0.9) so they don't interpenetrate at spawn
+    }
 
 }
 
@@ -120,11 +114,21 @@ void Start::Init()
     m_SubscriptionTokens = std::vector<Wheel::EventSystem::SubscriptionToken>();
     RegisterComponents();
     RegisterSystems();
-    CreateEntities();
-    m_SubscriptionTokens.emplace_back();
-
+    
     m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/square.png"));
     m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/logo.png"));
+
+    m_BoxMaterial = m_Renderer->CreateMaterial("base", "textures/square.png")->id;
+
+    // The circle shader sizes its SDF from u_size (in pixels). Set it on the
+    // material so every sprite using this material draws a proper circle — a
+    // material property feeding a shader uniform, no engine plumbing required.
+    Wheel::Renderer::Material* circle = m_Renderer->CreateMaterial("circle", "textures/square.png");
+    circle->Set("u_size", Wheel::Math::Vector2(0.9f * PIXELS_PER_UNIT, 0.5f * PIXELS_PER_UNIT));
+    m_CircleMaterial = circle->id;
+
+    CreateEntities();
+    m_SubscriptionTokens.emplace_back();
 
 
 #ifdef DEBUG_BUILD

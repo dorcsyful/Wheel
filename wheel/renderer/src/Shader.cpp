@@ -1,5 +1,6 @@
 #include "Shader.h"
 
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -70,16 +71,78 @@ Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::stri
 
 void Wheel::Renderer::Shader::CacheLocations()
 {
-    unsigned int program = m_ID;
-    glUseProgram(program);
-    m_PosLoc       = glGetAttribLocation(program, "a_position");
-    m_TexLoc       = glGetAttribLocation(program, "a_texCoord");
-    m_ViewProjLoc  = glGetUniformLocation(program, "u_viewProj");
-    m_ModelLoc     = glGetUniformLocation(program, "u_model");
-    m_TranslateLoc = glGetUniformLocation(program, "u_translate");
-    m_SamplerLoc   = glGetUniformLocation(program, "s_texture");
-    m_ColorLoc     = glGetUniformLocation(program, "u_color");
+    int count = 0;
+    // --- attributes ---
+    glGetProgramiv(m_ID, GL_ACTIVE_ATTRIBUTES, &count);
+    for (GLint i = 0; i < count; ++i) {
+        char    name[128];
+        GLint   size;      // array length (1 if not an array)
+        GLenum  type;      // GL_FLOAT_VEC2, GL_FLOAT_VEC3, ...
+        glGetActiveAttrib(m_ID, i, sizeof(name), nullptr, &size, &type, name);
+        GLint loc = glGetAttribLocation(m_ID, name);
+        VarInfo temp(name, loc, type);
+        m_Attributes.push_back(temp);
+    }
 
+    // --- uniforms ---
+    glGetProgramiv(m_ID, GL_ACTIVE_UNIFORMS, &count);
+    for (GLint i = 0; i < count; ++i) {
+        char    name[128];
+        GLint   size;
+        GLenum  type;      // GL_FLOAT_VEC4, GL_FLOAT_MAT2, GL_SAMPLER_2D, ...
+        glGetActiveUniform(m_ID, i, sizeof(name), nullptr, &size, &type, name);
+        GLint loc = glGetUniformLocation(m_ID, name);
+        VarInfo temp(name, loc, type);
+        m_PerObject.push_back(temp);
+
+    }
+
+}
+
+void Wheel::Renderer::Shader::AddPerBind(const std::string& a_Name)
+{
+    bool success = false;
+    for (auto it = m_PerBind.begin(); it != m_PerBind.end(); ++it)
+    {
+        if (it->name == a_Name)
+        {
+            return;
+        }
+    }
+    for (auto it = m_PerObject.begin(); it != m_PerObject.end(); ++it)
+    {
+        if (it->name == a_Name)
+        {
+            m_PerBind.push_back(*it);
+            m_PerObject.erase(it);
+            return;
+        }
+    }
+    std::string val = "Uniform not found in shader: ";
+    assert(!success && (val + a_Name).c_str());
+}
+
+void Wheel::Renderer::Shader::AddPerObject(const std::string& a_Name)
+{
+    bool success = false;
+    for (auto it = m_PerObject.begin(); it != m_PerObject.end(); ++it)
+    {
+        if (it->name == a_Name)
+        {
+            return;
+        }
+    }
+    for (auto it = m_PerBind.begin(); it != m_PerBind.end(); ++it)
+    {
+        if (it->name == a_Name)
+        {
+            m_PerObject.push_back(*it);
+            m_PerBind.erase(it);
+            return;
+        }
+    }
+    std::string val = "Uniform not found in shader: ";
+    assert(!success && (val + a_Name).c_str());
 }
 
 void Wheel::Renderer::Shader::checkCompileErrors(unsigned int shader, const std::string& type)
