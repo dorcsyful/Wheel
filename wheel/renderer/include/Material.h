@@ -54,8 +54,7 @@ namespace Wheel
             std::string ShaderName = "base";
             std::string TextureName = "square.png";
 
-            // Filled in by Renderer::CreateMaterial(). id is this material's slot
-            // in the renderer; shaderId/textureId are the resolved lookups cached
+            //id is this material's slot in the renderer shaderId/textureId are the resolved lookups cached
             // here so the render loop never hashes a name per object.
             uint32_t id        = 0;
             uint32_t shaderId  = 0;

@@ -176,6 +176,9 @@ void Wheel::Engine::Debugger::DrawOverlay()
     for (auto& [id, collider] : m_Scene->GetComponents<Components::BoxCollider2D>())
         DrawColliderWireframes(id, dl, camT, camC);
 
+    for (auto& [id, collider] : m_Scene->GetComponents<Components::CircleCollider2D>())
+        DrawColliderWireframes(id, dl, camT, camC);
+
     DrawCollisions(dl, camT, camC);
 }
 
@@ -222,16 +225,28 @@ void Wheel::Engine::Debugger::DrawColliderWireframes(uint32_t a_EntityId, ImDraw
     const Wheel::Components::Transform2D& a_CameraTransform,
     const Wheel::Components::CameraComponent& a_CameraComponent)
 {
-    auto& collider = m_Scene->GetComponent<Components::BoxCollider2D>(a_EntityId);
+    bool box = m_Scene->HasComponent<Components::BoxCollider2D>(a_EntityId);
     auto& transform = m_Scene->GetComponent<Components::Transform2D>(a_EntityId);
-    const Math::Vector2* vertices = Collision::BoxBoxCollision2D::GetVertices(collider, transform);
-
-    for (int i = 0; i < 4; i++)
+    bool circle = m_Scene->HasComponent<Components::CircleCollider2D>(a_EntityId);
+    if (box)
     {
-        ImVec2 p1 = ToScreen(vertices[i], a_CameraTransform, a_CameraComponent);
-        ImVec2 p2 = ToScreen(vertices[(i + 1) % 4], a_CameraTransform, a_CameraComponent);
-        dl->AddLine(p1, p2, GetColor(DebugColor::Cyan));
+        auto& collider = m_Scene->GetComponent<Components::BoxCollider2D>(a_EntityId);
+        const Math::Vector2* vertices = Collision::BoxBoxCollision2D::GetVertices(collider, transform);
+        for (int i = 0; i < 4; i++)
+        {
+            ImVec2 p1 = ToScreen(vertices[i], a_CameraTransform, a_CameraComponent);
+            ImVec2 p2 = ToScreen(vertices[(i + 1) % 4], a_CameraTransform, a_CameraComponent);
+            dl->AddLine(p1, p2, GetColor(DebugColor::Cyan));
+        }
     }
+    if (circle)
+    {
+        auto& collider = m_Scene->GetComponent<Components::CircleCollider2D>(a_EntityId);
+        ImVec2 center = ToScreen(transform.GetPosition(), a_CameraTransform, a_CameraComponent);
+        float radius = collider.radius * transform.GetScale().x * PIXELS_PER_UNIT * a_CameraComponent.zoom;
+        dl->AddCircle(center, radius, GetColor(DebugColor::Cyan));
+    }
+
 }
 
 bool Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescriptor& field)

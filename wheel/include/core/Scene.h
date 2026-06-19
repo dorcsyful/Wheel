@@ -113,10 +113,9 @@ namespace Wheel
             }
 
             void RemoveEntity(uint32_t a_Entity) {
-                m_EntityManager->DestroyEntity(a_Entity);
                 m_ComponentManager->EntityDestroyed(a_Entity);
                 m_SystemManager->RemoveEntityWithComponent(a_Entity, m_EntityManager->GetEntityDescription(a_Entity));
-
+                m_EntityManager->DestroyEntity(a_Entity);
             }
             size_t GetNumberOfEntities()
             {

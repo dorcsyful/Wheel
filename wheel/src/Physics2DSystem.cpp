@@ -94,7 +94,7 @@ void Wheel::Engine::Systems::Physics2DSystem::ApplyGravity(Components::Rigidbody
 void Wheel::Engine::Systems::Physics2DSystem::IntegrateVelocity(Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
     a_Rigidbody2D.linearVelocity = a_Rigidbody2D.linearVelocity +(a_Rigidbody2D.GetForce() * a_Rigidbody2D.GetInverseMass()) * deltaTime;
-    a_Rigidbody2D.angularVelocity += (a_Rigidbody2D.GetTorque() / a_Rigidbody2D.GetInertia()) * deltaTime;
+    a_Rigidbody2D.angularVelocity += (a_Rigidbody2D.GetTorque() * a_Rigidbody2D.GetInverseInertia()) * deltaTime;
     a_Rigidbody2D.linearVelocity *= (1.0f - a_Rigidbody2D.linearDamping * deltaTime);
     a_Rigidbody2D.angularVelocity *= (1.0f - a_Rigidbody2D.angularDamping * deltaTime);
 }

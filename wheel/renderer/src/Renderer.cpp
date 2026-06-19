@@ -307,10 +307,6 @@ uint32_t Wheel::Renderer::Renderer::AddShader(const std::string& a_VertexShader,
     m_Shaders.push_back(shader);
     m_ShaderIndex[shader->GetName()] = id;
 
-    // Promote the frame/bind-shared uniforms out of the per-object set so the
-    // draw loop uploads them once per program bind. Guarded by a presence check
-    // because AddPerBind() asserts on an unknown name and not every shader
-    // declares these (e.g. the circle shader has no sampler).
     for (const char* shared : { "u_viewProj", "s_texture" })
         for (const VarInfo& v : shader->GetPerObjects())
             if (v.name == shared) { shader->AddPerBind(shared); break; }

@@ -54,7 +54,9 @@ void Start::SpawnObject(float x, float y, float w, float h)
     transform.SetPosition(x, y);
     transform.SetScale(1.0f, 1.0f);
     transform.SetRotationInDegrees(0);
-    render.width = w; render.height = h; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+    // The ellipse shader fills the sprite quad, so a square sprite (side = 2*radius)
+    // draws a circle that matches the collider. Give width != height for an ellipse.
+    render.width = w; render.height = w; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     render.MaterialName = m_CircleMaterial;
 }
 
@@ -69,7 +71,7 @@ void Start::CreateEntities()
     cam.zoom = 1.0f;
     cam.width  = 1280.0f;
     cam.height = 720.0f;
-    Wheel::Components::Transform2D cameraTransform =m_Scene->GetComponent<Wheel::Components::Transform2D>(cameraId);
+    Wheel::Components::Transform2D& cameraTransform =m_Scene->GetComponent<Wheel::Components::Transform2D>(cameraId);
     cameraTransform.name = "Camera";
     m_RenderSystem->SetCameraEntity(cameraId);
     m_InputSystem->SetCameraEntity(cameraId);
@@ -119,13 +121,7 @@ void Start::Init()
     m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/logo.png"));
 
     m_BoxMaterial = m_Renderer->CreateMaterial("base", "textures/square.png")->id;
-
-    // The circle shader sizes its SDF from u_size (in pixels). Set it on the
-    // material so every sprite using this material draws a proper circle — a
-    // material property feeding a shader uniform, no engine plumbing required.
-    Wheel::Renderer::Material* circle = m_Renderer->CreateMaterial("circle", "textures/square.png");
-    circle->Set("u_size", Wheel::Math::Vector2(0.9f * PIXELS_PER_UNIT, 0.5f * PIXELS_PER_UNIT));
-    m_CircleMaterial = circle->id;
+    m_CircleMaterial = m_Renderer->CreateMaterial("circle", "textures/square.png")->id;
 
     CreateEntities();
     m_SubscriptionTokens.emplace_back();

@@ -76,7 +76,7 @@ Collision2DManifold CircleBoxCollision2D::CheckCircleBoxCollision(const Componen
     manifold.isColliding = true;
     manifold.contactCount = 1;
     manifold.contactPoint[0] = closestPoint;
-    manifold.collisionNormal = toBox / distance;
+    manifold.collisionNormal = distance == 0 ? Math::Vector2(0,1) : toBox / distance;
     manifold.penetrationDepth[0] = radius - distance;
     return manifold;
 }

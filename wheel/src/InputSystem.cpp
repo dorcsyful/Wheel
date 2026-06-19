@@ -94,9 +94,6 @@ void Wheel::Engine::Systems::InputSystem::SubscribeToEvents()
     EventSystem::EventBus::Subscribe<Events::MouseMoveEvent>(
         [&](const Events::MouseMoveEvent& e) {  }, m_Tokens.back());
     m_Tokens.emplace_back();
-    EventSystem::EventBus::Subscribe<Events::MouseMoveEvent>(
-        [&](const Events::MouseMoveEvent& e) {  }, m_Tokens.back());
-    m_Tokens.emplace_back();
     EventSystem::EventBus::Subscribe<Events::MouseScrollEvent>(
         [&](const Events::MouseScrollEvent& e) {  }, m_Tokens.back());
     m_Tokens.emplace_back();
