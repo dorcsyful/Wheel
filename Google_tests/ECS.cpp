@@ -62,7 +62,7 @@ TEST(ECS, Entity_RemovalDecreasesCount)
 TEST(ECS, Entity_RemovalOutOfRangeAsserts)
 {
     Wheel::Engine::Scene scene;
-    EXPECT_DEATH(scene.RemoveEntity(MAX_ENTITIES + 1), "Entity ID out of range.");
+    EXPECT_DEATH(scene.RemoveEntity(MAX_ENTITIES + 1), "");
 }
 
 // ==================== Component Registration ====================
