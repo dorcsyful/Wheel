@@ -1,6 +1,7 @@
 #include "Texture.h"
 #include <filesystem>
 #include <iostream>
+#include "core/AssetPath.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "../../dependencies/stb/stb_image.h"
 std::pair<std::string, unsigned int> Wheel::Renderer::Texture::LoadTexture()
@@ -18,7 +19,7 @@ std::pair<std::string, unsigned int> Wheel::Renderer::Texture::LoadTexture()
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    std::string basicString = ASSETS_LOCATION + m_Path;
+    std::string basicString = Wheel::GetAssetPath(m_Path);
     // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
     unsigned char *data = stbi_load(basicString.c_str(), &width, &height, &nrChannels, 0);
     if (data)

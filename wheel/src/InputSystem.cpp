@@ -9,6 +9,7 @@
 #include "components/Transform2D.h"
 #include "core/Globals.h"
 #include "core/Scene.h"
+#include "helpers/Coordinates.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -126,21 +127,7 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::ScreenToWorldPoint(con
 {
     const Components::Transform2D& camTransform = m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
     const Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
-
-    float ndc_x =  2.0f * screenPoint.x / camComponent.width  - 1.0f;
-    float ndc_y = -2.0f * screenPoint.y / camComponent.height + 1.0f;
-
-    float half_w = camComponent.width  / (2.0f * PIXELS_PER_UNIT * camComponent.zoom);
-    float half_h = camComponent.height / (2.0f * PIXELS_PER_UNIT * camComponent.zoom);
-    float view_x = ndc_x * half_w;
-    float view_y = ndc_y * half_h;
-
-    float cos_cr = std::cos(camTransform.GetRotationInRadians());
-    float sin_cr = std::sin(camTransform.GetRotationInRadians());
-    return {
-        camTransform.GetPosition().x + cos_cr * view_x - sin_cr * view_y,
-        camTransform.GetPosition().y + sin_cr * view_x + cos_cr * view_y
-    };
+    return Helpers::Coordinates::ScreenToWorldCoordinates(screenPoint, camComponent, camTransform);
 }
 
 Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::WorldToScreenPoint(const Math::Vector2& worldPoint)
@@ -148,20 +135,7 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::WorldToScreenPoint(con
     const Components::Transform2D& camTransform = m_Scene->GetComponent<Components::Transform2D>(m_CameraEntity);
     const Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
 
-    float cos_cr = std::cos(camTransform.GetRotationInRadians());
-    float sin_cr = std::sin(camTransform.GetRotationInRadians());
-    float dx = worldPoint.x - camTransform.GetPosition().x;
-    float dy = worldPoint.y - camTransform.GetPosition().y;
-    float view_x =  cos_cr * dx + sin_cr * dy;
-    float view_y = -sin_cr * dx + cos_cr * dy;
-
-    float ndc_x = view_x * 2.0f * PIXELS_PER_UNIT * camComponent.zoom / camComponent.width;
-    float ndc_y = view_y * 2.0f * PIXELS_PER_UNIT * camComponent.zoom / camComponent.height;
-
-    return {
-        (ndc_x + 1.0f) * camComponent.width  * 0.5f,
-        (1.0f - ndc_y) * camComponent.height * 0.5f
-    };
+    return Helpers::Coordinates::WorldToScreenCoordinates(worldPoint, camComponent, camTransform);
 }
 
 Wheel::Math::Vector2 Wheel::Engine::Systems::InputSystem::MousePositionToWorldPoint()

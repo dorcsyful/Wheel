@@ -35,9 +35,10 @@ namespace Wheel
             Description() = default;
             Description(const Description& a_Other) { m_ComponentBitset = a_Other.m_ComponentBitset; };
             Description(Description&& a_Other) noexcept { m_ComponentBitset = a_Other.m_ComponentBitset; };
-            void operator=(const Description& other)
+            Description& operator=(const Description& other)
             {
-                m_ComponentBitset = other.m_ComponentBitset;
+                this->m_ComponentBitset = other.m_ComponentBitset;
+                return *this;
             }
             bool operator==(const Description& other) const
             {

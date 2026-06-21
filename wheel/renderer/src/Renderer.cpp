@@ -22,12 +22,19 @@ static void glfwError(int id, const char* description)
 
 Wheel::Renderer::Renderer::~Renderer()
 {
+#ifdef DEBUG_BUILD
+    Engine::Debugger::get().Shutdown();
+#endif
     for (auto element : m_Shaders)
     {
         glDeleteProgram(element->GetID());
         delete element;
     }
     for (auto element : m_Textures)
+    {
+        delete element;
+    }
+    for (auto element : m_Materials)
     {
         delete element;
     }
@@ -80,9 +87,6 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
 #endif
 }
 
-// Fixed interleaved layout of the shared 2D quad VBO: [pos.x, pos.y, pos.z, u, v].
-// Attribute sizes/offsets are a property of this mesh, not of any shader, so they
-// can't come from shader reflection — they're matched to the shader by name.
 namespace
 {
     constexpr GLsizei kVertexStride = 5 * sizeof(GLfloat);

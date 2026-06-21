@@ -9,9 +9,7 @@
 #include "systems/subsystems/CircleBoxCollision2D.h"
 #include "systems/subsystems/CircleCircleCollision2D.h"
 #include "core/Scene.h"
-#ifdef DEBUG_BUILD
-#include "../renderer/include/DebugDrawQueue.h"
-#endif
+
 
 void Wheel::Engine::Systems::Collision2DSystem::Update(float deltaTime)
 {

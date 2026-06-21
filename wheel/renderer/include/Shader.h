@@ -20,7 +20,9 @@ namespace Wheel
         {
         public:
             Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath);
-            ~Shader() = default;
+            ~Shader() {
+                glDeleteProgram(m_ID);
+            }
 
             void use() const  {  glUseProgram(m_ID);  }
             void setBool(const std::string &name, bool value) const { glUniform1i(glGetUniformLocation(m_ID, name.c_str()), (int)value); }

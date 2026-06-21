@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "core/Globals.h"
+#include "core/AssetPath.h"
 
 Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath)
 {
@@ -18,10 +18,9 @@ Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::stri
     std::ifstream fShaderFile;
     vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    std::string path = static_cast<std::string>(ASSETS_LOCATION) + static_cast<std::string>("shaders/");
-    std::string vertexPath = path + static_cast<std::string>(a_VertexPath);
+    std::string vertexPath = Wheel::GetAssetPath("shaders/" + a_VertexPath);
     std::cout << "Vertex path: " << vertexPath.c_str() << std::endl;
-    std::string fragmentPath =  path + static_cast<std::string>(a_FragmentPath);
+    std::string fragmentPath = Wheel::GetAssetPath("shaders/" + a_FragmentPath);
     try
     {
         // open files

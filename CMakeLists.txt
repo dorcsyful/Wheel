@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20)
 project(Wheel)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -35,7 +36,7 @@ target_compile_definitions(imgui PRIVATE
 
 # --- 2. THE ENGINE (Wheel) ---
 
-file(GLOB_RECURSE ENGINE_SOURCES "wheel/*.cpp" "wheel/*.h")
+file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS "wheel/*.cpp" "wheel/*.h")
 add_library(wheel_engine STATIC ${ENGINE_SOURCES}
         wheel/src/InputSystem.cpp
         wheel/include/systems/InputSystem.h
@@ -75,7 +76,7 @@ endif()
 
 # --- 4. THE GAME (User Code) ---
 
-file(GLOB_RECURSE USER_SOURCES "game/*.cpp" "game/*.h")
+file(GLOB_RECURSE USER_SOURCES CONFIGURE_DEPENDS "game/*.cpp" "game/*.h")
 add_executable(WheelApp ${USER_SOURCES}) # Using USER_SOURCES which includes your main.cpp
 
 # Link the Game to the Engine
@@ -83,3 +84,9 @@ target_link_libraries(WheelApp PRIVATE wheel_engine)
 target_compile_definitions(WheelApp PRIVATE
         $<$<CONFIG:Debug>:DEBUG_BUILD>
 )
+
+# Copy assets next to the executable so the app finds them regardless of the
+# working directory it is launched from (paths are resolved via GetExecutableDir()).
+add_custom_command(TARGET WheelApp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:WheelApp>/assets")

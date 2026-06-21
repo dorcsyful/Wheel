@@ -12,7 +12,7 @@ CheckCircleCircleCollision(const Components::Transform2D& a_ATransform, const Co
     Math::Vector2 a_center = a_ATransform.GetPosition() + a_ACollider.offset;
     Math::Vector2 b_center = a_BTransform.GetPosition() + a_BCollider.offset;
     Math::Vector2 ab = b_center - a_center;
-    float radiusSum = a_ACollider.radius + a_BCollider.radius;
+    float radiusSum = a_ACollider.radius * std::min(a_ATransform.GetScale().x, a_ATransform.GetScale().y) + a_BCollider.radius * std::min(a_BTransform.GetScale().x, a_BTransform.GetScale().y);
     float distanceSquared = ab.Dot(ab);
     if (distanceSquared > radiusSum * radiusSum)
         return manifold; // No collision

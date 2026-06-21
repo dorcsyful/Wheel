@@ -8,10 +8,6 @@ constexpr float RAD_TO_DEG = 180.0f / PI;
 constexpr float DEG_TO_RAD = PI / 180.0f;
 
 /**
- * @brief The location of all assets relative to the EXECUTABLE. You can change this if you want to put your assets in a different location
- */
-#define ASSETS_LOCATION "../assets/"
-/**
  * @brief Wheel Units to actual pixels. Relevant in 2D
  */
 #define PIXELS_PER_UNIT 100

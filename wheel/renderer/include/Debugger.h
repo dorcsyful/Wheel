@@ -1,4 +1,6 @@
 #pragma once
+#ifdef DEBUG_BUILD
+
 #include <map>
 
 #include "DebugDescriptor.h"
@@ -41,7 +43,8 @@ namespace Wheel
         public:
             Debugger(const Debugger& obj) = delete;
             void operator=(const Debugger&)  = delete;
-            ~Debugger();
+            ~Debugger() = default;
+            void Shutdown();
             static Debugger& get() {  static Debugger instance; return instance;}
 
             void Initialize(GLFWwindow* a_Window);
@@ -86,7 +89,6 @@ namespace Wheel
             std::vector<EventSystem::SubscriptionToken> m_Tokens{};
             double m_LastFrameTime = 0.0;
             std::map<Description, const ComponentDescriptor*> m_Descriptors{};
-            static Debugger* s_Instance;
             Engine::Scene* m_Scene;
             GLFWwindow* m_Window;
             std::map<Description, std::string> m_ComponentNames {};
@@ -98,3 +100,4 @@ namespace Wheel
     }
 }
 
+#endif

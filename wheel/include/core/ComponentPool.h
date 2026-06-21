@@ -34,8 +34,9 @@ namespace Wheel
             ComponentPool(const Description& a_Description)
             {
                 m_Description = a_Description;
-                m_EntityToComponent = std::unordered_map<uint32_t, uint32_t>();
+                m_EntityToComponent = std::vector<uint32_t>(MAX_ENTITIES, -1);
                 m_ComponentToEntity = std::unordered_map<uint32_t, uint32_t>();
+                m_Components.reserve(MAX_ENTITIES);
             }
 
             ~ComponentPool() override
@@ -47,10 +48,10 @@ namespace Wheel
 
             T& AddComponent(uint32_t a_Entity)
             {
-                assert(m_EntityToComponent.find(a_Entity) == m_EntityToComponent.end() && "Entity already has component.");
-                m_EntityToComponent.insert(std::make_pair(a_Entity, m_Size));
+                assert(m_EntityToComponent[a_Entity] == -1 && "Entity already has component.");
+                m_EntityToComponent[a_Entity] = m_Size;
                 m_ComponentToEntity.insert(std::make_pair(m_Size, a_Entity));
-                m_Components[m_Size] = T{};
+                m_Components.push_back(T{});
                 if constexpr (HasSetEntityId<T>::value) {
                     m_Components[m_Size].SetEntityId(a_Entity);
                 }
@@ -68,8 +69,7 @@ namespace Wheel
             void RemoveComponent(uint32_t a_Entity)
             {
                 assert(
-                    m_EntityToComponent.find(a_Entity) != m_EntityToComponent.end() &&
-                    "Entity does not have component.");
+                    m_EntityToComponent[a_Entity] != -1 && "Entity does not have component.");
 
                 //find the position of the key components and entities
                 uint32_t indexToRemove = m_EntityToComponent[a_Entity];
@@ -86,14 +86,15 @@ namespace Wheel
                 //moving the last entity id into the place of the removed index
                 m_ComponentToEntity[indexToRemove] = lastEntity;
 
-                m_EntityToComponent.erase(a_Entity);
+                m_EntityToComponent[a_Entity] = -1;
                 m_ComponentToEntity.erase(m_Size - 1);
                 m_Size--;
+                m_Components.pop_back();
             }
 
             void EntityDestroyed(uint32_t a_Entity) override
             {
-                if (m_EntityToComponent.find(a_Entity) != m_EntityToComponent.end())
+                if (m_EntityToComponent[a_Entity] != -1)
                 {
                     RemoveComponent(a_Entity);
                 }
@@ -102,8 +103,8 @@ namespace Wheel
             std::unordered_map<uint32_t, T*> GetComponents()
             {
                 std::unordered_map<uint32_t, T*> components = std::unordered_map<uint32_t, T*>(m_Size);
-                for (const auto & [ key, value ] : m_EntityToComponent) {
-                    std::pair<uint32_t, T*> component = std::make_pair(key, &m_Components[value]);
+                for (int i = 0; i < m_Size; i++){
+                    std::pair<uint32_t, T*> component = std::make_pair(m_ComponentToEntity[i], &m_Components[i]);
                     components.insert(component);
                 }
 
@@ -115,8 +116,8 @@ namespace Wheel
             }
         private:
             //T m_Components[MAX_ENTITIES];
-            std::array<T, MAX_ENTITIES> m_Components;
-            std::unordered_map<uint32_t, uint32_t> m_EntityToComponent;
+            std::vector<T> m_Components;
+            std::vector<uint32_t> m_EntityToComponent;
             std::unordered_map<uint32_t, uint32_t> m_ComponentToEntity;
             Description m_Description;
             uint32_t m_Size = 0;

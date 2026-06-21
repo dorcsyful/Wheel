@@ -18,7 +18,10 @@ namespace Wheel
                 m_EntityManager = new EntityManager();
                 m_ComponentManager = new ComponentManager();
                 m_SystemManager = new SystemManager();
+
+#ifdef DEBUG_BUILD
                 Debugger::get().GetScene(this);
+#endif
             }
             ~Scene()
             {

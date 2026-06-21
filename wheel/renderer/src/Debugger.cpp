@@ -1,3 +1,4 @@
+#ifdef DEBUG_BUILD
 #include "Debugger.h"
 
 #include "EventBus.h"
@@ -9,11 +10,9 @@
 #include "components/Collider2D.h"
 #include "core/Scene.h"
 #include "core/Globals.h"
+#include "helpers/Coordinates.h"
 #include "systems/subsystems/BoxBoxCollision2D.h"
-#ifdef DEBUG_BUILD
-#include "../include/DebugDrawQueue.h"
 #include <cmath>
-#endif
 
 void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
 {
@@ -38,7 +37,8 @@ void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
         }, m_Tokens.back());
 }
 
-Wheel::Engine::Debugger::~Debugger()
+
+void Wheel::Engine::Debugger::Shutdown()
 {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -263,7 +263,8 @@ bool Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescrip
     case FieldType::STRING: {
             auto* str = static_cast<std::string*>(fieldPtr);
             char buf[256];
-            strncpy(buf, str->c_str(), sizeof(buf));
+            strncpy(buf, str->c_str(), sizeof(buf) - 1);
+            buf[sizeof(buf)-1] = '\0';
             if (ImGui::InputText(field.name, buf, sizeof(buf))) { *str = buf; return true; }
             return false;
     }
@@ -287,18 +288,8 @@ bool Wheel::Engine::Debugger::RenderField(void* componentPtr, const FieldDescrip
 
 ImVec2 Wheel::Engine::Debugger::ToScreen(const Math::Vector2& a_World, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent)
 {
-    float cos_r = std::cos(a_CameraTransform.GetRotationInRadians());
-    float sin_r = std::sin(a_CameraTransform.GetRotationInRadians());
-    float ppu   = static_cast<float>(PIXELS_PER_UNIT);
-
-    float dx = a_World.x - a_CameraTransform.GetPosition().x;
-    float dy = a_World.y - a_CameraTransform.GetPosition().y;
-    float vx =  cos_r * dx + sin_r * dy;
-    float vy = -sin_r * dx + cos_r * dy;
-    float ndcX = vx * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.width;
-    float ndcY = vy * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.height;
-    return { (ndcX + 1.0f) * a_CameraComponent.width * 0.5f, (1.0f - ndcY) * a_CameraComponent.height * 0.5f };
-
+    Math::Vector2 world = Helpers::Coordinates::WorldToScreenCoordinates(a_World, a_CameraComponent, a_CameraTransform);
+    return ImVec2(world.x, world.y);
 }
 
 ImColor Wheel::Engine::Debugger::GetColor(DebugColor a_Color)
@@ -311,3 +302,4 @@ ImColor Wheel::Engine::Debugger::GetColor(DebugColor a_Color)
     default:                 return IM_COL32(255, 255, 255, 255);
     }
 }
+#endif

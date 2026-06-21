@@ -11,7 +11,7 @@ namespace Wheel
         class SystemManager
         {
         public:
-            SystemManager() : m_Systems{}, m_SystemCount(0)
+            SystemManager() : m_Systems{}, m_SystemNames{}, m_SystemCount(0)
             {
                 for (int i = 0; i < MAX_SYSTEMS; i++)
                 {
@@ -76,7 +76,7 @@ namespace Wheel
                 const char* t_name = typeid(T).name();
                 for (int i = 0; i < m_SystemCount; i++)
                 {
-                    if (t_name == m_SystemNames[i])
+                    if (strcmp(t_name,m_SystemNames[i]) == 0)
                     {
                         return static_cast<T*>(m_Systems[i]);
                     }

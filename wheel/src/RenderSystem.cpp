@@ -7,6 +7,7 @@
 #include "EventBus.h"
 #include "Events.h"
 #include "core/Scene.h"
+#include "helpers/Coordinates.h"
 
 Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Description) : System(a_Description)
 {
@@ -49,8 +50,6 @@ void Wheel::Engine::Systems::RenderSystem::SavePreviousTransforms()
     EnsurePools();
     for (unsigned int entityId : m_EntityIDs)
     {
-        // Guards the ECS hole where RemoveComponent doesn't update m_EntityIDs.
-        if (!m_Scene->HasComponent<Components::Sprite>(entityId)) continue;
 
         const Components::Transform2D& t = m_TransformPool->GetComponent(entityId);
         m_PrevTransforms[entityId] = { t.GetPosition(), t.GetRotationInRadians(), t.GetScale() };
@@ -142,37 +141,12 @@ Wheel::Math::Vector2 Wheel::Engine::Systems::RenderSystem::WorldToScreen(const M
     const Components::Transform2D& a_CameraTransform,
     const Components::CameraComponent& a_CameraComponent)
 {
-    float cos_r = std::cos(a_CameraTransform.GetRotationInRadians());
-    float sin_r = std::sin(a_CameraTransform.GetRotationInRadians());
-    float ppu   = static_cast<float>(PIXELS_PER_UNIT);
-
-    float dx = a_World.x - a_CameraTransform.GetPosition().x;
-    float dy = a_World.y - a_CameraTransform.GetPosition().y;
-    float vx =  cos_r * dx + sin_r * dy;
-    float vy = -sin_r * dx + cos_r * dy;
-    float ndcX = vx * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.width;
-    float ndcY = vy * 2.0f * ppu * a_CameraComponent.zoom / a_CameraComponent.height;
-    return Math::Vector2((ndcX + 1.0f) * a_CameraComponent.width  * 0.5f,
-                         (1.0f - ndcY) * a_CameraComponent.height * 0.5f);
+    return Helpers::Coordinates::WorldToScreenCoordinates(a_World, a_CameraComponent, a_CameraTransform);
 }
 
 Wheel::Math::Vector2 Wheel::Engine::Systems::RenderSystem::ScreenToWorld(const Math::Vector2& a_Screen,
     const Components::Transform2D& a_CameraTransform,
     const Components::CameraComponent& a_CameraComponent)
 {
-    float cos_r = std::cos(a_CameraTransform.GetRotationInRadians());
-    float sin_r = std::sin(a_CameraTransform.GetRotationInRadians());
-    float ppu   = static_cast<float>(PIXELS_PER_UNIT);
-
-    float ndcX =        (a_Screen.x / (a_CameraComponent.width  * 0.5f)) - 1.0f;
-    float ndcY = 1.0f - (a_Screen.y / (a_CameraComponent.height * 0.5f));
-
-    float vx = ndcX * a_CameraComponent.width  / (2.0f * ppu * a_CameraComponent.zoom);
-    float vy = ndcY * a_CameraComponent.height / (2.0f * ppu * a_CameraComponent.zoom);
-
-    float dx = cos_r * vx - sin_r * vy;
-    float dy = sin_r * vx + cos_r * vy;
-
-    return Math::Vector2(dx + a_CameraTransform.GetPosition().x,
-                         dy + a_CameraTransform.GetPosition().y);
+    return Helpers::Coordinates::ScreenToWorldCoordinates(a_Screen, a_CameraComponent, a_CameraTransform);
 }

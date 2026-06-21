@@ -32,6 +32,7 @@ namespace Wheel
                 std::string name = typeid(T).name();
                 assert(m_ComponentPools.find(name) == m_ComponentPools.end() &&
                         "Component type already registered.");
+                assert(m_ComponentPools.size() < MAX_COMPONENT_TYPES && "Maximum number of component types exceeded.");
                 std::bitset<MAX_COMPONENT_TYPES> componentBitset;
                 componentBitset[m_ComponentPools.size()].flip();
 
@@ -54,17 +55,10 @@ namespace Wheel
             {
                 assert(a_EntityId < MAX_ENTITIES && "Entity ID out of range: ");
                 std::string name = typeid(T).name();
-
-                T& temp = static_cast<ComponentPool<T>*>(m_ComponentPools[name])->AddComponent(a_EntityId);
+                assert(m_ComponentPools.find(name) != m_ComponentPools.end() && "Component type not found.");
+                ComponentPool<T>* componentPool = static_cast<ComponentPool<T>*>(m_ComponentPools[name]);
+                T& temp = componentPool->AddComponent(a_EntityId);
                 return temp;
-            }
-
-            template <typename T>
-            void RemoveComponent(const T& a_Component)
-            {
-                assert(a_Component == nullptr && "Component cannot be null.");
-                std::string name = typeid(T).name();
-                static_cast<T>(m_ComponentPools[name])->RemoveComponent(a_Component);
             }
 
             template <typename T>

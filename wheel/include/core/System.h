@@ -17,7 +17,7 @@ namespace Wheel
             virtual ~System() = default;
             void AddEntityWithComponent(uint32_t a_Entity, Description& description)
             {
-                //TODO: change so it compared description instead of a search
+                //TODO: find a way to remove search
                 if (description.HasComponentType(m_Description) &&
                     std::find(m_EntityIDs.begin(), m_EntityIDs.end(), a_Entity) == m_EntityIDs.end())
                 {
@@ -26,7 +26,9 @@ namespace Wheel
             }
             void RemoveEntityWithComponent(uint32_t a_Entity, Description& description)
             {
-                if (m_Description.HasComponentType(description))
+                //TODO: find a way to remove search
+                if (description.HasComponentType(m_Description)&&
+                    std::find(m_EntityIDs.begin(), m_EntityIDs.end(), a_Entity) != m_EntityIDs.end())
                     m_EntityIDs.erase(std::find(m_EntityIDs.begin(), m_EntityIDs.end(), a_Entity));
             }
             System(Description a_Description) : m_Description(std::move(a_Description)) {}

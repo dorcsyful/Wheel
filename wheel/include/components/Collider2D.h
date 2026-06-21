@@ -45,6 +45,7 @@ namespace Wheel
 
         struct CircleCollider2D
         {
+            //Note: when the transform is non-uniform the smallest of value will be multiplied by the radius
             float radius = 0.0f;
             Math::Vector2 offset = { 0.0f, 0.0f };
             E_COLLIDER2_D type = E_COLLIDER2_D::CIRCLE;
