@@ -49,7 +49,7 @@ namespace Wheel
             };
 
 
-            class ConstraintSolver
+            class CollisionConstraintSolver
             {
             public:
                 static TempCalculations PrepareConstraintSolver(Collision::Collision2DManifold& a_Manifold,

@@ -1,11 +1,11 @@
-#include "../include/systems/subsystems/ConstraintSolver.h"
+#include "../include/systems/helpers/CollisionConstraintSolver.h"
 
 #include <algorithm>
 
 #include "components/Rigidbody2D.h"
 #include "helpers/Collision2DManifold.h"
 
-void Wheel::Engine::Physics::ConstraintSolver::WarmStart(TempCalculations& tempCalc, const float* a_NormalImpulse, const float* a_FrictionImpulse)
+void Wheel::Engine::Physics::CollisionConstraintSolver::WarmStart(TempCalculations& tempCalc, const float* a_NormalImpulse, const float* a_FrictionImpulse)
 {
     Math::Vector2 normal  = tempCalc.Manifold.collisionNormal;
     Math::Vector2 tangent = tempCalc.Manifold.tangentNormal;
@@ -30,7 +30,7 @@ void Wheel::Engine::Physics::ConstraintSolver::WarmStart(TempCalculations& tempC
     }
 }
 
-void Wheel::Engine::Physics::ConstraintSolver::SolveFrictionConstraint(TempCalculations& a_TempCalc, int i)
+void Wheel::Engine::Physics::CollisionConstraintSolver::SolveFrictionConstraint(TempCalculations& a_TempCalc, int i)
 {
     float a_cross_tangent = a_TempCalc.a_distance_from_com[i].Cross(a_TempCalc.Manifold.tangentNormal);
     float b_cross_tangent = a_TempCalc.b_distance_from_com[i].Cross(a_TempCalc.Manifold.tangentNormal);
@@ -53,7 +53,7 @@ void Wheel::Engine::Physics::ConstraintSolver::SolveFrictionConstraint(TempCalcu
     a_TempCalc.b_Rigidbody.angularVelocity += b_cross_tangent * lambda * a_TempCalc.b_Rigidbody.GetInverseInertia();
 }
 
-Wheel::Engine::Physics::TempCalculations Wheel::Engine::Physics::ConstraintSolver::PrepareConstraintSolver(Collision::Collision2DManifold& a_Manifold,
+Wheel::Engine::Physics::TempCalculations Wheel::Engine::Physics::CollisionConstraintSolver::PrepareConstraintSolver(Collision::Collision2DManifold& a_Manifold,
                                                                                                            Components::Transform2D& a_ATransform, Components::Transform2D& a_BTransform,Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B,
                                                                                                            float a_DeltaTime)
 {
@@ -89,7 +89,7 @@ Wheel::Engine::Physics::TempCalculations Wheel::Engine::Physics::ConstraintSolve
     return tempCalc;
 }
 
-void Wheel::Engine::Physics::ConstraintSolver::SolvePseudoVelocities(TempCalculations& tempCalc)
+void Wheel::Engine::Physics::CollisionConstraintSolver::SolvePseudoVelocities(TempCalculations& tempCalc)
 {
     //(vA + ωA × rA - vB - ωB × rB)
     // Position-only solve: the pseudo correction depends solely on the
@@ -133,7 +133,7 @@ void Wheel::Engine::Physics::ConstraintSolver::SolvePseudoVelocities(TempCalcula
     }
 }
 
-void Wheel::Engine::Physics::ConstraintSolver::Solve2ContactConstraint(TempCalculations& tempCalc)
+void Wheel::Engine::Physics::CollisionConstraintSolver::Solve2ContactConstraint(TempCalculations& tempCalc)
 {
     Math::Vector2 normal = tempCalc.Manifold.collisionNormal;
 
@@ -227,7 +227,7 @@ void Wheel::Engine::Physics::ConstraintSolver::Solve2ContactConstraint(TempCalcu
     }
 }
 
-void Wheel::Engine::Physics::ConstraintSolver::Solve1ContactConstraint(TempCalculations& tempCalc)
+void Wheel::Engine::Physics::CollisionConstraintSolver::Solve1ContactConstraint(TempCalculations& tempCalc)
 {
     Math::Vector2 normal = tempCalc.Manifold.collisionNormal;
 

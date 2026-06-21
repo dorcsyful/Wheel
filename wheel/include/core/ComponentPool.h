@@ -34,7 +34,7 @@ namespace Wheel
             ComponentPool(const Description& a_Description)
             {
                 m_Description = a_Description;
-                m_EntityToComponent = std::vector<uint32_t>(MAX_ENTITIES, -1);
+                m_EntityToComponent = std::vector<uint32_t>(MAX_ENTITIES, NO_VALUE);
                 m_ComponentToEntity = std::unordered_map<uint32_t, uint32_t>();
                 m_Components.reserve(MAX_ENTITIES);
             }
@@ -48,7 +48,7 @@ namespace Wheel
 
             T& AddComponent(uint32_t a_Entity)
             {
-                assert(m_EntityToComponent[a_Entity] == -1 && "Entity already has component.");
+                assert(m_EntityToComponent[a_Entity] == NO_VALUE && "Entity already has component.");
                 m_EntityToComponent[a_Entity] = m_Size;
                 m_ComponentToEntity.insert(std::make_pair(m_Size, a_Entity));
                 m_Components.push_back(T{});
@@ -86,7 +86,7 @@ namespace Wheel
                 //moving the last entity id into the place of the removed index
                 m_ComponentToEntity[indexToRemove] = lastEntity;
 
-                m_EntityToComponent[a_Entity] = -1;
+                m_EntityToComponent[a_Entity] = NO_VALUE;
                 m_ComponentToEntity.erase(m_Size - 1);
                 m_Size--;
                 m_Components.pop_back();
@@ -94,7 +94,7 @@ namespace Wheel
 
             void EntityDestroyed(uint32_t a_Entity) override
             {
-                if (m_EntityToComponent[a_Entity] != -1)
+                if (m_EntityToComponent[a_Entity] != NO_VALUE)
                 {
                     RemoveComponent(a_Entity);
                 }

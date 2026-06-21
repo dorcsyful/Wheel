@@ -8,7 +8,6 @@ namespace Wheel
     {
         namespace Physics
         {
-            class ConstraintSolver;
             class CircleCircleCollision2D
             {
             public:

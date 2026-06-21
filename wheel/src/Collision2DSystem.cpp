@@ -5,9 +5,9 @@
 #include "components/Collider2D.h"
 #include "components/Transform2D.h"
 #include "helpers/Collision2DManifold.h"
-#include "systems/subsystems/BoxBoxCollision2D.h"
-#include "systems/subsystems/CircleBoxCollision2D.h"
-#include "systems/subsystems/CircleCircleCollision2D.h"
+#include "../include/systems/helpers/BoxBoxCollision2D.h"
+#include "../include/systems/helpers/CircleBoxCollision2D.h"
+#include "../include/systems/helpers/CircleCircleCollision2D.h"
 #include "core/Scene.h"
 
 
