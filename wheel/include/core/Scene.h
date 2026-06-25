@@ -71,12 +71,15 @@ namespace Wheel
                 m_EntityManager->GetEntityDescription(a_Entity).AddComponentType(m_ComponentManager->GetDescription<T>().GetAsBitset());
                 T& component = m_ComponentManager->AddComponent<T>(a_Entity);
                 m_SystemManager->AddEntityWithComponent(a_Entity, m_EntityManager->GetEntityDescription(a_Entity));
+                EventSystem::EventBus::Publish(Events::ComponentAddedEvent<T>{ a_Entity });
                 return component;
             }
 
             template <typename T>
             void RemoveComponent(uint32_t a_Entity)
             {
+                // Publish before removal so handlers can still read the component if needed.
+                EventSystem::EventBus::Publish(Events::ComponentRemovedEvent<T>{ a_Entity });
                 m_ComponentManager->GetComponentPool<T>()->RemoveComponent(a_Entity);
                 m_EntityManager->GetEntityDescription(a_Entity).RemoveComponentType(m_ComponentManager->GetDescription<T>().GetAsBitset());
             }

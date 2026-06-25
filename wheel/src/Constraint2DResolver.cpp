@@ -12,6 +12,29 @@ namespace Wheel::Engine::Physics
         return (static_cast<uint64_t>(hi) << 32) | static_cast<uint64_t>(lo);
     }
 }
+
+Wheel::Engine::Subsystems::Constraint2DResolver::Constraint2DResolver()
+{
+    EventSystem::EventBus::Subscribe<Events::ComponentAddedEvent<Components::DistanceJoint2D>>(
+        [this](const Events::ComponentAddedEvent<Components::DistanceJoint2D>& a_Event)
+        {
+            m_JointEntities.insert(a_Event.entityId);
+        }, m_Tokens);
+
+    EventSystem::EventBus::Subscribe<Events::ComponentRemovedEvent<Components::DistanceJoint2D>>(
+        [this](const Events::ComponentRemovedEvent<Components::DistanceJoint2D>& a_Event)
+        {
+            m_JointEntities.erase(a_Event.entityId);
+        }, m_Tokens);
+
+    // Entity destruction tears the joint down without firing ComponentRemovedEvent,
+    // so catch that path too.
+    EventSystem::EventBus::Subscribe<Events::EntityDestroyed>(
+        [this](const Events::EntityDestroyed& a_Event)
+        {
+            m_JointEntities.erase(a_Event.entityId);
+        }, m_Tokens);
+}
 void Wheel::Engine::Subsystems::Constraint2DResolver::IntegratePseudoPosition(Components::Transform2D& a_Transform2D,
     Components::Rigidbody2D& a_Rigidbody2D, float deltaTime)
 {
@@ -22,7 +45,7 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::IntegratePseudoPosition(Co
 
 }
 
-void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStart(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs, size_t tcIdx, int j)
+void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStart(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, size_t tcIdx, int j)
 {
     Collision::Collision2DManifold& wsManifold = (*m_Manifolds)[j];
     float startNormal[2]   = { 0.0f, 0.0f };
@@ -42,12 +65,13 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStart(std::vector<Whee
     Physics::CollisionConstraintSolver::WarmStart(tempCalcs[tcIdx], startNormal, startFriction);
 }
 
-void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveCollisionConstraints(float a_DeltaTime, std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs, int i)
+void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveCollisionConstraints(float a_DeltaTime, std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, int i)
 {
     size_t tcIdx = 0;
     for (int j = 0; j < m_Manifolds->size(); j++)
     {
-        if (!m_Manifolds->at(j).isColliding)
+        Collision::Collision2DManifold collision2DManifold = (*m_Manifolds)[j];
+        if (!collision2DManifold.isColliding)
             continue;
         if (i == 0)
         {
@@ -71,7 +95,7 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveCollisionConstraint
         }
         if (i + 1 == MAX_CONSTRAINT_ITERATION)
         {
-            if (m_Manifolds->at(j).contactCount == 1) Physics::CollisionConstraintSolver::SolveFrictionConstraint(tempCalcs[tcIdx],0);
+            if (collision2DManifold.contactCount == 1) Physics::CollisionConstraintSolver::SolveFrictionConstraint(tempCalcs[tcIdx],0);
             else
             {
                 Physics::CollisionConstraintSolver::SolveFrictionConstraint(tempCalcs[tcIdx],0);
@@ -83,7 +107,7 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveCollisionConstraint
     }
 }
 
-void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveFrictionConstraints(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs)
+void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveFrictionConstraints(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs)
 {
     for (auto& tc : tempCalcs)
     {
@@ -93,7 +117,7 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveFrictionConstraints
     }
 }
 
-void Wheel::Engine::Subsystems::Constraint2DResolver::CacheContactImpulses(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs)
+void Wheel::Engine::Subsystems::Constraint2DResolver::CacheContactImpulses(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs)
 {
     // Persist this frame's impulses for next-frame warm starting.
     std::unordered_map<uint64_t, Physics::CachedContact> nextCache;
@@ -113,24 +137,49 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::CacheContactImpulses(std::
     m_ContactCache.swap(nextCache);
 }
 
+void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveDistanceJointConstraints(float a_DeltaTime,
+    std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs, int i)
+{
+    if (!m_JointPool)
+        return;
+    int j = 0;
+    for (auto entity : m_JointEntities)
+    {
+        if (i == 0)
+        {
+            Components::DistanceJoint2D& joint = m_JointPool->GetComponent(entity);
+            Components::Transform2D& transform1 = m_TransformPool->GetComponent(entity);
+            Components::Rigidbody2D& rigidbody1 = m_RigidbodyPool->GetComponent(entity);
+            Components::Transform2D& transform2 = joint.connectedRigidbody == NO_VALUE ? transform1 : m_TransformPool->GetComponent(joint.connectedRigidbody);
+            Components::Rigidbody2D& rigidbody2 = joint.connectedRigidbody == NO_VALUE ? rigidbody1 : m_RigidbodyPool->GetComponent(joint.connectedRigidbody);
+            jointCalcs.push_back(Physics::JointConstraintSolver::PrepareJointConstraintSolver(transform1, transform2, rigidbody1, rigidbody2, joint));
+        }
+        Physics::JointConstraintSolver::SolveDistanceJointConstraint(jointCalcs[j], a_DeltaTime);
+        j++;
+    }
+}
+
 void Wheel::Engine::Subsystems::Constraint2DResolver::SolveConstraints(std::vector<Collision::Collision2DManifold>* a_Manifolds, Engine::Scene* a_Scene, float a_DeltaTime)
 {
     m_Manifolds = a_Manifolds;
+    bool checkCollision = true;
     if (m_Manifolds == nullptr || m_Manifolds->empty())
-        return;
+        checkCollision = false;
     if (!m_TransformPool)
     {
         m_TransformPool = a_Scene->GetComponentPool<Components::Transform2D>();
         m_RigidbodyPool = a_Scene->GetComponentPool<Components::Rigidbody2D>();
+        m_JointPool = a_Scene->GetComponentPool<Components::DistanceJoint2D>();
     }
-    std::vector<Physics::TempCalculations> tempCalcs = {};
-
+    std::vector<Physics::CollisionTempCalculations> tempCalcs = {};
+    std::vector<Physics::JointTempCalculations> jointCalcs = {};
     for (int i = 0; i < MAX_CONSTRAINT_ITERATION; i++)
     {
-        ResolveCollisionConstraints(a_DeltaTime, tempCalcs, i);
+        if (checkCollision) ResolveCollisionConstraints(a_DeltaTime, tempCalcs, i);
+        ResolveDistanceJointConstraints(a_DeltaTime, jointCalcs, i);
     }
 
-    ResolveFrictionConstraints(tempCalcs);
+    //ResolveFrictionConstraints(tempCalcs);
 
     CacheContactImpulses(tempCalcs);
 }

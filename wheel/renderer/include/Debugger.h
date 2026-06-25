@@ -73,6 +73,7 @@ namespace Wheel
             void DrawOverlay();
             void DrawCollisions(ImDrawList* dl, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent);
             void DrawColliderWireframes(uint32_t a_EntityId, ImDrawList* dl, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent);
+            void DrawJoints(uint32_t a_EntityId, ImDrawList* dl, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent);
 
             //Helpers
             ImVec2 ToScreen(const Math::Vector2& a_World, const Wheel::Components::Transform2D& a_CameraTransform, const Wheel::Components::CameraComponent& a_CameraComponent);

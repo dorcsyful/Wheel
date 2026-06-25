@@ -14,6 +14,8 @@
 #include "../../include/systems/helpers/BoxBoxCollision2D.h"
 #include <cmath>
 
+#include "components/Joint2D.h"
+
 void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
 {
     // Initialize ImGUI
@@ -178,6 +180,8 @@ void Wheel::Engine::Debugger::DrawOverlay()
 
     for (auto& [id, collider] : m_Scene->GetComponents<Components::CircleCollider2D>())
         DrawColliderWireframes(id, dl, camT, camC);
+    for (auto& [id, joint] : m_Scene->GetComponents<Components::DistanceJoint2D>())
+        DrawJoints(id, dl, camT, camC);
 
     DrawCollisions(dl, camT, camC);
 }
@@ -246,6 +250,31 @@ void Wheel::Engine::Debugger::DrawColliderWireframes(uint32_t a_EntityId, ImDraw
         float radius = collider.radius * transform.GetScale().x * PIXELS_PER_UNIT * a_CameraComponent.zoom;
         dl->AddCircle(center, radius, GetColor(DebugColor::Cyan));
     }
+
+}
+
+void Wheel::Engine::Debugger::DrawJoints(uint32_t a_EntityId, ImDrawList* dl,
+    const Wheel::Components::Transform2D& a_CameraTransform,
+    const Wheel::Components::CameraComponent& a_CameraComponent)
+{
+    Components::Transform2D transform1 = m_Scene->GetComponent<Components::Transform2D>(a_EntityId);
+    Components::DistanceJoint2D joint = m_Scene->GetComponent<Components::DistanceJoint2D>(a_EntityId);
+
+    const Math::Vector2& s1 = transform1.GetScale();
+    Math::Vector2 local1(joint.localAnchorPoint.x * s1.x, joint.localAnchorPoint.y * s1.y);   // S
+    Math::Vector2 anchor1 = transform1.GetPosition() + transform1.GetRotationMatrix() * local1;  // T + R·(S·local)
+    Math::Vector2 anchor2 = joint.otherAnchorPoint;
+    if (joint.connectedRigidbody != NO_VALUE)
+    {
+        Components::Transform2D transform2 = m_Scene->GetComponent<Components::Transform2D>(joint.connectedRigidbody);
+        const Math::Vector2& s2 = transform2.GetScale();
+        Math::Vector2 local2(joint.localAnchorPoint.x * s2.x,joint.localAnchorPoint.y * s2.y);   // S
+        anchor2 = transform2.GetPosition() + transform2.GetRotationMatrix() * local2;  // T + R·(S·local)
+
+    }
+    ImVec2 p1 = ToScreen(anchor1, a_CameraTransform, a_CameraComponent);
+    ImVec2 p2 = ToScreen(anchor2, a_CameraTransform, a_CameraComponent);
+    dl->AddLine(p1, p2, GetColor(DebugColor::Green));
 
 }
 

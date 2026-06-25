@@ -23,9 +23,9 @@ namespace Wheel
     {
         namespace Physics
         {
-            struct TempCalculations
+            struct CollisionTempCalculations
             {
-                TempCalculations(Collision::Collision2DManifold& a_Manifold, float a_DeltaTime,
+                CollisionTempCalculations(Collision::Collision2DManifold& a_Manifold, float a_DeltaTime,
                     Components::Transform2D& a_ATransform, Components::Transform2D& a_BTransform,
                     Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B)
                         :                     Manifold(a_Manifold), a_Transform(a_ATransform), b_Transform(a_BTransform),
@@ -52,17 +52,17 @@ namespace Wheel
             class CollisionConstraintSolver
             {
             public:
-                static TempCalculations PrepareConstraintSolver(Collision::Collision2DManifold& a_Manifold,
+                static CollisionTempCalculations PrepareConstraintSolver(Collision::Collision2DManifold& a_Manifold,
                     Components::Transform2D& a_ATransform, Components::Transform2D& a_BTransform,
                     Components::Rigidbody2D& a_A, Components::Rigidbody2D& a_B,
                     float a_DeltaTime);
                 // Applies last frame's accumulated impulses to the bodies and seeds the
                 // accumulators, so the iterative solve starts near its converged state.
-                static void WarmStart(TempCalculations& tempCalc, const float* a_NormalImpulse, const float* a_FrictionImpulse);
-                static void SolvePseudoVelocities(TempCalculations& tempCalc);
-                static void Solve2ContactConstraint(TempCalculations& tempCalc);
-                static void Solve1ContactConstraint(TempCalculations& tempCalc);
-                static void SolveFrictionConstraint(TempCalculations& a_TempCalc, int i);
+                static void WarmStart(CollisionTempCalculations& tempCalc, const float* a_NormalImpulse, const float* a_FrictionImpulse);
+                static void SolvePseudoVelocities(CollisionTempCalculations& tempCalc);
+                static void Solve2ContactConstraint(CollisionTempCalculations& tempCalc);
+                static void Solve1ContactConstraint(CollisionTempCalculations& tempCalc);
+                static void SolveFrictionConstraint(CollisionTempCalculations& a_TempCalc, int i);
             };
         }
     }

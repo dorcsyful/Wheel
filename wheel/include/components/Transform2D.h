@@ -91,7 +91,7 @@ namespace Wheel
             Math::Matrix2x2 m_RotationMatrix;
             uint32_t m_Id = UINT32_MAX;
             Wheel::Math::Vector2 position;
-            Wheel::Math::Vector2 scale;
+            Wheel::Math::Vector2 scale = Wheel::Math::Vector2(1.0f, 1.0f);
             float rotation = 0.0f;
         };
     };

@@ -2,8 +2,13 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include "core/ComponentPool.h"
 #include "systems/helpers/CollisionConstraintSolver.h"
+#include "EventBus.h"
+#include "Events.h"
+#include "SubscriptionToken.h"
+#include "systems/helpers/JointConstraintSolver.h"
 
 namespace Wheel::Engine::Collision
 {
@@ -14,6 +19,7 @@ namespace Wheel::Components
 {
     struct Rigidbody2D;
     struct Transform2D;
+    struct DistanceJoint2D;
 }
 
 namespace Wheel::Engine
@@ -44,14 +50,16 @@ namespace Wheel
         {
             class Constraint2DResolver {
             public:
+                Constraint2DResolver();
                 void SolveConstraints(std::vector<Collision::Collision2DManifold>* a_Manifolds, Engine::Scene* a_Scene, float a_DeltaTime);
                 void IntegratePseudoPosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime);
-                void WarmStart(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs, size_t tcIdx, int j);
+                void WarmStart(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, size_t tcIdx, int j);
                 void ResolveCollisionConstraints(float a_DeltaTime,
-                                                 std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs,
+                                                 std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs,
                                                  int i);
-                void ResolveFrictionConstraints(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs);
-                void CacheContactImpulses(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs);
+                void ResolveFrictionConstraints(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs);
+                void CacheContactImpulses(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs);
+                void ResolveDistanceJointConstraints(float a_DeltaTime, std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs, int i);
 
             private:
                 // Survives across frames to warm start each contact
@@ -59,6 +67,10 @@ namespace Wheel
                 std::vector<Collision::Collision2DManifold>* m_Manifolds = nullptr;
                 ComponentPool<Wheel::Components::Transform2D>* m_TransformPool = nullptr;
                 ComponentPool<Wheel::Components::Rigidbody2D>* m_RigidbodyPool = nullptr;
+                ComponentPool<Wheel::Components::DistanceJoint2D>* m_JointPool = nullptr;
+
+                std::unordered_set<uint32_t> m_JointEntities;
+                EventSystem::SubscriptionToken m_Tokens;
 
             };
         }

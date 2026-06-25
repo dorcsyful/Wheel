@@ -104,6 +104,21 @@ namespace Wheel
             uint32_t entityId;
             EntityDestroyed(uint32_t a_EntityId) : entityId(a_EntityId) {}
         };
+        
+        template <typename T>
+        struct ComponentAddedEvent
+        {
+            uint32_t entityId;
+            ComponentAddedEvent(uint32_t a_EntityId) : entityId(a_EntityId) {}
+        };
+        //NOTE: entity destruction tears components down without firing
+        //this; subscribers that must catch that path should also listen for EntityDestroyed.
+        template <typename T>
+        struct ComponentRemovedEvent
+        {
+            uint32_t entityId;
+            ComponentRemovedEvent(uint32_t a_EntityId) : entityId(a_EntityId) {}
+        };
     }
 }
 

@@ -26,6 +26,8 @@ namespace Wheel
             Vector2& operator-=(const Vector2& a) { x -= a.x; y -= a.y; return *this; }
             Vector2& operator*=(float a) { x *= a; y *= a; return *this; }
             Vector2& operator/=(float a) { x /= a; y /= a; return *this; }
+            Vector2 operator+(float a_Rhs) const { return Vector2(x + a_Rhs, y + a_Rhs); }
+            Vector2 operator-(float a_Rhs) const { return Vector2(x - a_Rhs, y - a_Rhs); }
 
             float Dot(const Vector2& a) const { return x * a.x + y * a.y; }
             float Cross(const Vector2& a) const { return x * a.y - y * a.x; }
@@ -39,5 +41,10 @@ namespace Wheel
             float x;
             float y;
         };
+
+        inline Wheel::Math::Vector2 operator*(float a_Lhs, const Wheel::Math::Vector2& a_Rhs)
+        {
+            return a_Rhs * a_Lhs;
+        }
     }
 }
