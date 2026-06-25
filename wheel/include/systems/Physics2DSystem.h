@@ -4,7 +4,7 @@
 
 #include "core/System.h"
 #include "math/Vector2.h"
-#include "subsystems/Collision2DResolver.h"
+#include "subsystems/Constraint2DResolver.h"
 
 namespace Wheel::Engine::Collision
 {
@@ -36,7 +36,7 @@ namespace Wheel
             public:
                 Physics2DSystem(const Engine::Description& a_Description) : Engine::System(a_Description)
                 {
-                    m_CollisionResolver = new Subsystems::Collision2DResolver();
+                    m_CollisionResolver = new Subsystems::Constraint2DResolver();
                 }
                 ~Physics2DSystem() override { delete m_CollisionResolver; }
 
@@ -52,7 +52,7 @@ namespace Wheel
                 float CalculateBoxInertia(const Components::BoxCollider2D& a_Collider, const Components::Transform2D& a_Transform, float mass);
                 float CalculateCircleInertia(const Components::CircleCollider2D& a_Collider, const Components::Transform2D& a_Transform, float mass);
 
-                Subsystems::Collision2DResolver* m_CollisionResolver;
+                Subsystems::Constraint2DResolver* m_CollisionResolver;
                 Math::Vector2 m_Gravity{0.0f, -9.81f};
                 ComponentPool<Wheel::Components::Transform2D>* m_TransformPool = nullptr;
                 ComponentPool<Wheel::Components::BoxCollider2D>* m_BoxColliderPool = nullptr;

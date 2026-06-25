@@ -2,6 +2,9 @@
 #include <cstdint>
 #include <iostream>
 #include <vector>
+
+#include "CollisionDispatcher.h"
+#include "Events.h"
 #include "SystemManager.h"
 #include "ComponentManager.h"
 #include "EntityManager.h"
@@ -15,6 +18,7 @@ namespace Wheel
         public:
             Scene()
             {
+                EventSystem::CollisionDispatcher::get();
                 m_EntityManager = new EntityManager();
                 m_ComponentManager = new ComponentManager();
                 m_SystemManager = new SystemManager();
@@ -116,6 +120,7 @@ namespace Wheel
             }
 
             void RemoveEntity(uint32_t a_Entity) {
+                EventSystem::EventBus::Publish(Events::EntityDestroyed{ a_Entity });
                 m_ComponentManager->EntityDestroyed(a_Entity);
                 m_SystemManager->RemoveEntityWithComponent(a_Entity, m_EntityManager->GetEntityDescription(a_Entity));
                 m_EntityManager->DestroyEntity(a_Entity);

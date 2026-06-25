@@ -3,6 +3,14 @@
 #include <string>
 #include "../wheel/include/core/Scene.h"
 
+// assert() is compiled out in release (NDEBUG) builds, so assertion-based
+// death tests can only run when asserts are enabled (debug builds).
+#ifdef NDEBUG
+#define SKIP_IF_ASSERTS_DISABLED() GTEST_SKIP() << "assert() is disabled in NDEBUG (release) builds"
+#else
+#define SKIP_IF_ASSERTS_DISABLED() ((void)0)
+#endif
+
 // ==================== Test Components ====================
 
 struct A { int value = 0; };
@@ -35,6 +43,7 @@ TEST(ECS, Entity_CountTracking)
 
 TEST(ECS, Entity_TooManyEntitiesAsserts)
 {
+    SKIP_IF_ASSERTS_DISABLED();
     Wheel::Engine::Scene scene;
     for (int i = 0; i < MAX_ENTITIES; ++i)
         scene.AddEntity();
@@ -61,6 +70,7 @@ TEST(ECS, Entity_RemovalDecreasesCount)
 
 TEST(ECS, Entity_RemovalOutOfRangeAsserts)
 {
+    SKIP_IF_ASSERTS_DISABLED();
     Wheel::Engine::Scene scene;
     EXPECT_DEATH(scene.RemoveEntity(MAX_ENTITIES + 1), "");
 }
@@ -87,6 +97,7 @@ TEST(ECS, ComponentReg_MultipleTypes)
 
 TEST(ECS, ComponentReg_DuplicateAsserts)
 {
+    SKIP_IF_ASSERTS_DISABLED();
     Wheel::Engine::Scene scene;
     scene.RegisterComponentType<A>();
     EXPECT_DEATH(scene.RegisterComponentType<A>(), "Component type already registered.");
@@ -123,6 +134,7 @@ TEST(ECS, Component_HasFalseAfterRemove)
 
 TEST(ECS, Component_AddDuplicateAsserts)
 {
+    SKIP_IF_ASSERTS_DISABLED();
     Wheel::Engine::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
@@ -132,6 +144,7 @@ TEST(ECS, Component_AddDuplicateAsserts)
 
 TEST(ECS, Component_RemoveMissingAsserts)
 {
+    SKIP_IF_ASSERTS_DISABLED();
     Wheel::Engine::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
@@ -663,6 +676,7 @@ TEST(ECS, Description_HasComponentType_Absent)
 
 TEST(ECS, Description_HasComponentType_EmptyQueryAsserts)
 {
+    SKIP_IF_ASSERTS_DISABLED();
     Wheel::Engine::Description entity_desc;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[0] = true;

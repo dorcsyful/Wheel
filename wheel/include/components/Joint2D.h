@@ -13,14 +13,18 @@ namespace Wheel
         {
             //set this to NO_VALUE to connect it to a point
             uint32_t connectedRigidbody = NO_VALUE;
-            Math::Vector2 anchorPoint = Math::Vector2(0.0f, 0.0f);
+            //point on the connected body. If connectedRigidbody is NO_VALUE this is a point in world space
+            Math::Vector2 otherAnchorPoint = Math::Vector2(0.0f, 0.0f);
+            //point on the rigidbody relative to its center of mass
+            Math::Vector2 localAnchorPoint = Math::Vector2(0.0f, 0.0f);
             float distance = 0.0f;
             //Whether to force max distance. Otherwise, the distance might become smaller than the set distance, but the joint will not allow it to become larger than the set distance. This is useful for rope-like behavior
-            bool maxDistanceOnly = true;
+            bool maxDistanceOnly = false;
 
             REFLECT_BEGIN(DistanceJoint2D)
             FIELD(connectedRigidbody)
-            FIELD(anchorPoint)
+            FIELD(otherAnchorPoint)
+            FIELD(localAnchorPoint)
             FIELD(distance)
             FIELD(maxDistanceOnly)
             REFLECT_END(DistanceJoint2D, "DistanceJoint2D")

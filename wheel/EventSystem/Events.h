@@ -80,13 +80,30 @@ namespace Wheel
             CollisionEnterEvent(const Engine::Collision::Collision2DManifold& a_Manifold) : manifold(a_Manifold) {}
             const Engine::Collision::Collision2DManifold manifold;
         };
+        struct CollisionExitEvent
+        {
+            CollisionExitEvent(uint32_t a_Collider1, uint32_t a_Collider2) : collider1(a_Collider1), collider2(a_Collider2) {}
+            uint32_t collider1;
+            uint32_t collider2;
+        };
+        //used exclusively by the collision dispatcher, carries ALL collision manifolds
+        struct CollisionResultsFinished
+        {
+            CollisionResultsFinished(const std::vector<Engine::Collision::Collision2DManifold>* a_ManifoldPtr) : ManifoldPtr(a_ManifoldPtr) {}
+            const std::vector<Engine::Collision::Collision2DManifold>* ManifoldPtr = nullptr;
+        };
 
-      struct RunSimulation
-      {
+        struct RunSimulation
+        {
           RunSimulation(bool a_Enable) : enable(a_Enable) {};
           bool enable;
-      };
-
+        };
+        //The collision dispatcher needs to know when to unsubscribe
+        struct EntityDestroyed
+        {
+            uint32_t entityId;
+            EntityDestroyed(uint32_t a_EntityId) : entityId(a_EntityId) {}
+        };
     }
 }
 

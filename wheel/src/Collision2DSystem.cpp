@@ -101,11 +101,10 @@ void Wheel::Engine::Systems::Collision2DSystem::CheckNarrowPhase()
             if (manifold.isColliding)
             {
                 m_Manifolds.push_back(manifold);
-                Wheel::EventSystem::EventBus::Publish(Events::CollisionEnterEvent(manifold));
             }
         }
     }
-
+    EventSystem::EventBus::Publish(Events::CollisionResultsFinished(&m_Manifolds));
     enable = false;
     SetDirtyFlag(boxComponentDesc, circleComponentDesc, enable);
 }

@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include "core/ComponentPool.h"
+#include "systems/helpers/CollisionConstraintSolver.h"
 
 namespace Wheel::Engine::Collision
 {
@@ -41,10 +42,17 @@ namespace Wheel
     {
         namespace Subsystems
         {
-            class Collision2DResolver {
+            class Constraint2DResolver {
             public:
                 void SolveConstraints(std::vector<Collision::Collision2DManifold>* a_Manifolds, Engine::Scene* a_Scene, float a_DeltaTime);
                 void IntegratePseudoPosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime);
+                void WarmStart(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs, size_t tcIdx, int j);
+                void ResolveCollisionConstraints(float a_DeltaTime,
+                                                 std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs,
+                                                 int i);
+                void ResolveFrictionConstraints(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs);
+                void CacheContactImpulses(std::vector<Wheel::Engine::Physics::TempCalculations>& tempCalcs);
+
             private:
                 // Survives across frames to warm start each contact
                 std::unordered_map<uint64_t, Physics::CachedContact> m_ContactCache;
