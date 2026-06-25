@@ -69,7 +69,7 @@ namespace Wheel
             void RemoveComponent(uint32_t a_Entity)
             {
                 assert(
-                    m_EntityToComponent[a_Entity] != -1 && "Entity does not have component.");
+                    m_EntityToComponent[a_Entity] != NO_VALUE && "Entity does not have component.");
 
                 //find the position of the key components and entities
                 uint32_t indexToRemove = m_EntityToComponent[a_Entity];

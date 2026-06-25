@@ -3,7 +3,7 @@
 #include <iostream>
 #include "core/AssetPath.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "../../dependencies/stb/stb_image.h"
+#include "stb_image.h"
 std::pair<std::string, unsigned int> Wheel::Renderer::Texture::LoadTexture()
 {
     assert(m_ID == -1 && "Texture already loaded.");

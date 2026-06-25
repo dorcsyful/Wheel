@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-cmake_minimum_required(VERSION 3.20)
 project(Wheel)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Emit compile_commands.json so editors/clangd can resolve include paths.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # --- 1. DEPENDENCIES (GLFW & GLAD) ---
 
@@ -37,21 +39,15 @@ target_compile_definitions(imgui PRIVATE
 # --- 2. THE ENGINE (Wheel) ---
 
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS "wheel/*.cpp" "wheel/*.h")
-add_library(wheel_engine STATIC ${ENGINE_SOURCES}
-        wheel/src/InputSystem.cpp
-        wheel/include/systems/InputSystem.h
-        wheel/EventSystem/EventBus.h
-        wheel/EventSystem/Events.h
-        wheel/EventSystem/SubscriptionToken.h
-        wheel/src/Collision2DSystem.cpp
-)
+add_library(wheel_engine STATIC ${ENGINE_SOURCES})
 
 # Include directories for the engine (so it can find its own and dependency headers)
 target_link_libraries(wheel_engine PUBLIC glad glfw imgui)
-target_include_directories(wheel_engine PUBLIC wheel/include)
-target_include_directories(wheel_engine PUBLIC wheel/renderer/include)
-target_include_directories(wheel_engine PUBLIC wheel/stb)
-target_include_directories(wheel_engine PUBLIC wheel/EventSystem)
+target_include_directories(wheel_engine PUBLIC
+        wheel/include
+        wheel/renderer/include
+        dependencies/stb
+        wheel/EventSystem)
 
 target_compile_definitions(wheel_engine PRIVATE
         $<$<CONFIG:Debug>:DEBUG_BUILD>
