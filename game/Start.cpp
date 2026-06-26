@@ -43,25 +43,28 @@ void Start::RegisterSystems()
 
 }
 
-void Start::SpawnObject(float x, float y, float w, float h)
+uint32_t Start::SpawnObject(float x, float y, float w, float h)
 {
     uint32_t id = m_Scene->AddEntity();
     auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
     auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(id);
     auto& collider  = m_Scene->AddComponent<Wheel::Components::CircleCollider2D>(id);
     auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
-    rigidbody.SetMass(10.0f); rigidbody.friction = 0.5f;
+    rigidbody.SetMass(2.0f); rigidbody.friction = 0.05f;
     collider.radius = w / 2.0f;
+    rigidbody.restitution = 0.97f;
     transform.SetPosition(x, y);
     transform.SetScale(1.0f, 1.0f);
+    rigidbody.linearDamping = 0.0001; rigidbody.angularDamping = 0.0001;
     transform.SetRotationInDegrees(0);
     // The ellipse shader fills the sprite quad, so a square sprite (side = 2*radius)
     // draws a circle that matches the collider. Give width != height for an ellipse.
     render.width = w; render.height = w; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     render.MaterialName = m_CircleMaterial;
+    return id;
 }
 
-void Start::CreateEntities()
+void Start::InitializeCameraEntity()
 {
     // Camera entity — has Transform2D + CameraComponent but no Sprite
     uint32_t cameraId = m_Scene->AddEntity();
@@ -80,64 +83,56 @@ void Start::CreateEntities()
     Wheel::Engine::Debugger::get().SetCameraEntity(cameraId);
 #endif
     m_CameraId = cameraId;
+}
 
-    {
-        uint32_t ground = m_Scene->AddEntity();
-        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(ground);
-        auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(ground);
-        auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(ground);
-        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(ground);
-        rigidbody.SetMass(100.0f); rigidbody.friction = 0.5f; rigidbody.SetType(Wheel::Components::Rigidbody2DType::STATIC);
-        collider.SetWidth(13.f); collider.SetHeight(2.f);
-        transform.SetPosition(0.0f, -3.0f);
-        transform.SetScale(1.0f, 1.0f);
-        transform.SetRotationInDegrees(0);
-        render.width = 13.f; render.height = 2.f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-        render.MaterialName = m_BoxMaterial;
-    }
+void Start::CreateGroundEntity()
+{
+    uint32_t ground = m_Scene->AddEntity();
+    auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(ground);
+    auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(ground);
+    auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(ground);
+    auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(ground);
+    rigidbody.SetMass(100.0f); rigidbody.friction = 0.5f; rigidbody.SetType(Wheel::Components::Rigidbody2DType::STATIC);
+    collider.SetWidth(13.f); collider.SetHeight(2.f);
+    transform.SetPosition(0.0f, -3.0f);
+    transform.SetScale(1.0f, 1.0f);
+    transform.SetRotationInDegrees(0);
+    render.width = 13.f; render.height = 2.f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+    render.MaterialName = m_BoxMaterial;
+}
 
-    {
-        uint32_t connectedRigidbody = m_Scene->AddEntity();
-        auto& transform1 = m_Scene->AddComponent<Wheel::Components::Transform2D>(connectedRigidbody);
-        auto& render1    = m_Scene->AddComponent<Wheel::Components::Sprite>(connectedRigidbody);
-        auto& collider1  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(connectedRigidbody);
-        auto& rigidbody1 = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(connectedRigidbody);
-        rigidbody1.SetMass(2.0f); rigidbody1.friction = 0.5f;
-        collider1.SetWidth(1.0f); collider1.SetHeight(1.0f);
-        transform1.SetPosition(-1.0f, 3.5);
-        transform1.SetScale(1.0f, 1.0f);
-        transform1.SetRotationInDegrees(0);
-        render1.width = 1.0f; render1.height = 1.0f; render1.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-        render1.MaterialName = m_BoxMaterial;
+void Start::CreateNewtonsCradle()
+{
+    float width = 0.5f;
+    float gap   = 0.002f;
+    float step  = width + gap;   // center spacing: the gap MUST be in the step, or neighbours stay exactly touching
+    float x0    = -1.0f;         // ball 0
 
-        uint32_t jointTest = m_Scene->AddEntity();
-        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(jointTest);
-        auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(jointTest);
-        auto& collider  = m_Scene->AddComponent<Wheel::Components::CircleCollider2D>(jointTest);
-        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(jointTest);
-        auto& joint     = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(jointTest);
-        rigidbody.SetMass(2.0f); rigidbody.friction = 0.5f;
-        collider.radius = 0.5f;
-        transform.SetPosition(-1.0f, 2.0f);
-        transform.SetScale(1.0f, 1.0f);
-        transform.SetRotationInDegrees(0);
-        render.width = 1.0f; render.height = 1.0f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-        render.MaterialName = m_CircleMaterial;
-        joint.localAnchorPoint = Wheel::Math::Vector2(0.0f, 0.0f);
-        joint.connectedRigidbody = connectedRigidbody;
-        joint.otherAnchorPoint = Wheel::Math::Vector2(0, 0);
-        joint.distance = 1.5f;
-    }
-
-    float w = 0.9;
-    float h = 0.5f;
-    float y = 1;
-    float x = 0;
     for (int i = 0; i < 4; i++)
     {
-        SpawnObject(x,y,w,h);
-        y += 1.0f; // > radius sum (0.9) so they don't interpenetrate at spawn
+        float x = x0 + i * step;
+        uint32_t entityId = SpawnObject(x, 2.f, width, width);
+        Wheel::Components::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(entityId);
+        joint.distance = 1.f;
+        joint.otherAnchorPoint = Wheel::Math::Vector2(x, 3.f);   // pivot directly above
     }
+    {
+        // Striker: one step left of ball 0, pulled back to horizontal and taut (distance == rest length).
+        float pivotX   = x0 - step;
+        float strikerX = pivotX - 1.0f;
+        uint32_t entityId = SpawnObject(strikerX, 3.f, width, width);
+        Wheel::Components::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(entityId);
+        joint.distance = 1.f;
+        joint.otherAnchorPoint = Wheel::Math::Vector2(pivotX, 3.f);
+    }
+}
+
+void Start::CreateEntities()
+{
+    InitializeCameraEntity();
+    CreateGroundEntity();
+
+    CreateNewtonsCradle();
 
 }
 

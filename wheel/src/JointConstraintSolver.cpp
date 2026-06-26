@@ -35,7 +35,7 @@ PrepareJointConstraintSolver(Components::Transform2D& a_Transform1, Components::
             ? delta * (1.0f / currentLength)
             : Math::Vector2(1.0f, 0.0f);
     jtc.direction = direction;
-    jtc.bias = (0.01 / dt) * C;
+    jtc.bias = (0.1 / dt) * C;
     jtc.a_cross_direction = (jtc.anchor1 - jtc.transform1.GetPosition()).Cross(direction);
     jtc.b_cross_direction = 0.0f;
     if (jtc.joint.connectedRigidbody != NO_VALUE && (jtc.rigidbody2.GetType() != Components::Rigidbody2DType::STATIC))
