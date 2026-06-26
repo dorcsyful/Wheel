@@ -274,7 +274,7 @@ void Wheel::Engine::Debugger::DrawJoints(uint32_t a_EntityId, ImDrawList* dl,
     }
     ImVec2 p1 = ToScreen(anchor1, a_CameraTransform, a_CameraComponent);
     ImVec2 p2 = ToScreen(anchor2, a_CameraTransform, a_CameraComponent);
-    dl->AddLine(p1, p2, GetColor(DebugColor::Green));
+    dl->AddLine(p1, p2, GetColor(DebugColor::Red));
 
 }
 

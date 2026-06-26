@@ -152,9 +152,9 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveDistanceJointConstr
             Components::Rigidbody2D& rigidbody1 = m_RigidbodyPool->GetComponent(entity);
             Components::Transform2D& transform2 = joint.connectedRigidbody == NO_VALUE ? transform1 : m_TransformPool->GetComponent(joint.connectedRigidbody);
             Components::Rigidbody2D& rigidbody2 = joint.connectedRigidbody == NO_VALUE ? rigidbody1 : m_RigidbodyPool->GetComponent(joint.connectedRigidbody);
-            jointCalcs.push_back(Physics::JointConstraintSolver::PrepareJointConstraintSolver(transform1, transform2, rigidbody1, rigidbody2, joint));
+            jointCalcs.push_back(Physics::JointConstraintSolver::PrepareJointConstraintSolver(transform1, transform2, rigidbody1, rigidbody2, joint, a_DeltaTime));
         }
-        Physics::JointConstraintSolver::SolveDistanceJointConstraint(jointCalcs[j], a_DeltaTime);
+        Physics::JointConstraintSolver::SolveDistanceJointConstraint(jointCalcs[j]);
         j++;
     }
 }

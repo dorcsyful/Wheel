@@ -96,22 +96,38 @@ void Start::CreateEntities()
         render.MaterialName = m_BoxMaterial;
     }
 
-    uint32_t jointTest = m_Scene->AddEntity();
-    auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(jointTest);
-    auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(jointTest);
-    auto& collider  = m_Scene->AddComponent<Wheel::Components::CircleCollider2D>(jointTest);
-    auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(jointTest);
-    auto& joint     = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(jointTest);
-    rigidbody.SetMass(2.0f); rigidbody.friction = 0.5f;
-    collider.radius = 0.5f;
-    transform.SetPosition(-1.0f, 2.0f);
-    transform.SetScale(1.0f, 1.0f);
-    transform.SetRotationInDegrees(0);
-    render.width = 1.0f; render.height = 1.0f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-    render.MaterialName = m_CircleMaterial;
-    joint.localAnchorPoint = Wheel::Math::Vector2(0.0f, 0.0f);
-    joint.otherAnchorPoint = Wheel::Math::Vector2(-1.f, 2.50f);
-    joint.distance = 1.0f;
+    {
+        uint32_t connectedRigidbody = m_Scene->AddEntity();
+        auto& transform1 = m_Scene->AddComponent<Wheel::Components::Transform2D>(connectedRigidbody);
+        auto& render1    = m_Scene->AddComponent<Wheel::Components::Sprite>(connectedRigidbody);
+        auto& collider1  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(connectedRigidbody);
+        auto& rigidbody1 = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(connectedRigidbody);
+        rigidbody1.SetMass(2.0f); rigidbody1.friction = 0.5f;
+        collider1.SetWidth(1.0f); collider1.SetHeight(1.0f);
+        transform1.SetPosition(-1.0f, 3.5);
+        transform1.SetScale(1.0f, 1.0f);
+        transform1.SetRotationInDegrees(0);
+        render1.width = 1.0f; render1.height = 1.0f; render1.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        render1.MaterialName = m_BoxMaterial;
+
+        uint32_t jointTest = m_Scene->AddEntity();
+        auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(jointTest);
+        auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(jointTest);
+        auto& collider  = m_Scene->AddComponent<Wheel::Components::CircleCollider2D>(jointTest);
+        auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(jointTest);
+        auto& joint     = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(jointTest);
+        rigidbody.SetMass(2.0f); rigidbody.friction = 0.5f;
+        collider.radius = 0.5f;
+        transform.SetPosition(-1.0f, 2.0f);
+        transform.SetScale(1.0f, 1.0f);
+        transform.SetRotationInDegrees(0);
+        render.width = 1.0f; render.height = 1.0f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        render.MaterialName = m_CircleMaterial;
+        joint.localAnchorPoint = Wheel::Math::Vector2(0.0f, 0.0f);
+        joint.connectedRigidbody = connectedRigidbody;
+        joint.otherAnchorPoint = Wheel::Math::Vector2(0, 0);
+        joint.distance = 1.5f;
+    }
 
     float w = 0.9;
     float h = 0.5f;

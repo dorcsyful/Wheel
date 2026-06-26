@@ -61,6 +61,7 @@ namespace Wheel
 
             T& GetComponent(uint32_t a_Entity)
             {
+                assert(m_EntityToComponent[a_Entity] != NO_VALUE && "Entity does not have component.");
                 return m_Components[m_EntityToComponent[a_Entity]];
             }
             void* GetRaw(uint32_t entityId) override {

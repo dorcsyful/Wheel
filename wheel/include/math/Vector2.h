@@ -31,7 +31,12 @@ namespace Wheel
 
             float Dot(const Vector2& a) const { return x * a.x + y * a.y; }
             float Cross(const Vector2& a) const { return x * a.y - y * a.x; }
-            float Length() const { return std::sqrt(x * x + y * y); }
+            float Length() const
+            {
+                float temp = x * x + y * y;
+                return temp < 1e-6f ? 1e-6f : std::sqrt(temp);
+            }
+
             float LengthSquared() const { return x * x + y * y; }
             Vector2 Normalized() const { return *this / Length(); }
             static Vector2 Normalize(const Vector2& a) { return a / a.Length(); }
