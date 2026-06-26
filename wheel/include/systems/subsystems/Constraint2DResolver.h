@@ -41,6 +41,11 @@ namespace Wheel::Engine::Physics
         float    normalImpulse[2]   = { 0.0f, 0.0f };
         float    frictionImpulse[2] = { 0.0f, 0.0f };
     };
+    struct CachedJoint
+    {
+        uint16_t id[2]              = { 0xFFFF, 0xFFFF };
+        float impulse = 0.0f;
+    };
 }
 namespace Wheel
 {
@@ -53,17 +58,20 @@ namespace Wheel
                 Constraint2DResolver();
                 void SolveConstraints(std::vector<Collision::Collision2DManifold>* a_Manifolds, Engine::Scene* a_Scene, float a_DeltaTime);
                 void IntegratePseudoPosition(Components::Transform2D& a_Transform2D, Components::Rigidbody2D& a_Rigidbody2D, float deltaTime);
-                void WarmStart(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, size_t tcIdx, int j);
+                void WarmStartCollision(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, size_t tcIdx, int j);
+                void WarmStartJoint(std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs, size_t jcIdx, int j);
                 void ResolveCollisionConstraints(float a_DeltaTime,
                                                  std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs,
                                                  int i);
                 void ResolveFrictionConstraints(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs);
                 void CacheContactImpulses(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs);
+                void CacheJointImpulses(std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs);
                 void ResolveDistanceJointConstraints(float a_DeltaTime, std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs, int i);
 
             private:
                 // Survives across frames to warm start each contact
                 std::unordered_map<uint64_t, Physics::CachedContact> m_ContactCache;
+                std::unordered_map<uint32_t, Physics::CachedJoint> m_JointCache;
                 std::vector<Collision::Collision2DManifold>* m_Manifolds = nullptr;
                 ComponentPool<Wheel::Components::Transform2D>* m_TransformPool = nullptr;
                 ComponentPool<Wheel::Components::Rigidbody2D>* m_RigidbodyPool = nullptr;

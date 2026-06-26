@@ -72,6 +72,7 @@ void Wheel::Engine::Physics::JointConstraintSolver::SolveDistanceJointConstraint
         Math::Vector2 impulse = impulseMagnitude * jointCalc.direction;
         jointCalc.rigidbody1.linearVelocity += impulse * jointCalc.rigidbody1.GetInverseMass();
         jointCalc.rigidbody1.angularVelocity += jointCalc.a_cross_direction * impulseMagnitude * jointCalc.rigidbody1.GetInverseInertia();
+        jointCalc.cachedImpulse += impulseMagnitude;   // running total for warm starting next frame
     }
     else
     {
@@ -84,5 +85,24 @@ void Wheel::Engine::Physics::JointConstraintSolver::SolveDistanceJointConstraint
         jointCalc.rigidbody1.angularVelocity += jointCalc.a_cross_direction * impulseMagnitude * jointCalc.rigidbody1.GetInverseInertia();
         jointCalc.rigidbody2.linearVelocity -= impulse * jointCalc.rigidbody2.GetInverseMass();
         jointCalc.rigidbody2.angularVelocity -= jointCalc.b_cross_direction * impulseMagnitude * jointCalc.rigidbody2.GetInverseInertia();
+        jointCalc.cachedImpulse += impulseMagnitude;   // running total for warm starting next frame
+    }
+}
+
+void Wheel::Engine::Physics::JointConstraintSolver::WarmStart(JointTempCalculations& jointCalc, float cachedImpulse)
+{
+    if (!jointCalc.go)
+        return;
+
+    float pn = cachedImpulse;
+    jointCalc.cachedImpulse = pn;
+
+    Math::Vector2 P = jointCalc.direction * pn;
+    jointCalc.rigidbody1.linearVelocity  += P * jointCalc.rigidbody1.GetInverseMass();
+    jointCalc.rigidbody1.angularVelocity += jointCalc.a_cross_direction * pn * jointCalc.rigidbody1.GetInverseInertia();
+    if (jointCalc.twoBody)
+    {
+        jointCalc.rigidbody2.linearVelocity  -= P * jointCalc.rigidbody2.GetInverseMass();
+        jointCalc.rigidbody2.angularVelocity -= jointCalc.b_cross_direction * pn * jointCalc.rigidbody2.GetInverseInertia();
     }
 }

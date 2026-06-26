@@ -45,7 +45,7 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::IntegratePseudoPosition(Co
 
 }
 
-void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStart(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, size_t tcIdx, int j)
+void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStartCollision(std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, size_t tcIdx, int j)
 {
     Collision::Collision2DManifold& wsManifold = (*m_Manifolds)[j];
     float startNormal[2]   = { 0.0f, 0.0f };
@@ -65,6 +65,17 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStart(std::vector<Whee
     Physics::CollisionConstraintSolver::WarmStart(tempCalcs[tcIdx], startNormal, startFriction);
 }
 
+void Wheel::Engine::Subsystems::Constraint2DResolver::WarmStartJoint(
+    std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs, size_t jcIdx, int j)
+{
+    Physics::JointTempCalculations& jointCalc = jointCalcs[j];
+    auto cached = m_JointCache.find(jcIdx);
+    if (cached != m_JointCache.end())
+    {
+        Physics::JointConstraintSolver::WarmStart(jointCalc, cached->second.impulse);
+    }
+}
+
 void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveCollisionConstraints(float a_DeltaTime, std::vector<Wheel::Engine::Physics::CollisionTempCalculations>& tempCalcs, int i)
 {
     size_t tcIdx = 0;
@@ -79,7 +90,7 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveCollisionConstraint
                 m_TransformPool->GetComponent((*m_Manifolds)[j].collider1), m_TransformPool->GetComponent((*m_Manifolds)[j].collider2),
                 m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider1), m_RigidbodyPool->GetComponent((*m_Manifolds)[j].collider2),
                 a_DeltaTime));
-            WarmStart(tempCalcs, tcIdx, j);
+            WarmStartCollision(tempCalcs, tcIdx, j);
         }
 
         Physics::CollisionConstraintSolver::SolvePseudoVelocities(tempCalcs[tcIdx]);
@@ -137,6 +148,23 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::CacheContactImpulses(std::
     m_ContactCache.swap(nextCache);
 }
 
+void Wheel::Engine::Subsystems::Constraint2DResolver::CacheJointImpulses(std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs)
+{
+    // Persist this frame's accumulated joint impulse, keyed by owner entity, for
+    // next-frame warm starting. Rebuilt each frame so removed joints drop out.
+    std::unordered_map<uint32_t, Physics::CachedJoint> nextCache;
+    nextCache.reserve(jointCalcs.size());
+    for (auto& jc : jointCalcs)
+    {
+        if (jc.entity == NO_VALUE)
+            continue;
+        Physics::CachedJoint cached;
+        cached.impulse = jc.cachedImpulse;
+        nextCache[jc.entity] = cached;
+    }
+    m_JointCache.swap(nextCache);
+}
+
 void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveDistanceJointConstraints(float a_DeltaTime,
     std::vector<Wheel::Engine::Physics::JointTempCalculations>& jointCalcs, int i)
 {
@@ -153,6 +181,8 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::ResolveDistanceJointConstr
             Components::Transform2D& transform2 = joint.connectedRigidbody == NO_VALUE ? transform1 : m_TransformPool->GetComponent(joint.connectedRigidbody);
             Components::Rigidbody2D& rigidbody2 = joint.connectedRigidbody == NO_VALUE ? rigidbody1 : m_RigidbodyPool->GetComponent(joint.connectedRigidbody);
             jointCalcs.push_back(Physics::JointConstraintSolver::PrepareJointConstraintSolver(transform1, transform2, rigidbody1, rigidbody2, joint, a_DeltaTime));
+            jointCalcs.back().entity = entity;   // cache key for warm starting next frame
+            WarmStartJoint(jointCalcs, entity, j);
         }
         Physics::JointConstraintSolver::SolveDistanceJointConstraint(jointCalcs[j]);
         j++;
@@ -182,4 +212,5 @@ void Wheel::Engine::Subsystems::Constraint2DResolver::SolveConstraints(std::vect
     //ResolveFrictionConstraints(tempCalcs);
 
     CacheContactImpulses(tempCalcs);
+    CacheJointImpulses(jointCalcs);
 }

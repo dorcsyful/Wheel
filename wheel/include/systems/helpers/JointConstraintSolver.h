@@ -24,7 +24,6 @@ namespace Wheel
                 Components::Rigidbody2D& rigidbody2;
                 Components::DistanceJoint2D& joint;
                 float a_cross_direction = 0.0f, b_cross_direction = 0.0f;
-                Math::Vector2 a_distance_from_com, b_distance_from_com;
                 Math::Vector2 anchor1, anchor2;
                 Math::Vector2 direction;
                 float constraintMass = 0.0f;
@@ -34,6 +33,8 @@ namespace Wheel
                 // solve body1 against a fixed/static anchor. Avoids recomputing (and
                 // having to keep in sync) the branch condition in Solve.
                 bool twoBody = false;
+                float cachedImpulse = 0.0f;
+                uint32_t entity = NO_VALUE;   // joint owner id; key for the warm-start cache
             };
 
             class JointConstraintSolver
@@ -43,6 +44,7 @@ namespace Wheel
                     Components::Rigidbody2D& a_Rigidbody1, Components::Rigidbody2D& a_Rigidbody2,
                     Components::DistanceJoint2D& a_Joint, float a_DeltaTime);
                 static void SolveDistanceJointConstraint(JointTempCalculations& jointCalc);
+                static void WarmStart(JointTempCalculations& jointCalc, float cachedImpulse);
             };
         }
     }
