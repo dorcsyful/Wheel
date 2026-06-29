@@ -26,11 +26,7 @@ void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
     (void)io;
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(a_Window, true);
-#ifdef _WIN32
-    ImGui_ImplOpenGL3_Init("#version 110");
-#else
     ImGui_ImplOpenGL3_Init("#version 100");
-#endif
     m_Tokens.emplace_back();
     EventSystem::EventBus::Subscribe<Events::CollisionEnterEvent>(
         [&](const Events::CollisionEnterEvent& e)
