@@ -1,13 +1,15 @@
 #pragma once
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include "../../wheel/include/core/Globals.h"
 #include "components/CameraComponent.h"
 #include "components/Sprite.h"
 #include "components/Transform2D.h"
 #include "math/Matrix4x4.h"
 #include "math/Vector4.h"
-
+#include "systems/helpers/RenderLayers.h"
+#include "UniformValue.h"
 namespace Wheel
 {
     namespace Renderer
@@ -89,6 +91,36 @@ namespace Wheel
                 translate[0] = a_Position.x;
                 translate[1] = a_Position.y;
             }
+            void SetRenderLayer(Helpers::RenderLevel a_Level)
+            {
+                level = a_Level;
+            }
+
+            // Per-object uniform override. The renderer uploads these after the
+            // engine uniforms, so a feature can drive shader inputs (e.g. an
+            // outline's thickness) that vary per entity instead of per material.
+            struct UniformOverride
+            {
+                char name[24] = {};
+                MaterialProperty value;
+            };
+            static constexpr int MAX_UNIFORM_OVERRIDES = 4;
+
+            // Queue a per-object uniform by name. Must be one of a shader's
+            // per-object uniforms; set it on every object drawn with that shader
+            // (GL uniform state is sticky). Silently dropped past the cap.
+            template<typename T>
+            void SetUniform(const char* a_Name, const T& a_Value)
+            {
+                static_assert(sizeof(T) <= sizeof(MaterialProperty::bytes),
+                              "Uniform value is larger than MaterialProperty storage.");
+                if (overrideCount >= MAX_UNIFORM_OVERRIDES) return;
+                UniformOverride& o = overrides[overrideCount++];
+                std::strncpy(o.name, a_Name, sizeof(o.name) - 1);
+                o.name[sizeof(o.name) - 1] = '\0';
+                o.value.type = UniformTypeOf<T>::value;
+                std::memcpy(o.value.bytes, &a_Value, sizeof(T));
+            }
 
             uint32_t entityId  = 0;
             uint32_t textureId = 0;
@@ -97,6 +129,10 @@ namespace Wheel
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             float linear[4]    = { 1.0f, 0.0f, 0.0f, 1.0f };
             float translate[2] = { 0.0f, 0.0f };
+            Wheel::Helpers::RenderLevel level = 0;
+
+            UniformOverride overrides[MAX_UNIFORM_OVERRIDES];
+            uint8_t         overrideCount = 0;
         };
     }
 }

@@ -1,9 +1,12 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <functional>
+#include <algorithm>
 #include "EventBus.h"
 #include "RenderedObject.h"
 #include "core/System.h"
+#include "core/Scene.h"
 #include "core/ComponentPool.h"
 #include "components/Transform2D.h"
 #include "components/Sprite.h"
@@ -50,6 +53,31 @@ namespace Wheel
                 static bool ROSorter(Renderer::RenderedObject& a_A, Renderer::RenderedObject& a_B);
 
                 /**
+                 * @brief Register a render feature: any feature component that's present
+                 * on an entity, creates extra RenderedObject(s) derived from the base sprite
+                 * (highlight, glow, shadow...). Register all features before the first rendered frame
+                 */
+                template <typename T>
+                void RegisterFeature(Helpers::RenderLevel a_Order,
+                    std::function<void(const Renderer::RenderedObject&, const T&,
+                                       std::vector<Renderer::RenderedObject>&)> a_Out)
+                {
+                    RenderFeature feature;
+                    feature.order = a_Order;
+                    feature.has   = [](Engine::Scene* a_Scene, uint32_t a_Entity)
+                    {
+                        return a_Scene->HasComponent<T>(a_Entity);
+                    };
+                    feature.result  = [emit = std::move(a_Out)](Engine::Scene* a_Scene, uint32_t a_Entity,
+                                  const Renderer::RenderedObject& a_Base,
+                                  std::vector<Renderer::RenderedObject>& a_Out)
+                    {
+                        emit(a_Base, a_Scene->GetComponent<T>(a_Entity), a_Out);
+                    };
+                    m_Features.push_back(std::move(feature));
+                }
+
+                /**
                  * @brief Convert a world-space point to screen-space pixels using the currently active camera.
                  */
                 Math::Vector2 WorldToScreen(const Math::Vector2& a_World);
@@ -72,6 +100,18 @@ namespace Wheel
                     float         rotation = 0.0f;
                     Math::Vector2 scale;
                 };
+
+                // Type-erased render feature.
+                struct RenderFeature
+                {
+                    Helpers::RenderLevel order = 0;
+                    //needs access to scene to check for required component
+                    std::function<bool(Engine::Scene*, uint32_t)> has;
+                    std::function<void(Engine::Scene*, uint32_t,
+                                       const Renderer::RenderedObject&,
+                                       std::vector<Renderer::RenderedObject>&)> result;
+                };
+
                 void EnsurePools();
 
                 // Indexed directly by entityId (IDs are dense and capped at
@@ -83,11 +123,12 @@ namespace Wheel
                 Renderer::Renderer* m_Renderer = nullptr;
                 uint32_t m_CameraEntity = -1;
                 std::vector<Renderer::RenderedObject> m_RenderObjects;
+                std::vector<RenderFeature> m_Features;
                 float m_designWidth  = 0.0f;
                 float m_designHeight = 0.0f;
                 float m_initialZoom  = 0.0f;
                 std::vector<EventSystem::SubscriptionToken> m_Tokens = {};
-
+                std::vector<Renderer::RenderedObject> m_RenderFeatures;
                 ComponentPool<Components::Transform2D>*      m_TransformPool = nullptr;
                 ComponentPool<Components::Sprite>* m_RenderPool   = nullptr;
                 ComponentPool<Components::CameraComponent>*  m_CameraPool    = nullptr;

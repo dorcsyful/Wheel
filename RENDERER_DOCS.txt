@@ -1,0 +1,512 @@
+===============================================================================
+ WHEEL ENGINE — RENDERER DOCUMENTATION
+===============================================================================
+
+Purpose of this document:
+  A cold-start reference for the 2D renderer and the "render feature" system.
+  If you have been away from this project for a year, read this top to bottom
+  and you will understand how a frame is drawn, why each piece exists, and how
+  to add new visual effects — without spelunking through the code first.
+
+  This is NOT an API reference. It does not describe every function. It
+  describes purpose, flow, and reasoning.
+
+Big picture in three sentences:
+  - The engine (ECS) never talks to OpenGL. Once per frame it fills a flat
+    list of RenderedObject structs and hands the pointer to the Renderer.
+  - RenderedObject is the ONLY type that crosses the engine <-> renderer
+    boundary. Everything a draw needs (transform, color, resource ids, layer,
+    per-object uniform overrides) lives on it as plain data / integer ids.
+  - The Renderer walks that list once and issues GL calls, changing as little
+    GL state as possible between draws.
+
+Rendering backend: OpenGL ES 2.0 (via GLFW + GLAD). ES 2.0 is why you see
+  quirks like "no transpose flag on glUniformMatrix" and "attributes bound by
+  name every program switch".
+
+
+===============================================================================
+ 1. FILES IN wheel/renderer  — what each one is for
+===============================================================================
+
+include/Renderer.h  +  src/Renderer.cpp
+  The renderer itself. Owns the GLFW window and GL context, and owns the three
+  resource tables (shaders, textures, materials) plus the single unit quad that
+  every 2D sprite is drawn with. Loads resources at startup; executes the draw
+  loop in Update(). This is the only place that calls OpenGL for drawing.
+
+include/RenderedObject.h   (header-only)
+  The hand-off struct: one per drawable per frame. THE bridge between engine and
+  renderer — deliberately has no GL dependency so the engine side can build it
+  freely. Holds the per-object 2D affine (a 2x2 "linear" + a translate), color,
+  the resolved texture/shader/material ids, the render layer, and a small set of
+  per-object uniform overrides. Also carries two static/inline helpers that are
+  pure math: ComputeViewProj() (camera matrix) and Build() (packs a sprite +
+  interpolated transform into the affine). Nothing here touches GL.
+
+include/Material.h   (header-only)
+  "How to draw something" = a shader + a texture + the constant per-object
+  uniform values that the engine does NOT supply. See section 5 for the full
+  reasoning. Referenced from a Sprite by integer id.
+
+include/Shader.h  +  src/Shader.cpp
+  Compiles a vertex+fragment pair into a GL program and, right after linking,
+  enumerates every active attribute and uniform (CacheLocations). Uniforms start
+  life in the "per-object" bucket; AddShader() later promotes the frame-wide ones
+  ("u_viewProj", "s_texture") into the "per-bind" bucket. This bucketing is what
+  lets the draw loop upload each uniform at the right frequency (see section 4).
+
+include/Texture.h  +  src/Texture.cpp
+  A thin wrapper around an image file. Construction only records the path;
+  the pixels are uploaded to GL when Renderer::LoadTexture() calls LoadTexture().
+  The renderer hands back an integer id used everywhere afterwards.
+
+include/TypeInfo.h
+  A lookup table: GL uniform type enum (GL_FLOAT_VEC2, GL_FLOAT_MAT4, ...) ->
+  { component count, base type, function pointer to the correct glUniform* call }.
+  This is what makes uniform upload generic: given a location, a type, and a
+  pointer to bytes, the right GL call fires with zero per-uniform C++ code. Used
+  by both material-uniform upload and per-object-override upload. In other words,
+  this knows whether to call glUniform1fv(), glUniform1ó2fv(), glUniformMatrix4fv() and so on.
+
+include/UniformValue.h   (header-only, GL-free)
+  The storage types shared by Material and RenderedObject: the UniformType enum,
+  the UniformTypeOf<T> trait (C++ type -> UniformType), and MaterialProperty
+  (a type tag + 64 raw bytes). Created so Material can store the properties
+  (which have different types) in one unordered_map
+
+include/DebugDescriptor.h
+  Reflection macros (REFLECT_BEGIN / FIELD / REFLECT_END) and the makeField
+  overloads behind them. A component that uses these exposes a list of
+  {name, type, struct offset} so the Debugger can display/edit its fields
+  generically. Not a drawing concern; it lives here because the Debugger does.
+
+include/Debugger.h  +  src/Debugger.cpp
+  The ImGui debug overlay (entity list, window stats). Compiled and drawn only
+  under DEBUG_BUILD. Drawn at the end of the render loop, before buffer swap.
+
+
+===============================================================================
+ 2. STARTUP  — Start::Init(), call by call, and WHY
+===============================================================================
+
+Order matters here; several calls depend on earlier ones.
+
+  m_Renderer = make_unique<Renderer>();
+  m_Renderer->Init(1280, 720, "Wheel Engine");
+      Creates the GLFW window and an OpenGL ES 2.0 context, loads GL function
+      pointers via GLAD, sets the viewport and a framebuffer-resize callback.
+      Then the non-boilerplate part:
+        - AddShader("base.vert","base.frag")
+        - AddShader("circle.vert","circle.frag")
+        - AddShader("highlight.vert","highlight.frag")
+            Each AddShader compiles+links the program and caches its uniform and
+            attribute locations. It also PROMOTES "u_viewProj" and "s_texture"
+            from per-object to per-bind, because those are identical for every
+            object drawn with the shader and should be uploaded once per program
+            bind, not once per object. "highlight" is the outline shader (sec 6).
+        - CreateTestSquare()
+            Uploads the ONE unit quad (corners at -0.5..0.5 with texcoords) into
+            a VBO/EBO. Every 2D sprite in the whole engine is this same quad,
+            transformed per object by u_model/u_translate in the vertex shader.
+            There is no per-sprite geometry.
+        - glEnable(GL_BLEND) + standard alpha blend func, so sprite transparency
+            and the outline's transparent regions composite correctly.
+
+  m_Scene = make_unique<Scene>();
+
+  RegisterComponents();
+      Registers every component type with the ECS (Transform2D, Sprite, camera,
+      colliders, rigidbody, joint, and Highlight2D). Registration must happen
+      before any system queries or HasComponent<> checks for that type.
+
+  RegisterSystems();
+      Builds "Descriptions" (bitsets naming the components a system requires) and
+      registers each system against them. The important, non-obvious parts:
+        - RenderSystem is registered requiring Transform2D + Sprite: only entities
+          with both are iterated for drawing.
+        - m_RenderSystem->GetRenderer(m_Renderer.get()) gives the render system a
+          raw pointer to the renderer (so it can resolve materials and push the
+          frame list). Despite the name this is a SETTER.
+        - id = m_Renderer->GetShaderId("highlight") grabs the outline shader's id.
+        - m_RenderSystem->RegisterFeature<Highlight2D>(-1, lambda) registers the
+          outline as a "render feature" (see section 6). The lambda is captured
+          now and run every frame for every entity that has a Highlight2D. The
+          shader id is captured by value here; that is why the shader must already
+          exist (it was added inside Renderer::Init above).
+
+  LoadTexture(...) x3   (square.png, logo.png, character.png/key)
+      Registers and uploads each texture, returning an integer id. Materials
+      resolve texture NAMES to these ids once, at creation, so the draw loop
+      never touches a string.
+
+  m_BoxMaterial    = CreateMaterial("base",   "textures/square.png")->id;
+  m_CircleMaterial = CreateMaterial("circle", "textures/square.png")->id;
+      Creates the two base materials and stores their ids. CreateMaterial pairs a
+      shader+texture and fills a default value for every uniform the shader
+      declares (so nothing is ever left unset). Deduped by shader+texture key.
+
+  CreateEntities();
+      Spawns the camera, the ground, the Newton's cradle balls, and the test
+      character/key entity. Each drawable entity gets a Transform2D + Sprite and
+      a MaterialName pointing at one of the material ids above.
+
+Why this ordering: shaders exist before feature registration captures a shader
+id; textures exist before materials resolve them; materials exist before
+entities reference them.
+
+
+===============================================================================
+ 3. PER-FRAME, ENGINE SIDE  — RenderSystem
+===============================================================================
+
+The game loop (Start::Update) runs a fixed-timestep physics loop and a
+variable-rate render. Two render-system entry points cooperate:
+
+SavePreviousTransforms()
+    Called once immediately before each fixed physics step. It snapshots every
+    tracked entity's transform into m_PrevTransforms (and marks m_PrevValid).
+    Reason: the render happens at a different rate than physics, so Render()
+    interpolates between the LAST snapshot and the CURRENT transform to avoid
+    stutter. Only the snapshot taken right before the final step of a frame is
+    used, so redundant snapshots during catch-up are skipped by the caller.
+
+Render(alpha)   — alpha in [0,1] = accumulator / fixedDeltaTime
+    1. EnsurePools() lazily caches the component-pool pointers (transform,
+       sprite, camera) on first use, so the per-entity loop never re-resolves
+       them.
+    2. Clear m_RenderObjects and m_RenderFeatures (both are reused members,
+       reserved to MAX_ENTITIES, so no per-frame reallocation).
+    3. Compute the frame view-projection from the camera and hand it to the
+       renderer via SetViewProj (stored once, uploaded once per shader bind).
+    4. For each entity that has a Sprite:
+         - Read current transform; if a previous snapshot exists, interpolate:
+             position: straight lerp by alpha.
+             rotation: shortest-arc lerp (delta wrapped into [-pi, pi] so
+                       359deg -> 1deg spins +2deg, not -358deg).
+             scale:    straight lerp.
+           If no snapshot yet (first frame / just spawned / paused), fall back to
+           the current transform.
+         - Resolve the sprite's material (m_Renderer->GetMaterial) and build the
+           base RenderedObject: Build() packs sprite size * interpolated scale *
+           rotation into the 2x2 "linear" plus the translate; then textureId,
+           shaderId, materialId, and level are copied on. Push to m_RenderObjects.
+         - FEATURES: for each registered feature, if the entity has that feature's
+           component, call feature.result(scene, entityId, baseRO, m_RenderFeatures).
+           That appends the feature's extra RenderedObject(s). Immediately after,
+           each newly appended RO gets its level set to (baseRO.level + feature.order)
+           — this is the "relative layering" (section 6).
+    5. Append m_RenderFeatures onto m_RenderObjects (order irrelevant; the sort
+       fixes it).
+    6. std::sort by ROSorter: level ASC, then shaderId ASC, then textureId ASC.
+         - level first  = painter's order (there is no depth buffer; lower level
+                          draws earlier / further back). This is what makes an
+                          outline at level-1 sit behind its sprite at level 0.
+         - shader/texture next = batching: objects sharing a program/texture end
+                          up adjacent, minimizing GL state changes in the loop.
+    7. Hand the list pointer to the renderer (GetRenderedObjects). The renderer
+       does not own or copy it; it reads it during Update().
+
+
+===============================================================================
+ 4. PER-FRAME, RENDERER SIDE  — Renderer::Update() draw loop
+===============================================================================
+
+Precondition: m_RenderedObjects points at the sorted list from RenderSystem.
+
+  - If the list is empty, bail (nothing to clear/draw this path).
+  - Clear the color buffer. Bind the single quad's VBO/EBO once — it never
+    changes for the whole frame.
+  - Track activeShaderId / activeTexId / activeMatId to skip redundant binds.
+
+  For each RenderedObject (already sorted, so changes come in runs):
+
+    (a) If shaderId changed:
+          - glUseProgram + BindAttributes (ES 2.0 needs attribute pointers
+            re-bound per program).
+          - Upload the PER-BIND uniforms once: the sampler unit (s_texture -> 0)
+            and u_viewProj (uploaded from the transposed frame matrix — ES 2.0
+            forbids the transpose flag, so it was pre-transposed in SetViewProj).
+          - Resolve the three ENGINE per-object uniform locations for this program:
+            u_model, u_translate, u_color (see IsEngineUniform).
+          - Force a material re-upload (a new program invalidates the old one).
+
+    (b) If textureId changed: bind that texture to unit 0.
+
+    (c) If materialId changed: UploadMaterialUniforms(). This uploads the
+        MATERIAL-owned per-object uniforms — every per-object uniform the shader
+        declares EXCEPT the three engine ones — reading their values from the
+        material's property map and firing the correct GL call via TypeInfoMap.
+        These are constant across every object sharing the material, so this runs
+        only on material change, not per object.
+
+    (d) Upload the three ENGINE per-object uniforms straight from this RO:
+          u_model     <- linear (2x2)
+          u_translate <- translate
+          u_color     <- color
+
+    (e) Upload PER-OBJECT OVERRIDES from this RO (section 6). For each override,
+        find its location by matching its name against the shader's per-object
+        list, then upload via TypeInfoMap. These fire LAST, so they overwrite the
+        material defaults for the same uniform. This is how a value that varies
+        per entity (e.g. outline thickness) reaches the shader, even though the
+        engine only natively feeds three per-object uniforms.
+
+    (f) glDrawElements — draw the quad (6 indices).
+
+  After the loop: Debugger draw (DEBUG_BUILD only), then swap buffers.
+
+Three uniform frequencies, summarized:
+    per-bind    : uploaded once per program bind        (u_viewProj, s_texture)
+    per-material: uploaded once per material change      (material properties)
+    per-object  : uploaded every object    (u_model/u_translate/u_color + overrides)
+
+
+===============================================================================
+ 5. THE MATERIAL CLASS  — why it exists, every line
+===============================================================================
+
+WHY IT EXISTS
+  A draw needs two very different kinds of information:
+    - Dynamic, per-object data that changes every frame: transform, color, and
+      any per-object override. This lives on RenderedObject.
+    - Static "recipe" data shared by many objects: which shader, which texture,
+      and the constant values of any extra uniforms that shader declares. This
+      lives on a Material.
+  Separating them buys two things:
+    1. Batching. Because the recipe is shared and identified by a small integer
+       id, the frame list can be sorted by shader/texture and drawn in runs.
+    2. Generic uniforms. A shader can declare arbitrary extra uniforms; the
+       material stores their values by name and the draw loop uploads them with
+       no shader-specific C++ code.
+  A Sprite does not embed a shader or texture; it stores a MaterialName (an id).
+  That indirection is the whole point — many sprites, one material, one bind.
+
+THE FILE, LINE BY LINE (Material.h)
+
+  class Material
+    std::string ShaderName  = "base";
+    std::string TextureName = "square.png";
+        The names this material was built from. Kept mostly for debugging/
+        inspection; the draw loop never uses names.
+
+    uint32_t id        = 0;
+        This material's own slot index in Renderer::m_Materials. This is the
+        number a Sprite stores as MaterialName and a RenderedObject stores as
+        materialId.
+
+    uint32_t shaderId  = 0;
+    uint32_t textureId = 0;
+        The resolved integer lookups for ShaderName/TextureName, cached here at
+        creation so the render loop never hashes a string. NOTE: the draw loop
+        actually reads these off the RenderedObject, not off the material — the
+        material caches them so RenderSystem can copy them onto the RO cheaply.
+
+    template<typename T> void Set(name, value)
+        static_assert that sizeof(T) fits the 64-byte store; tag the property
+        with UniformTypeOf<T>::value; memcpy the raw bytes in. Type-erased
+        storage: one map holds floats, vec2s, mat4s, etc., uniformly.
+
+    template<typename T> T Get(name) const
+        memcpy the bytes back out into a T. Returns a default-constructed T if
+        the name is absent.
+
+    bool Has(name) const
+        Existence check.
+
+    const std::unordered_map<std::string, MaterialProperty>& GetProperties() const
+        The draw loop's read path: UploadMaterialUniforms iterates the shader's
+        per-object uniforms and looks each up here by name.
+
+    private: std::unordered_map<std::string, MaterialProperty> m_Properties;
+        Name -> value. MaterialProperty = { UniformType type; byte bytes[64]; }.
+
+SUPPORTING TYPE (UniformValue.h)
+    MaterialProperty is deliberately a fixed 64-byte blob (fits up to a mat4)
+    with 16-byte alignment. Fixed size = no allocation, trivially copyable, and
+    safe to sit inside other trivially-copyable structs (which is exactly what
+    RenderedObject's overrides do).
+
+WHERE MATERIALS ARE USED (the whole lifecycle)
+  - Created: Renderer::CreateMaterial(shaderName, textureName) at startup.
+    It dedupes on "shader_texture", resolves shaderId/textureId, then calls
+    SetDefault for every uniform the shader declares (per-object AND per-bind),
+    so every declared uniform starts with a sane value.
+  - Referenced: a Sprite stores a material id in MaterialName.
+  - Read in RenderSystem::Render: GetMaterial(MaterialName) -> copy textureId,
+    shaderId, materialId onto the RenderedObject.
+  - Read in Renderer::Update: on material change, UploadMaterialUniforms reads
+    GetProperties() and uploads the non-engine per-object uniforms.
+
+  Note on the outline: the highlight shader has NO material-constant uniforms
+  that matter (everything it needs is either engine-driven or a per-object
+  override), so the outline RO reuses the sprite's own material id. No dedicated
+  "highlight material" is needed.
+
+
+===============================================================================
+ 6. THE RENDER FEATURE SYSTEM  — everything
+===============================================================================
+
+6.1  THE PROBLEM IT SOLVES
+  Effects like an outline, a glow, or a drop shadow all "add to" a base sprite:
+  they draw one or more EXTRA quads derived from the sprite (same texture, tinted
+  and/or offset and/or on a different shader, layered behind or in front).
+  We wanted to add such effects open-endedly WITHOUT editing RenderedObject or
+  RenderSystem for each one. So a feature had to be pluggable data + a small
+  function, registered once.
+
+6.2  THE CORE ABSTRACTION
+  A feature is:
+    - a COMPONENT that carries the effect's data (e.g. Highlight2D = thickness +
+      color). Its presence on an entity means "this entity has the effect".
+    - an EMIT FUNCTION that, given the entity's already-built base RenderedObject
+      and the component, appends extra RenderedObject(s) to an output list.
+  Crucially the emitter receives the BASE RenderedObject, not the sprite/scene.
+  A RenderedObject already carries the transform, color, and resource ids, so an
+  effect that re-scales / re-tints / re-shaders the base needs nothing else.
+  (If a future effect needs to read OTHER components, that is the one case this
+  design intentionally does not cover; you would widen the emitter's inputs.)
+
+6.3  REGISTRATION  (RenderSystem.h :: RegisterFeature<T>)
+  RegisterFeature<T>(order, emit) wraps the typed emit lambda into a type-erased
+  RenderFeature and stores it in m_Features. RenderFeature holds:
+     order   : an int layer offset RELATIVE to the owning sprite's level.
+     has     : (scene, entity) -> bool, implemented as scene->HasComponent<T>.
+     result  : (scene, entity, baseRO, out) — fetches scene->GetComponent<T> and
+               calls the user emit with (baseRO, component, out).
+  The <T> only lives inside these two closures; RenderSystem stores a flat list
+  and never knows the concrete component type. Registration just push_backs — the
+  list order does not matter because draw order is decided later by the sort.
+
+6.4  EXECUTION  (RenderSystem.cpp, inside the per-entity loop)
+  After building the base RO for an entity, the loop runs every feature:
+      for each feature:
+          if feature.has(scene, entity):
+              remember out.size()
+              feature.result(scene, entity, baseRO, m_RenderFeatures)
+              for each newly appended RO: RO.level = baseRO.level + feature.order
+  So the FEATURE'S LAYER IS RELATIVE to whatever layer the sprite is on. A
+  highlight registered at order -1 always sits exactly one layer behind ITS OWN
+  sprite, whether that sprite is on the default layer or on some background
+  layer. The system stamps the level; the emit lambda does not have to.
+
+6.5  DRAW ORDER
+  All emitted ROs go into m_RenderFeatures, then get merged and sorted with the
+  base ROs by ROSorter (level, then shader, then texture). Because level is the
+  primary key, an outline at level-1 is drawn before (behind) its sprite at
+  level 0, while same-level same-shader same-texture objects still batch. There
+  is no depth buffer; this painter's-order sort IS the depth handling.
+
+6.6  THE PER-OBJECT UNIFORM OVERRIDE CHANNEL   (the enabling mechanism)
+  Some shader features need uniforms that vary PER ENTITY, not per material. The
+  outline is the motivating case: its thickness/UV-scale depend on each sprite's
+  world size, so they cannot be baked into a shared material. But the engine
+  natively feeds only three per-object uniforms (u_model, u_translate, u_color).
+  Solution: RenderedObject carries a tiny fixed array of overrides.
+
+    RenderedObject:
+       struct UniformOverride { char name[24]; MaterialProperty value; };
+       static constexpr int MAX_UNIFORM_OVERRIDES = 4;
+       UniformOverride overrides[MAX_UNIFORM_OVERRIDES];
+       uint8_t overrideCount;
+       template<typename T> void SetUniform(name, value);   // append, memcpy
+
+  SetUniform records a (name, type, bytes) triple; the renderer (step 4e) matches
+  the name against the active shader's per-object uniforms and uploads via
+  TypeInfoMap, AFTER the engine uniforms and material defaults, so the override
+  wins. This channel is generic: any future shader feature can push its own
+  per-object uniforms the same way.
+
+  RULE that comes with it: a uniform driven per-object must be set on EVERY
+  object drawn with that shader (GL uniform state is sticky per program). This is
+  fine for the outline because the highlight shader is only ever used by outline
+  ROs, which all set their overrides.
+
+  Storage note: UniformValue.h is GL-free precisely so RenderedObject (engine
+  side) can embed MaterialProperty without dragging OpenGL headers into the ECS.
+
+6.7  THE HIGHLIGHT (OUTLINE) FEATURE — the concrete instance
+
+  Component: Highlight2D { int thickness (pixels); Vector4 color }.
+
+  Registration (Start.cpp): RegisterFeature<Highlight2D>(-1, lambda). Order -1 =
+  one layer behind the sprite.
+
+  Why NOT the naive "scale the sprite up" approach (this was tried first and
+  abandoned):
+     Scaling the quad is a homothety — every texel moves radially out from the
+     sprite center by (position * factor). The visible outline band's width then
+     depends on each edge's DISTANCE FROM CENTER and its ANGLE relative to the
+     radial direction. For a complex, off-center silhouette (the key: bow, thin
+     shaft, teeth) this gives a thick band at the far top and almost nothing on
+     the shaft or near the center. A homothety scales a shape; it does not
+     DILATE it. A uniform-width outline of an arbitrary alpha silhouette needs a
+     morphological dilation of the alpha mask.
+
+  How the outline actually works now (dilation in the fragment shader):
+     highlight.frag: for each fragment, discard if the sprite's own alpha there
+     is opaque (that interior is covered by the real sprite drawn on top). Else
+     sample a ring of taps at radius u_thicknessUV around the fragment; if ANY
+     tap hits an opaque texel, output the outline color; else discard. That paints
+     a uniform band exactly `thickness` outside the true silhouette.
+     highlight.vert: draws the quad enlarged by the margin and remaps the UVs so
+     the texture sits inset in the center; the added border maps to UVs outside
+     [0,1], which the fragment shader treats as transparent (room for the band to
+     grow into).
+
+  What the emit lambda computes (from the base RO alone):
+     sx = length of linear column 0, sy = length of column 1  -> the sprite's
+        world width/height including scale. (Recoverable from the baked affine;
+        the raw sprite size is not needed.)
+     t  = thickness / PIXELS_PER_UNIT                          -> world margin.
+     fx = (sx + 2t)/sx,  fy = (sy + 2t)/sy                     -> grow factors.
+     - multiply linear by fx/fy                                -> enlarge the quad.
+     - ro.shaderId = highlight; keep the sprite's textureId + materialId.
+     - ro.color = highlight color                              -> uploaded as u_color.
+     - SetUniform("u_uvScale",     (fx, fy))                   -> vertex UV inset.
+     - SetUniform("u_thicknessUV", (t/(sx+2t), t/(sy+2t)))     -> ring radius in the
+       enlarged quad's UV space.
+     The system then stamps ro.level = baseRO.level - 1.
+
+  Draw path for one outlined sprite: at level-1 the outline RO uses the highlight
+  program + the sprite's own texture; u_model/translate/color come from the RO,
+  u_uvScale/u_thicknessUV come from the overrides; then at level 0 the real
+  sprite draws on top with its normal shader.
+
+  KNOWN LIMITATION: the dilation reads TEXTURE ALPHA. It works for sprites whose
+  silhouette lives in the texture's alpha channel (PNG art like the key). It does
+  NOT work for procedurally-shaped sprites — e.g. the cradle balls, whose round
+  shape comes from the circle shader's math while their texture (square.png) is
+  fully opaque. Their outline comes out as a square ring. To outline a procedural
+  shape you would have to make that shape's shader emit a mask the outline can
+  sample. Do not be surprised by square rings on the balls; that is expected.
+
+6.8  TO ADD A NEW FEATURE LATER (checklist)
+     1. Make a component struct holding the effect's data. Register its type in
+        RegisterComponents.
+     2. If the effect needs a special shader, write the .vert/.frag and AddShader
+        it in Renderer::Init; grab its id at registration.
+     3. RegisterFeature<YourComponent>(order, lambda). In the lambda: copy the
+        base RO, tweak transform/color/shaderId, and push_back. Use SetUniform
+        for anything that varies per entity. Do NOT set level — the system stamps
+        it from `order`.
+     4. Add the component to whichever entities should show the effect.
+     Nothing in RenderedObject, RenderSystem, or the draw loop needs to change.
+
+
+===============================================================================
+ 7. ONE-SCREEN MENTAL MODEL
+===============================================================================
+  physics step        -> SavePreviousTransforms (snapshot for interpolation)
+  render tick:
+    RenderSystem      -> interpolate; build base RO per sprite; run features to
+                         emit extra ROs; stamp relative layers; sort by
+                         level/shader/texture; hand list to Renderer
+    Renderer::Update  -> walk sorted list; bind program/texture/material only on
+                         change; upload per-bind, per-material, per-object, and
+                         override uniforms; draw the one shared quad each time;
+                         swap buffers
+  The quad is always the same. The transform is a 2x2 + translate. Depth is fake
+  (painter's order via `level`). Effects are extra ROs produced by features.
+===============================================================================

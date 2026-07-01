@@ -2,6 +2,7 @@
 #include <cstdint>
 
 #include "DebugDescriptor.h"
+#include "systems/helpers/RenderLayers.h"
 
 namespace Wheel
 {
@@ -24,7 +25,7 @@ namespace Wheel
              * @brief: You can give the texture a tint. If there is no texture assigned, this will be the color of the mesh
              */
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-
+            Helpers::RenderLevel level = 0;
             REFLECT_BEGIN(Sprite)
             FIELD(active)
             FIELD(ID)

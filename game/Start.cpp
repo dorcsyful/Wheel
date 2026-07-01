@@ -3,8 +3,10 @@
 #include "systems/Collision2DSystem.h"
 #include "components/Collider2D.h"
 #include "components/Rigidbody2D.h"
+#include "components/Highlight2D.h"
 #include "systems/Physics2DSystem.h"
 #include "Texture.h"
+#include <cmath>
 
 void Start::RegisterComponents()
 {
@@ -15,6 +17,7 @@ void Start::RegisterComponents()
     m_Scene->RegisterComponentType<Wheel::Components::CircleCollider2D>();
     m_Scene->RegisterComponentType<Wheel::Components::Rigidbody2D>();
     m_Scene->RegisterComponentType<Wheel::Components::DistanceJoint2D>();
+    m_Scene->RegisterComponentType<Wheel::Components::Highlight2D>();
 }
 
 void Start::RegisterSystems()
@@ -28,6 +31,31 @@ void Start::RegisterSystems()
     finalDesc.AddComponentType(render.GetAsBitset());
     m_RenderSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::RenderSystem>(finalDesc);
     m_RenderSystem->GetRenderer(m_Renderer.get());
+    auto id = m_Renderer->GetShaderId("highlight");
+    // Highlight: same sprite grown by thickness (world units = px / PIXELS_PER_UNIT),
+    // tinted, one layer behind its owner.
+    m_RenderSystem->RegisterFeature<Wheel::Components::Highlight2D>(-1,
+        [id](const Wheel::Renderer::RenderedObject& a_Base,
+             const Wheel::Components::Highlight2D& a_Highlight,
+             std::vector<Wheel::Renderer::RenderedObject>& a_Out)
+        {
+            float t  = static_cast<float>(a_Highlight.thickness) / PIXELS_PER_UNIT;
+            float sx = std::sqrt(a_Base.linear[0] * a_Base.linear[0] + a_Base.linear[1] * a_Base.linear[1]);
+            float sy = std::sqrt(a_Base.linear[2] * a_Base.linear[2] + a_Base.linear[3] * a_Base.linear[3]);
+            if (sx <= 0.0f || sy <= 0.0f) return;
+
+            Wheel::Renderer::RenderedObject ro = a_Base;
+            float fx = (sx + 2.0f * t) / sx;
+            float fy = (sy + 2.0f * t) / sy;
+            ro.linear[0] *= fx; ro.linear[1] *= fx;
+            ro.linear[2] *= fy; ro.linear[3] *= fy;
+            ro.color = a_Highlight.color;
+            ro.shaderId = id;
+            // dilation params in the enlarged quad's UV space
+            ro.SetUniform("u_uvScale",     Wheel::Math::Vector2(fx, fy));
+            ro.SetUniform("u_thicknessUV", Wheel::Math::Vector2(t / (sx + 2.0f * t), t / (sy + 2.0f * t)));
+            a_Out.push_back(ro);
+        });
     finalDesc = Wheel::Engine::Description();
     finalDesc.AddComponentType(transform.GetAsBitset());
     finalDesc.AddComponentType(cameraDesc.GetAsBitset());
@@ -40,7 +68,6 @@ void Start::RegisterSystems()
     finalDesc.AddComponentType(transform.GetAsBitset());
     finalDesc.AddComponentType(rigidbody2D.GetAsBitset());
     m_Scene->RegisterSystem<Wheel::Engine::Systems::Physics2DSystem>(finalDesc);
-
 }
 
 uint32_t Start::SpawnObject(float x, float y, float w, float h)
@@ -61,6 +88,9 @@ uint32_t Start::SpawnObject(float x, float y, float w, float h)
     // draws a circle that matches the collider. Give width != height for an ellipse.
     render.width = w; render.height = w; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     render.MaterialName = m_CircleMaterial;
+    auto& highlight = m_Scene->AddComponent<Wheel::Components::Highlight2D>(id);
+    highlight.thickness = 4;
+    highlight.color = Wheel::Math::Vector4(1.0f, 0.85f, 0.1f, 1.0f);
     return id;
 }
 
@@ -133,7 +163,15 @@ void Start::CreateEntities()
     CreateGroundEntity();
 
     CreateNewtonsCradle();
-
+    Wheel::Renderer::Material* mat = m_Renderer->CreateMaterial("base","textures/key.png");
+    uint32_t characterEntity = m_Scene->AddEntity();
+    Wheel::Components::Transform2D& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(characterEntity);
+    Wheel::Components::Sprite& sprite = m_Scene->AddComponent<Wheel::Components::Sprite>(characterEntity);
+    Wheel::Components::Highlight2D& hl = m_Scene->AddComponent<Wheel::Components::Highlight2D>(characterEntity);
+    hl.active = true; hl.color = Wheel::Math::Vector4(1.0f, 0.0f, 0.0f, 1.0f); hl.thickness = 10;
+    sprite.MaterialName = mat->id;
+    sprite.width = 1; sprite.height = 1;
+    transform.SetPosition(0.0f, 0.0f);
 }
 
 void Start::Init()
@@ -141,16 +179,17 @@ void Start::Init()
     m_RunSimulation = true;
     m_Renderer = std::make_unique<Wheel::Renderer::Renderer>();
     m_Renderer->Init(1280, 720, "Wheel Engine");
+    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/square.png"));
+    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/logo.png"));
+    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/key.png"));
+    m_BoxMaterial = m_Renderer->CreateMaterial("base", "textures/square.png")->id;
+    m_CircleMaterial = m_Renderer->CreateMaterial("circle", "textures/square.png")->id;
+
     m_Scene = std::make_unique<Wheel::Engine::Scene>();
     m_SubscriptionTokens = std::vector<Wheel::EventSystem::SubscriptionToken>();
     RegisterComponents();
     RegisterSystems();
     
-    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/square.png"));
-    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/logo.png"));
-
-    m_BoxMaterial = m_Renderer->CreateMaterial("base", "textures/square.png")->id;
-    m_CircleMaterial = m_Renderer->CreateMaterial("circle", "textures/square.png")->id;
 
     CreateEntities();
     m_SubscriptionTokens.emplace_back();

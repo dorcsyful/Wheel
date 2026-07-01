@@ -12,6 +12,7 @@
 Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Description) : System(a_Description)
 {
     m_RenderObjects.reserve(MAX_ENTITIES);
+    m_RenderFeatures.reserve(MAX_ENTITIES);
     m_PrevTransforms.resize(MAX_ENTITIES);
     m_PrevValid.assign(MAX_ENTITIES, 0);
     m_Description = a_Description;
@@ -71,6 +72,7 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
     const Components::CameraComponent& camComponent = m_CameraPool->GetComponent(m_CameraEntity);
     const Math::Matrix4x4 viewProj = Renderer::RenderedObject::ComputeViewProj(camTransform, camComponent);
     m_Renderer->SetViewProj(viewProj);
+    m_RenderFeatures.clear();
 
     for (unsigned int entityId : m_EntityIDs)
     {
@@ -107,14 +109,29 @@ void Wheel::Engine::Systems::RenderSystem::Render(float a_Alpha)
         ro.textureId  = material->textureId;
         ro.shaderId   = material->shaderId;
         ro.materialId = render.MaterialName;
+        ro.level = render.level;
         m_RenderObjects.push_back(ro);
+        for (const auto& current : m_Features)
+        {
+            if (!current.has(m_Scene, entityId)) continue;
+
+            size_t before = m_RenderFeatures.size();
+            current.result(m_Scene, entityId, ro, m_RenderFeatures);
+
+            // relative to owner's layer
+            for (size_t i = before; i < m_RenderFeatures.size(); ++i)
+                m_RenderFeatures[i].level = ro.level + current.order;
+        }
     }
+    m_RenderObjects.insert(m_RenderObjects.end(), m_RenderFeatures.begin(), m_RenderFeatures.end());
     std::sort(m_RenderObjects.begin(), m_RenderObjects.end(), ROSorter);
     m_Renderer->GetRenderedObjects(&m_RenderObjects);
 }
 
 bool Wheel::Engine::Systems::RenderSystem::ROSorter(Renderer::RenderedObject& a_A, Renderer::RenderedObject& a_B)
 {
+    if (a_A.level < a_B.level) return true;
+    if (a_A.level > a_B.level) return false;
     if (a_A.shaderId < a_B.shaderId) return true;
     if (a_A.shaderId > a_B.shaderId) return false;
     if (a_A.textureId < a_B.textureId) return true;

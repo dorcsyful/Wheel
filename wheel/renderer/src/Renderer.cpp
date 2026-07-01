@@ -76,6 +76,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     // Base shader — Shader constructor calls CacheLocations() internally
     AddShader("base.vert", "base.frag");
     AddShader("circle.vert","circle.frag");
+    AddShader("highlight.vert","highlight.frag");
     CreateTestSquare();
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -201,6 +202,22 @@ void Wheel::Renderer::Renderer::Update()
         if (locModel     >= 0) glUniformMatrix2fv(locModel, 1, GL_FALSE, ro.linear);
         if (locTranslate >= 0) glUniform2f(locTranslate, ro.translate[0], ro.translate[1]);
         if (locColor     >= 0) glUniform4f(locColor, ro.color.x, ro.color.y, ro.color.z, ro.color.w);
+
+        // Per-object overrides, uploaded last so they win over the material
+        // defaults. The shader's declared type drives the upload (as with
+        // material uniforms), so the override just supplies the bytes.
+        for (uint8_t i = 0; i < ro.overrideCount; ++i)
+        {
+            const RenderedObject::UniformOverride& ov = ro.overrides[i];
+            for (const VarInfo& v : activeShader->GetPerObjects())
+            {
+                if (v.name != ov.name) continue;
+                auto ti = TypeInfoMap.find(static_cast<GLenum>(v.typeInfo));
+                if (ti != TypeInfoMap.end())
+                    ti->second.setUniform(v.location, ov.value.Data());
+                break;
+            }
+        }
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
     }
