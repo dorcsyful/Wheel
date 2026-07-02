@@ -16,9 +16,6 @@ void main()
     if (alphaAt(v_texCoord) > 0.5)
         discard;
 
-    // Ring sample: this transparent pixel becomes outline-coloured if any opaque
-    // pixel lies within `thickness`. Per-axis radius keeps the thickness even in
-    // world space even when the texture is non-square.
     const int TAPS = 16;
     for (int i = 0; i < TAPS; i++)
     {

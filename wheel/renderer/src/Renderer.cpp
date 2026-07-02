@@ -87,55 +87,21 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::WINDOW_STATS);
 #endif
 }
-
-namespace
+void Wheel::Renderer::Renderer::BindAttributes(Wheel::Renderer::Shader* a_Shader)
 {
-    constexpr GLsizei kVertexStride = 5 * sizeof(GLfloat);
-    struct AttribLayout { const char* name; GLint size; const void* offset; };
-    const AttribLayout kVertexLayout[] = {
-        { "a_position", 3, reinterpret_cast<const void*>(0) },
-        { "a_texCoord", 2, reinterpret_cast<const void*>(3 * sizeof(GLfloat)) },
-    };
-
-    // Engine-owned per-object uniforms. Their values come from the RenderedObject
-    // every frame, so the material never supplies them.
-    bool IsEngineUniform(const std::string& a_Name)
+    for (const Wheel::Renderer::VarInfo& attr : a_Shader->GetAttributes())
     {
-        return a_Name == "u_model" || a_Name == "u_translate" || a_Name == "u_color";
-    }
-
-    void BindAttributes(Wheel::Renderer::Shader* a_Shader)
-    {
-        for (const Wheel::Renderer::VarInfo& attr : a_Shader->GetAttributes())
-            for (const AttribLayout& l : kVertexLayout)
-                if (attr.name == l.name)
-                {
-                    glVertexAttribPointer(attr.location, l.size, GL_FLOAT, GL_FALSE, kVertexStride, l.offset);
-                    glEnableVertexAttribArray(attr.location);
-                    break;
-                }
-    }
-
-    // Uploads the material-owned per-object uniforms (everything the shader
-    // declares per-object except the engine ones). Constant across every object
-    // sharing the material, so the caller only invokes this when the material
-    // changes. Driven generically through TypeInfoMap — no per-uniform code here.
-    void UploadMaterialUniforms(Wheel::Renderer::Shader* a_Shader,
-                                const Wheel::Renderer::Material* a_Material)
-    {
-        const auto& props = a_Material->GetProperties();
-        for (const Wheel::Renderer::VarInfo& v : a_Shader->GetPerObjects())
+        for (const AttribLayout& l : kVertexLayout)
         {
-            if (IsEngineUniform(v.name)) continue;
-            auto prop = props.find(v.name);
-            if (prop == props.end()) continue;
-            auto ti = Wheel::TypeInfoMap.find(static_cast<GLenum>(v.typeInfo));
-            if (ti != Wheel::TypeInfoMap.end())
-                ti->second.setUniform(v.location, prop->second.Data());
+            if (attr.name == l.name)
+            {
+                glVertexAttribPointer(attr.location, l.size, GL_FLOAT, GL_FALSE, kVertexStride, l.offset);
+                glEnableVertexAttribArray(attr.location);
+                break;
+            }
         }
     }
 }
-
 void Wheel::Renderer::Renderer::Update()
 {
     if (!m_RenderedObjects || m_RenderedObjects->empty()) return;
@@ -203,9 +169,7 @@ void Wheel::Renderer::Renderer::Update()
         if (locTranslate >= 0) glUniform2f(locTranslate, ro.translate[0], ro.translate[1]);
         if (locColor     >= 0) glUniform4f(locColor, ro.color.x, ro.color.y, ro.color.z, ro.color.w);
 
-        // Per-object overrides, uploaded last so they win over the material
-        // defaults. The shader's declared type drives the upload (as with
-        // material uniforms), so the override just supplies the bytes.
+        // Per-object overrides, uploaded last so they win over the material defaults.
         for (uint8_t i = 0; i < ro.overrideCount; ++i)
         {
             const RenderedObject::UniformOverride& ov = ro.overrides[i];
@@ -242,6 +206,21 @@ void Wheel::Renderer::Renderer::CreateTestSquare()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void Wheel::Renderer::Renderer::UploadMaterialUniforms(Wheel::Renderer::Shader* a_Shader,
+    const Wheel::Renderer::Material* a_Material)
+{
+    const auto& props = a_Material->GetProperties();
+    for (const Wheel::Renderer::VarInfo& v : a_Shader->GetPerObjects())
+    {
+        if (IsEngineUniform(v.name)) continue;
+        auto prop = props.find(v.name);
+        if (prop == props.end()) continue;
+        auto ti = Wheel::TypeInfoMap.find(static_cast<GLenum>(v.typeInfo));
+        if (ti != Wheel::TypeInfoMap.end())
+            ti->second.setUniform(v.location, prop->second.Data());
+    }
 }
 
 uint32_t Wheel::Renderer::Renderer::LoadTexture(Texture* a_Texture)
@@ -295,8 +274,6 @@ Wheel::Renderer::Material* Wheel::Renderer::Renderer::CreateMaterial(const std::
         return m_Materials[existing->second];
 
     Material* material = new Material();
-    material->ShaderName = a_ShaderName;
-    material->TextureName = a_TextureName;
 
     uint32_t id = static_cast<uint32_t>(m_Materials.size());
     m_Materials.push_back(material);

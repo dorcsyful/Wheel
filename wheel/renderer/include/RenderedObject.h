@@ -21,6 +21,10 @@ namespace Wheel
         {
         public:
             RenderedObject() = default;
+
+            /**
+             * @brief Builds the camera matrix. Called once per frame
+             */
             static Math::Matrix4x4 ComputeViewProj(const Components::Transform2D& a_CameraTransform,
                                                    const Components::CameraComponent& a_Camera)
             {
@@ -66,24 +70,20 @@ namespace Wheel
                 Build(a_Render, a_EntityId, a_Position, a_Rotation, a_Scale);
             }
 
-            // Builds only the compact per-object 2D affine. The view-projection
-            // is shared by the whole frame and applied in the vertex shader, so
-            // it is no longer folded in here (no per-object 4x4 multiply).
+            // Builds only the per-object rotation matrix and sets the translation
             void Build(const Components::Sprite& a_Render, uint32_t a_EntityId,
                        const Math::Vector2& a_Position, float a_Rotation,
                        const Math::Vector2& a_Scale)
             {
                 entityId = a_EntityId;
-                color    = a_Render.color;
+                color = a_Render.color;
 
                 float cos_r = std::cos(a_Rotation);
                 float sin_r = std::sin(a_Rotation);
                 float sx = a_Render.width  * a_Scale.x;
                 float sy = a_Render.height * a_Scale.y;
 
-                // Math 2x2 is [[sx*cos, -sy*sin], [sx*sin, sy*cos]]. Stored
-                // column-major so it feeds straight into glUniformMatrix2fv:
-                // {col0.x, col0.y, col1.x, col1.y}.
+                // Math 2x2 stored as a flat float[4] so it's easier to pass to the renderer
                 linear[0] =  sx * cos_r;   // col0.x
                 linear[1] =  sx * sin_r;   // col0.y
                 linear[2] = -sy * sin_r;   // col1.x
@@ -106,9 +106,7 @@ namespace Wheel
             };
             static constexpr int MAX_UNIFORM_OVERRIDES = 4;
 
-            // Queue a per-object uniform by name. Must be one of a shader's
-            // per-object uniforms; set it on every object drawn with that shader
-            // (GL uniform state is sticky). Silently dropped past the cap.
+            // Queue a per-object uniform by name
             template<typename T>
             void SetUniform(const char* a_Name, const T& a_Value)
             {
@@ -127,12 +125,12 @@ namespace Wheel
             uint32_t shaderId  = 0;
             uint32_t materialId = 0;
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-            float linear[4]    = { 1.0f, 0.0f, 0.0f, 1.0f };
+            float linear[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
             float translate[2] = { 0.0f, 0.0f };
             Wheel::Helpers::RenderLevel level = 0;
 
             UniformOverride overrides[MAX_UNIFORM_OVERRIDES];
-            uint8_t         overrideCount = 0;
+            uint8_t overrideCount = 0;
         };
     }
 }

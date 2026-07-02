@@ -16,9 +16,14 @@ namespace Wheel
     {
         class Debugger;
         class Texture;
-
+        constexpr GLsizei kVertexStride = 5 * sizeof(GLfloat);
+        struct AttribLayout { const char* name; GLint size; const void* offset; };
+        const AttribLayout kVertexLayout[] = {
+            { "a_position", 3, reinterpret_cast<const void*>(0) },
+            { "a_texCoord", 2, reinterpret_cast<const void*>(3 * sizeof(GLfloat)) },
+        };
         /**
-         * @brief You have direct access to the basic OpenGLES renderer. Use this to load resources like textures and meshes.
+         * @brief Use this to load resources like textures and meshes.
          */
         class Renderer
         {
@@ -36,9 +41,6 @@ namespace Wheel
              */
             void Update();
 
-            /**
-             * @brief You have direct access to the GLFW window. Don't make me regret it
-             */
             GLFWwindow* GetWindow() { return m_Window; }
 
             /**
@@ -102,6 +104,16 @@ namespace Wheel
 
         private:
             void CreateTestSquare();
+
+            // Uploads the material-owned per-object uniforms
+            void UploadMaterialUniforms(Shader* a_Shader,const Material* a_Material);
+            void BindAttributes(Shader* a_Shader);
+            // Engine-owned per-object uniforms. Their values come from the RenderedObject
+            // every frame, so the material never supplies them.
+            bool IsEngineUniform(const std::string& a_Name)
+            {
+                return a_Name == "u_model" || a_Name == "u_translate" || a_Name == "u_color";
+            }
 
             GLFWwindow* m_Window{};
 
