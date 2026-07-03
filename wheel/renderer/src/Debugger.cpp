@@ -5,6 +5,7 @@
 #include "Events.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <GLFW/glfw3.h>
 #include "components/Transform2D.h"
 #include "components/CameraComponent.h"
 #include "components/Collider2D.h"
@@ -23,8 +24,14 @@ void Wheel::Engine::Debugger::Initialize(GLFWwindow* a_Window)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    (void)io;
     ImGui::StyleColorsDark();
+
+    // Scale the UI to the monitor DPI so text stays readable on high-DPI displays
+    float xscale, yscale;
+    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
+    ImGui::GetStyle().ScaleAllSizes(xscale);
+    io.FontGlobalScale = xscale;
+
     ImGui_ImplGlfw_InitForOpenGL(a_Window, true);
     ImGui_ImplOpenGL3_Init("#version 100");
     m_Tokens.emplace_back();
@@ -243,7 +250,9 @@ void Wheel::Engine::Debugger::DrawColliderWireframes(uint32_t a_EntityId, ImDraw
     {
         auto& collider = m_Scene->GetComponent<Components::CircleCollider2D>(a_EntityId);
         ImVec2 center = ToScreen(transform.GetPosition(), a_CameraTransform, a_CameraComponent);
-        float radius = collider.radius * transform.GetScale().x * PIXELS_PER_UNIT * a_CameraComponent.zoom;
+        // Screen pixels per world unit, from the current view
+        float pixelsPerUnit = a_CameraComponent.height / a_CameraComponent.orthoSize;
+        float radius = collider.radius * transform.GetScale().x * pixelsPerUnit * a_CameraComponent.zoom;
         dl->AddCircle(center, radius, GetColor(DebugColor::Cyan));
     }
 

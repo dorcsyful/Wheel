@@ -23,7 +23,7 @@ void Wheel::Engine::Initializer::InitEverything(bool a_LoadAssets, Renderer::Ren
 {
     //Initialize a window with a size adjusted to the monitor's resolution
     a_Out_Renderer = new Renderer::Renderer();
-    a_Out_Renderer->Init(1280,720,"Wheel Engine");
+    a_Out_Renderer->Init(1280,720,"Wheel Engine", true);
     if (a_LoadAssets)
     {
         auto textures = GetRecursivePathsByExtensions(GetTexturePath(),Renderer::supported_image_extensions);
@@ -42,7 +42,7 @@ void Wheel::Engine::Initializer::InitEverything(bool a_LoadAssets, Renderer::Ren
                 std::string frag = frags[j].filename().string().substr(0,frags[j].filename().string().find(".frag"));
                 if (frag == vert)
                 {
-                    a_Out_Renderer->AddShader(vert,frag);
+                    a_Out_Renderer->AddShader(verts[i].filename().string(),frags[j].filename().string());
                     frags.erase(frags.begin()+j);
                     break;
                 }
@@ -91,7 +91,7 @@ Wheel::Renderer::Renderer* Wheel::Engine::Initializer::CreateRenderer(int a_Widt
     const std::vector<std::string>& a_Shaders)
 {
     Renderer::Renderer* renderer = new Renderer::Renderer();
-    renderer->Init(a_Width, a_Height,a_Title.c_str());
+    renderer->Init(a_Width, a_Height,a_Title.c_str(), true);
     for (auto& texture : a_Textures)
     {
         renderer->LoadTexture(new Renderer::Texture(texture));

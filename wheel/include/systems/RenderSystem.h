@@ -124,9 +124,6 @@ namespace Wheel
                 uint32_t m_CameraEntity = -1;
                 std::vector<Renderer::RenderedObject> m_RenderObjects;
                 std::vector<RenderFeature> m_Features;
-                float m_designWidth  = 0.0f;
-                float m_designHeight = 0.0f;
-                float m_initialZoom  = 0.0f;
                 std::vector<EventSystem::SubscriptionToken> m_Tokens = {};
                 std::vector<Renderer::RenderedObject> m_RenderFeatures;
                 ComponentPool<Components::Transform2D>*      m_TransformPool = nullptr;

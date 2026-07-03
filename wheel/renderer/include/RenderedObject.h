@@ -41,8 +41,8 @@ namespace Wheel
                 );
 
                 float z = a_Camera.zoom;
-                float W = a_Camera.width  / PIXELS_PER_UNIT;
-                float H = a_Camera.height / PIXELS_PER_UNIT;
+                float H = a_Camera.orthoSize;
+                float W = H * (a_Camera.width / a_Camera.height);
 
                 Math::Matrix4x4 proj(
                     2.0f * z / W, 0.0f,         0.0f, 0.0f,

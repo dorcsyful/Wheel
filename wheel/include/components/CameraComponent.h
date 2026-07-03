@@ -40,6 +40,10 @@ namespace Wheel
             // float left = 0;
             // float right = 0;
             float zoom = 1.0f;
+            /**
+             * @brief World units visible vertically. Resolution-independent
+             */
+            float orthoSize = 7.2f;
             //TODO: Implement required variables for 3D camera
 
                 REFLECT_BEGIN(CameraComponent)
@@ -48,6 +52,7 @@ namespace Wheel
                 FIELD(width)
                 FIELD(height)
                 FIELD(zoom)
+                FIELD(orthoSize)
                 REFLECT_END(CameraComponent, "CameraComponent")
 
         private:

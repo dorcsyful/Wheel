@@ -21,18 +21,8 @@ Wheel::Engine::Systems::RenderSystem::RenderSystem(const Description& a_Descript
     EventSystem::EventBus::Subscribe<Events::WindowResizeEvent>([this](const Events::WindowResizeEvent& e)
     {
         Components::CameraComponent& camComponent = m_Scene->GetComponent<Components::CameraComponent>(m_CameraEntity);
-
-        if (m_designWidth == 0.0f)
-        {
-            m_designWidth = camComponent.width;
-            m_designHeight = camComponent.height;
-            m_initialZoom = camComponent.zoom;
-        }
-
-        float scale = std::min(e.width / m_designWidth, e.height / m_designHeight);
-        camComponent.width = e.width;
+        camComponent.width  = e.width;
         camComponent.height = e.height;
-        camComponent.zoom = m_initialZoom * scale;
     }, m_Tokens.back());
 
 }

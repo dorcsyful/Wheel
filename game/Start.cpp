@@ -98,10 +98,12 @@ void Start::Init()
     m_SubscriptionTokens = std::vector<Wheel::EventSystem::SubscriptionToken>();
 
     Wheel::Engine::Initializer::InitEverything(true, m_Renderer,m_Scene,m_CameraId);
+
     m_BoxMaterial = m_Renderer->CreateMaterial("base", "square.png")->id;
     m_CircleMaterial = m_Renderer->CreateMaterial("circle", "square.png")->id;
     m_RenderSystem = m_Scene->GetSystem<Wheel::Engine::Systems::RenderSystem>();
     m_InputSystem = m_Scene->GetSystem<Wheel::Engine::Systems::InputSystem>();
+
     CreateEntities();
     m_SubscriptionTokens.emplace_back();
 

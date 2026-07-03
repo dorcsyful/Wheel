@@ -32,9 +32,10 @@ namespace Wheel
             ~Renderer();
 
             /**
-             * @brief This gets called when the scene is initialized. You do not have to manually call it.
+             * @brief Initializes the GLFW window
+             * @param a_AdjustToOSScale Scale to OS DPI
              */
-            void Init(int a_Width, int a_Height, const char* a_Title);
+            void Init(int a_Width, int a_Height, const char* a_Title, bool a_AdjustToOSScale);
 
             /**
              * @brief Only handles the DRAW phase. Does not update game state or polls input
@@ -106,7 +107,18 @@ namespace Wheel
              * @brief Resize the OpenGL window. Note: this does not resize the contents.
              */
             void ResizeWindow(int a_Width, int a_Height);
-
+            /**
+             * @brief Sizes window in millimeters
+             * @param a_Width Width in millimeters
+             * @param a_Height Height in millimeters
+             */
+            void ForcePhysicalWindowSize(int a_Width, int a_Height);
+            /**
+             * @brief Sizes window as monitor fraction
+             * @param a_WidthFraction Fraction of monitor width
+             * @param a_HeightFraction Fraction of monitor height
+             */
+            void ForceMonitorFractionSize(float a_WidthFraction, float a_HeightFraction);
         private:
             void CreateTestSquare();
 

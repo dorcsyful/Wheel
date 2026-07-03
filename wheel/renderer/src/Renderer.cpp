@@ -41,7 +41,7 @@ Wheel::Renderer::Renderer::~Renderer()
     glfwTerminate();
 }
 
-void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title)
+void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Title, bool a_AdjustToOSScale)
 {
     glfwSetErrorCallback(&glfwError);
 
@@ -53,9 +53,17 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+    int winW = a_Width;
+    int winH = a_Height;
+    if (a_AdjustToOSScale)
+    {
+        float xscale, yscale;
+        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
+        winW = int(a_Width * xscale);
+        winH = int(a_Height * yscale);
+    }
+    m_Window = glfwCreateWindow(winW, winH, a_Title, nullptr, nullptr);
 
-    m_Window = glfwCreateWindow(a_Width, a_Height, a_Title, nullptr, nullptr);
     if (m_Window == nullptr)
     {
         std::cout << "Failed to initialize window" << std::endl;
@@ -71,14 +79,16 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
         glfwTerminate();
         return;
     }
-    glViewport(0, 0, a_Width, a_Height);
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_Window, &fbWidth, &fbHeight);
+    glViewport(0, 0, fbWidth, fbHeight);
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
 
     // Base shader — Shader constructor calls CacheLocations() internally
     AddShader("base.vert", "base.frag");
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    CreateTestSquare();
 #ifdef DEBUG_BUILD
     Engine::Debugger::get().Initialize(m_Window);
     Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::ENTITY_LIST);
@@ -189,6 +199,32 @@ void Wheel::Renderer::Renderer::Update()
 #endif
 
     glfwSwapBuffers(m_Window);
+}
+
+void Wheel::Renderer::Renderer::ResizeWindow(int a_Width, int a_Height)
+{
+    glfwSetWindowSize(m_Window, a_Width, a_Height);
+}
+
+void Wheel::Renderer::Renderer::ForcePhysicalWindowSize(int a_Width, int a_Height)
+{
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    int mmW, mmH;
+    glfwGetMonitorPhysicalSize(monitor, &mmW, &mmH);
+
+    // mm -> px via the monitor's pixel density
+    int winW = a_Width  * mode->width  / mmW;
+    int winH = a_Height * mode->height / mmH;
+    glfwSetWindowSize(m_Window, winW, winH);
+}
+
+void Wheel::Renderer::Renderer::ForceMonitorFractionSize(float a_WidthFraction, float a_HeightFraction)
+{
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    glfwSetWindowSize(m_Window,
+                      int(mode->width  * a_WidthFraction),
+                      int(mode->height * a_HeightFraction));
 }
 
 void Wheel::Renderer::Renderer::CreateTestSquare()
