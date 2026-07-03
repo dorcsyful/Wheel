@@ -20,12 +20,9 @@ public:
     Start()
     = default;
     ~Start()
-    = default;
+    {delete m_Scene; delete m_Renderer;}
 
-    void RegisterComponents();
-    void RegisterSystems();
     uint32_t SpawnObject(float x, float y, float w = 0.9f, float h = 0.5f);
-    void InitializeCameraEntity();
     void CreateGroundEntity();
     void CreateNewtonsCradle();
     void CreateEntities();
@@ -33,7 +30,7 @@ public:
 
 
     void Update();
-    Wheel::Engine::Scene* GetScene() { return m_Scene.get(); }
+    Wheel::Engine::Scene* GetScene() { return m_Scene; }
 
 private:
     bool m_RunSimulation;
@@ -41,8 +38,8 @@ private:
 
     uint32_t m_BoxMaterial    = 0;
     uint32_t m_CircleMaterial = 0;
-    std::unique_ptr<Wheel::Renderer::Renderer> m_Renderer;
-    std::unique_ptr<Wheel::Engine::Scene> m_Scene;
+    Wheel::Renderer::Renderer* m_Renderer;
+    Wheel::Engine::Scene* m_Scene;
     Wheel::Engine::Systems::RenderSystem* m_RenderSystem = nullptr;
     Wheel::Engine::Systems::InputSystem* m_InputSystem = nullptr;
     std::vector<Wheel::EventSystem::SubscriptionToken> m_SubscriptionTokens;

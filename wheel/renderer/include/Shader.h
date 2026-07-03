@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -20,6 +21,7 @@ namespace Wheel
         {
         public:
             Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath);
+            Shader(std::filesystem::path a_VertexPath, std::filesystem::path a_FragmentPath);
             ~Shader() {
                 glDeleteProgram(m_ID);
             }
@@ -43,6 +45,7 @@ namespace Wheel
             std::vector<VarInfo>& GetPerObjects() { return m_PerObject; }
             std::vector<VarInfo>& GetAttributes() { return m_Attributes; }
         private:
+            void Build(const std::filesystem::path& a_VertexPath, const std::filesystem::path& a_FragmentPath);
             void checkCompileErrors(unsigned int shader, const std::string& type);
             std::vector<VarInfo> m_Attributes;
             std::vector<VarInfo> m_PerBind;

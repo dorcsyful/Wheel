@@ -1,13 +1,17 @@
 #pragma once
+#include <filesystem>
 #include <string>
 
 #include "glad.h"
+#include "core/AssetPath.h"
 #include "core/Globals.h"
 
 namespace Wheel
 {
     namespace Renderer
     {
+        static std::vector<std::string> supported_image_extensions =
+            { ".jpg", ".jpeg",".png",".bmp", ".tga",".psd", ".gif", ".hdr", ".pic", ".ppm", ".pgm"};
         enum class RepeatType
         {
             Repeat = GL_REPEAT,
@@ -28,8 +32,7 @@ namespace Wheel
         {
         public:
             /**
-             *
-             * @param a_Path relative to the "assets" folder
+             * @param a_Path relative to the "assets/textures" folder
              * @param a_FilterType how the texture should behave when sizing up or down
              * @param a_RepeatType what should happen when the texture is too small for the given mesh.
              */
@@ -37,7 +40,19 @@ namespace Wheel
              : m_FilterType(a_FilterType), m_RepeatType(a_RepeatType)
             {
                 m_Name = a_Path;
-                m_Path = a_Path;
+                m_Path = GetTexturePath() + m_Path;
+                m_ID = -1;
+            }
+            /**
+             * @param a_Path full filesystem path
+             * @param a_FilterType how the texture should behave when sizing up or down
+             * @param a_RepeatType what should happen when the texture is too small for the given mesh.
+             */
+            explicit Texture(const std::filesystem::path& a_Path, FilterType a_FilterType = FilterType::Linear, RepeatType a_RepeatType = RepeatType::Repeat)
+             : m_FilterType(a_FilterType), m_RepeatType(a_RepeatType)
+            {
+                m_Name = a_Path.filename().string();
+                m_Path = a_Path.string();
                 m_ID = -1;
             }
             ~Texture() = default;

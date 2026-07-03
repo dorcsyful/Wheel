@@ -9,8 +9,18 @@
 
 Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath)
 {
-    m_Name = a_VertexPath;
-    m_Name = m_Name.substr(0,m_Name.find_last_of('.'));
+    Build(Wheel::GetShaderPathFS() / a_VertexPath, Wheel::GetShaderPathFS() / a_FragmentPath);
+}
+
+Wheel::Renderer::Shader::Shader(std::filesystem::path a_VertexPath, std::filesystem::path a_FragmentPath)
+{
+    Build(a_VertexPath, a_FragmentPath);
+}
+
+void Wheel::Renderer::Shader::Build(const std::filesystem::path& a_VertexPath,
+                                    const std::filesystem::path& a_FragmentPath)
+{
+    m_Name = a_VertexPath.stem().string();
 
     std::string vertexCode;
     std::string fragmentCode;
@@ -18,14 +28,12 @@ Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::stri
     std::ifstream fShaderFile;
     vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    std::string vertexPath = Wheel::GetAssetPath("shaders/" + a_VertexPath);
-    std::cout << "Vertex path: " << vertexPath.c_str() << std::endl;
-    std::string fragmentPath = Wheel::GetAssetPath("shaders/" + a_FragmentPath);
+    std::cout << "Vertex path: " << a_VertexPath.string().c_str() << std::endl;
     try
     {
-        // open files
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
+        // open files (ifstream accepts std::filesystem::path directly since C++17)
+        vShaderFile.open(a_VertexPath);
+        fShaderFile.open(a_FragmentPath);
         std::stringstream vShaderStream, fShaderStream;
         // read file's buffer contents into streams
         vShaderStream << vShaderFile.rdbuf();
@@ -65,7 +73,6 @@ Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::stri
     //We don't need no shaders no more
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-
 }
 
 void Wheel::Renderer::Shader::CacheLocations()

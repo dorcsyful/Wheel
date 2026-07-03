@@ -102,6 +102,11 @@ namespace Wheel
              */
             void SetViewProj(const Math::Matrix4x4& a_ViewProj) { m_ViewProjGL = a_ViewProj.Transpose(); }
 
+            /**
+             * @brief Resize the OpenGL window. Note: this does not resize the contents.
+             */
+            void ResizeWindow(int a_Width, int a_Height);
+
         private:
             void CreateTestSquare();
 

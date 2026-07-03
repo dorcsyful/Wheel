@@ -53,6 +53,7 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
     m_Window = glfwCreateWindow(a_Width, a_Height, a_Title, nullptr, nullptr);
     if (m_Window == nullptr)
@@ -75,9 +76,6 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
 
     // Base shader — Shader constructor calls CacheLocations() internally
     AddShader("base.vert", "base.frag");
-    AddShader("circle.vert","circle.frag");
-    AddShader("highlight.vert","highlight.frag");
-    CreateTestSquare();
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

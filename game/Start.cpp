@@ -8,67 +8,7 @@
 #include "Texture.h"
 #include <cmath>
 
-void Start::RegisterComponents()
-{
-    m_Scene->RegisterComponentType<Wheel::Components::Transform2D>();
-    m_Scene->RegisterComponentType<Wheel::Components::Sprite>();
-    m_Scene->RegisterComponentType<Wheel::Components::CameraComponent>();
-    m_Scene->RegisterComponentType<Wheel::Components::BoxCollider2D>();
-    m_Scene->RegisterComponentType<Wheel::Components::CircleCollider2D>();
-    m_Scene->RegisterComponentType<Wheel::Components::Rigidbody2D>();
-    m_Scene->RegisterComponentType<Wheel::Components::DistanceJoint2D>();
-    m_Scene->RegisterComponentType<Wheel::Components::Highlight2D>();
-}
-
-void Start::RegisterSystems()
-{
-    Wheel::Engine::Description transform = m_Scene->GetComponentDescription<Wheel::Components::Transform2D>();
-    Wheel::Engine::Description render = m_Scene->GetComponentDescription<Wheel::Components::Sprite>();
-    Wheel::Engine::Description finalDesc = Wheel::Engine::Description();
-    Wheel::Engine::Description cameraDesc = m_Scene->GetComponentDescription<Wheel::Components::CameraComponent>();
-    Wheel::Engine::Description rigidbody2D = m_Scene->GetComponentDescription<Wheel::Components::Rigidbody2D>();
-    finalDesc.AddComponentType(transform.GetAsBitset());
-    finalDesc.AddComponentType(render.GetAsBitset());
-    m_RenderSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::RenderSystem>(finalDesc);
-    m_RenderSystem->GetRenderer(m_Renderer.get());
-    auto id = m_Renderer->GetShaderId("highlight");
-    // Highlight: same sprite grown by thickness (world units = px / PIXELS_PER_UNIT),
-    // tinted, one layer behind its owner.
-    m_RenderSystem->RegisterFeature<Wheel::Components::Highlight2D>(-1,
-        [id](const Wheel::Renderer::RenderedObject& a_Base,
-             const Wheel::Components::Highlight2D& a_Highlight,
-             std::vector<Wheel::Renderer::RenderedObject>& a_Out)
-        {
-            float t  = static_cast<float>(a_Highlight.thickness) / PIXELS_PER_UNIT;
-            float sx = std::sqrt(a_Base.linear[0] * a_Base.linear[0] + a_Base.linear[1] * a_Base.linear[1]);
-            float sy = std::sqrt(a_Base.linear[2] * a_Base.linear[2] + a_Base.linear[3] * a_Base.linear[3]);
-            if (sx <= 0.0f || sy <= 0.0f) return;
-
-            Wheel::Renderer::RenderedObject ro = a_Base;
-            float fx = (sx + 2.0f * t) / sx;
-            float fy = (sy + 2.0f * t) / sy;
-            ro.linear[0] *= fx; ro.linear[1] *= fx;
-            ro.linear[2] *= fy; ro.linear[3] *= fy;
-            ro.color = a_Highlight.color;
-            ro.shaderId = id;
-            // dilation params in the enlarged quad's UV space
-            ro.SetUniform("u_uvScale",     Wheel::Math::Vector2(fx, fy));
-            ro.SetUniform("u_thicknessUV", Wheel::Math::Vector2(t / (sx + 2.0f * t), t / (sy + 2.0f * t)));
-            a_Out.push_back(ro);
-        });
-    finalDesc = Wheel::Engine::Description();
-    finalDesc.AddComponentType(transform.GetAsBitset());
-    finalDesc.AddComponentType(cameraDesc.GetAsBitset());
-    m_InputSystem = m_Scene->RegisterSystem<Wheel::Engine::Systems::InputSystem>(finalDesc);
-    m_InputSystem->Initialize(m_Renderer->GetWindow());
-    finalDesc.Reset();
-    finalDesc.AddComponentType(transform.GetAsBitset());
-    m_Scene->RegisterSystem<Wheel::Engine::Systems::Collision2DSystem>(finalDesc);
-    finalDesc.Reset();
-    finalDesc.AddComponentType(transform.GetAsBitset());
-    finalDesc.AddComponentType(rigidbody2D.GetAsBitset());
-    m_Scene->RegisterSystem<Wheel::Engine::Systems::Physics2DSystem>(finalDesc);
-}
+#include "../wheel/Initializer.h"
 
 uint32_t Start::SpawnObject(float x, float y, float w, float h)
 {
@@ -92,27 +32,6 @@ uint32_t Start::SpawnObject(float x, float y, float w, float h)
     highlight.thickness = 4;
     highlight.color = Wheel::Math::Vector4(1.0f, 0.85f, 0.1f, 1.0f);
     return id;
-}
-
-void Start::InitializeCameraEntity()
-{
-    // Camera entity — has Transform2D + CameraComponent but no Sprite
-    uint32_t cameraId = m_Scene->AddEntity();
-    m_Scene->AddComponent<Wheel::Components::Transform2D>(cameraId);
-    Wheel::Components::CameraComponent& cam =
-        m_Scene->AddComponent<Wheel::Components::CameraComponent>(cameraId);
-    cam.SetCameraActive(true);
-    cam.zoom = 1.0f;
-    cam.width  = 1280.0f;
-    cam.height = 720.0f;
-    Wheel::Components::Transform2D& cameraTransform =m_Scene->GetComponent<Wheel::Components::Transform2D>(cameraId);
-    cameraTransform.name = "Camera";
-    m_RenderSystem->SetCameraEntity(cameraId);
-    m_InputSystem->SetCameraEntity(cameraId);
-#ifdef DEBUG_BUILD
-    Wheel::Engine::Debugger::get().SetCameraEntity(cameraId);
-#endif
-    m_CameraId = cameraId;
 }
 
 void Start::CreateGroundEntity()
@@ -159,11 +78,10 @@ void Start::CreateNewtonsCradle()
 
 void Start::CreateEntities()
 {
-    InitializeCameraEntity();
     CreateGroundEntity();
 
     CreateNewtonsCradle();
-    Wheel::Renderer::Material* mat = m_Renderer->CreateMaterial("base","textures/key.png");
+    Wheel::Renderer::Material* mat = m_Renderer->CreateMaterial("base","key.png");
     uint32_t characterEntity = m_Scene->AddEntity();
     Wheel::Components::Transform2D& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(characterEntity);
     Wheel::Components::Sprite& sprite = m_Scene->AddComponent<Wheel::Components::Sprite>(characterEntity);
@@ -177,20 +95,13 @@ void Start::CreateEntities()
 void Start::Init()
 {
     m_RunSimulation = true;
-    m_Renderer = std::make_unique<Wheel::Renderer::Renderer>();
-    m_Renderer->Init(1280, 720, "Wheel Engine");
-    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/square.png"));
-    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/logo.png"));
-    m_Renderer->LoadTexture(new Wheel::Renderer::Texture("textures/key.png"));
-    m_BoxMaterial = m_Renderer->CreateMaterial("base", "textures/square.png")->id;
-    m_CircleMaterial = m_Renderer->CreateMaterial("circle", "textures/square.png")->id;
-
-    m_Scene = std::make_unique<Wheel::Engine::Scene>();
     m_SubscriptionTokens = std::vector<Wheel::EventSystem::SubscriptionToken>();
-    RegisterComponents();
-    RegisterSystems();
-    
 
+    Wheel::Engine::Initializer::InitEverything(true, m_Renderer,m_Scene,m_CameraId);
+    m_BoxMaterial = m_Renderer->CreateMaterial("base", "square.png")->id;
+    m_CircleMaterial = m_Renderer->CreateMaterial("circle", "square.png")->id;
+    m_RenderSystem = m_Scene->GetSystem<Wheel::Engine::Systems::RenderSystem>();
+    m_InputSystem = m_Scene->GetSystem<Wheel::Engine::Systems::InputSystem>();
     CreateEntities();
     m_SubscriptionTokens.emplace_back();
 
