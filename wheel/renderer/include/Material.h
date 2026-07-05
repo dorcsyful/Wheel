@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "DebugDescriptor.h"
+#include "../../debug/DebugDescriptor.h"
 #include "Shader.h"
 #include "UniformValue.h"
 

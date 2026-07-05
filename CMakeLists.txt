@@ -44,10 +44,7 @@ add_library(wheel_engine STATIC ${ENGINE_SOURCES})
 # Include directories for the engine (so it can find its own and dependency headers)
 target_link_libraries(wheel_engine PUBLIC glad glfw imgui)
 target_include_directories(wheel_engine PUBLIC
-        wheel/include
-        wheel/renderer/include
-        dependencies/stb
-        wheel/EventSystem)
+        wheel/)
 
 target_compile_definitions(wheel_engine PRIVATE
         $<$<CONFIG:Debug>:DEBUG_BUILD>

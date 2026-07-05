@@ -3,7 +3,7 @@
 #include <string>
 
 #include "glad.h"
-#include "core/AssetPath.h"
+#include "../../helpers/AssetPath.h"
 #include "core/Globals.h"
 
 namespace Wheel

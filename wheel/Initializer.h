@@ -3,17 +3,11 @@
 #include <string>
 #include <vector>
 
-namespace Wheel::Renderer
-{
-    class Renderer;
-}
+namespace Wheel::Renderer { class Renderer; }
 
 namespace Wheel
 {
-    namespace Engine
-    {
-
-        class Scene;
+    namespace Core { class Scene; }
         /**
          * @brief Initializes all built-in components and systems
          */
@@ -27,16 +21,16 @@ namespace Wheel
              * @brief Creates the scene and renderer
              * @param a_LoadAssets If true, loads in all textures and shaders found in the assets folder but does not create materials
              */
-            static void InitEverything(bool a_LoadAssets,Renderer::Renderer*& a_Out_Renderer, Scene*& a_Out_Scene,
+            static void InitEverything(bool a_LoadAssets,Renderer::Renderer*& a_Out_Renderer, Core::Scene*& a_Out_Scene,
                                        uint32_t& a_Out_Camera);
-            static Scene* CreateScene(Renderer::Renderer* renderer = nullptr);
+            static Core::Scene* CreateScene(Renderer::Renderer* renderer = nullptr);
             /**
              * @brief Creates a base camera the size of the window and assigns it to the systems that require it
              * @param a_Scene The Scene with all components and systems registered
              * @param renderer The base OpenGL renderer
              * @return the id of the camera entity
              */
-            static uint32_t CreateCameraEntity(Scene* a_Scene, Renderer::Renderer* renderer = nullptr);
+            static uint32_t CreateCameraEntity(Core::Scene* a_Scene, Renderer::Renderer* renderer = nullptr);
             /**
              * @brief Initizalizes the basic OpenGL renderer.
              * @param a_Width Window width
@@ -53,10 +47,9 @@ namespace Wheel
             /**
              * @brief Initializes some built-in rendering features
              */
-            static void CreateFeatures(Scene* a_Scene,Renderer::Renderer* renderer);
+            static void CreateFeatures(Core::Scene* a_Scene,Renderer::Renderer* renderer);
         private:
-            static void RegisterComponents(Scene* a_Scene);
-            static void RegisterSystems(Scene* a_Scene,Renderer::Renderer* renderer = nullptr);
+            static void RegisterComponents(Core::Scene* a_Scene);
+            static void RegisterSystems(Core::Scene* a_Scene,Renderer::Renderer* renderer = nullptr);
         };
-    }
 }

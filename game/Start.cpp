@@ -1,56 +1,16 @@
 #include "Start.h"
-#include "Debugger.h"
-#include "systems/Collision2DSystem.h"
-#include "components/Collider2D.h"
-#include "components/Rigidbody2D.h"
-#include "components/Highlight2D.h"
-#include "systems/Physics2DSystem.h"
-#include "Texture.h"
+#include "debug/Debugger.h"
+#include "../wheel/collision/Collision2DSystem.h"
+#include "../wheel/collision/Collider2D.h"
+#include "../wheel/physics/Rigidbody2D.h"
+#include "../wheel/rendering/Highlight2D.h"
+#include "../wheel/physics/Physics2DSystem.h"
+#include "renderer/include/Texture.h"
 #include <cmath>
 
 #include "../wheel/Initializer.h"
 
-uint32_t Start::SpawnObject(float x, float y, float w, float h)
-{
-    uint32_t id = m_Scene->AddEntity();
-    auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(id);
-    auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(id);
-    auto& collider  = m_Scene->AddComponent<Wheel::Components::CircleCollider2D>(id);
-    auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(id);
-    rigidbody.SetMass(2.0f); rigidbody.friction = 0.05f;
-    collider.radius = w / 2.0f;
-    rigidbody.restitution = 0.97f;
-    transform.SetPosition(x, y);
-    transform.SetScale(1.0f, 1.0f);
-    rigidbody.linearDamping = 0.0001; rigidbody.angularDamping = 0.0001;
-    transform.SetRotationInDegrees(0);
-    // The ellipse shader fills the sprite quad, so a square sprite (side = 2*radius)
-    // draws a circle that matches the collider. Give width != height for an ellipse.
-    render.width = w; render.height = w; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-    render.MaterialName = m_CircleMaterial;
-    auto& highlight = m_Scene->AddComponent<Wheel::Components::Highlight2D>(id);
-    highlight.thickness = 4;
-    highlight.color = Wheel::Math::Vector4(1.0f, 0.85f, 0.1f, 1.0f);
-    return id;
-}
-
-void Start::CreateGroundEntity()
-{
-    uint32_t ground = m_Scene->AddEntity();
-    auto& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(ground);
-    auto& render    = m_Scene->AddComponent<Wheel::Components::Sprite>(ground);
-    auto& collider  = m_Scene->AddComponent<Wheel::Components::BoxCollider2D>(ground);
-    auto& rigidbody = m_Scene->AddComponent<Wheel::Components::Rigidbody2D>(ground);
-    rigidbody.SetMass(100.0f); rigidbody.friction = 0.5f; rigidbody.SetType(Wheel::Components::Rigidbody2DType::STATIC);
-    collider.SetWidth(13.f); collider.SetHeight(2.f);
-    transform.SetPosition(0.0f, -3.0f);
-    transform.SetScale(1.0f, 1.0f);
-    transform.SetRotationInDegrees(0);
-    render.width = 13.f; render.height = 2.f; render.color = Wheel::Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-    render.MaterialName = m_BoxMaterial;
-}
-
-void Start::CreateNewtonsCradle()
+/*void Start::CreateNewtonsCradle()
 {
     float width = 0.5f;
     float gap   = 0.002f;
@@ -61,7 +21,7 @@ void Start::CreateNewtonsCradle()
     {
         float x = x0 + i * step;
         uint32_t entityId = SpawnObject(x, 2.f, width, width);
-        Wheel::Components::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(entityId);
+        Wheel::Physics::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Physics::DistanceJoint2D>(entityId);
         joint.distance = 1.f;
         joint.otherAnchorPoint = Wheel::Math::Vector2(x, 3.f);   // pivot directly above
     }
@@ -70,22 +30,20 @@ void Start::CreateNewtonsCradle()
         float pivotX   = x0 - step;
         float strikerX = pivotX - 1.0f;
         uint32_t entityId = SpawnObject(strikerX, 3.f, width, width);
-        Wheel::Components::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Components::DistanceJoint2D>(entityId);
+        Wheel::Physics::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Physics::DistanceJoint2D>(entityId);
         joint.distance = 1.f;
         joint.otherAnchorPoint = Wheel::Math::Vector2(pivotX, 3.f);
     }
-}
+}*/
 
 void Start::CreateEntities()
 {
-    CreateGroundEntity();
 
-    CreateNewtonsCradle();
     Wheel::Renderer::Material* mat = m_Renderer->CreateMaterial("base","key.png");
     uint32_t characterEntity = m_Scene->AddEntity();
-    Wheel::Components::Transform2D& transform = m_Scene->AddComponent<Wheel::Components::Transform2D>(characterEntity);
-    Wheel::Components::Sprite& sprite = m_Scene->AddComponent<Wheel::Components::Sprite>(characterEntity);
-    Wheel::Components::Highlight2D& hl = m_Scene->AddComponent<Wheel::Components::Highlight2D>(characterEntity);
+    Wheel::Common::Transform2D& transform = m_Scene->AddComponent<Wheel::Common::Transform2D>(characterEntity);
+    Wheel::Rendering::Sprite& sprite = m_Scene->AddComponent<Wheel::Rendering::Sprite>(characterEntity);
+    Wheel::Rendering::Highlight2D& hl = m_Scene->AddComponent<Wheel::Rendering::Highlight2D>(characterEntity);
     hl.active = true; hl.color = Wheel::Math::Vector4(1.0f, 0.0f, 0.0f, 1.0f); hl.thickness = 10;
     sprite.MaterialName = mat->id;
     sprite.width = 1; sprite.height = 1;
@@ -97,12 +55,12 @@ void Start::Init()
     m_RunSimulation = true;
     m_SubscriptionTokens = std::vector<Wheel::EventSystem::SubscriptionToken>();
 
-    Wheel::Engine::Initializer::InitEverything(true, m_Renderer,m_Scene,m_CameraId);
+    Wheel::Initializer::InitEverything(true, m_Renderer,m_Scene,m_CameraId);
 
     m_BoxMaterial = m_Renderer->CreateMaterial("base", "square.png")->id;
     m_CircleMaterial = m_Renderer->CreateMaterial("circle", "square.png")->id;
-    m_RenderSystem = m_Scene->GetSystem<Wheel::Engine::Systems::RenderSystem>();
-    m_InputSystem = m_Scene->GetSystem<Wheel::Engine::Systems::InputSystem>();
+    m_RenderSystem = m_Scene->GetSystem<Wheel::Rendering::RenderSystem>();
+    m_InputSystem = m_Scene->GetSystem<Wheel::Input::InputSystem>();
 
     CreateEntities();
     m_SubscriptionTokens.emplace_back();
@@ -112,8 +70,8 @@ void Start::Init()
     Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::RunSimulation>(
         [&](const Wheel::Events::RunSimulation& e) { m_RunSimulation = e.enable; }, m_SubscriptionTokens.back());
 #endif
-    Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::LeftMouseButtonPressEvent>(
-    [&](const Wheel::Events::LeftMouseButtonPressEvent& e) { Wheel::Math::Vector2 world = m_Scene->GetSystem<Wheel::Engine::Systems::RenderSystem>()->ScreenToWorld(e.x,e.y); SpawnObject(world.x,world.y); }, m_SubscriptionTokens.back());
+   // Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::LeftMouseButtonPressEvent>(
+   // [&](const Wheel::Events::LeftMouseButtonPressEvent& e) { Wheel::Math::Vector2 world = m_Scene->GetSystem<Wheel::Rendering::RenderSystem>()->ScreenToWorld(e.x,e.y); SpawnObject(world.x,world.y); }, m_SubscriptionTokens.back());
 
 }
 
@@ -154,7 +112,7 @@ void Start::Update()
         m_Renderer->Update();
 
 #ifdef DEBUG_BUILD
-        Wheel::Engine::Debugger::get().SetFrameTime(frameTime);
+        Wheel::Debug::Debugger::get().SetFrameTime(frameTime);
 #endif
     }
 

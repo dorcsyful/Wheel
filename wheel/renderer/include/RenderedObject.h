@@ -2,13 +2,12 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-#include "../../wheel/include/core/Globals.h"
-#include "components/CameraComponent.h"
-#include "components/Sprite.h"
-#include "components/Transform2D.h"
+#include "../../rendering/CameraComponent.h"
+#include "../../rendering/Sprite.h"
+#include "common/Transform2D.h"
 #include "math/Matrix4x4.h"
 #include "math/Vector4.h"
-#include "systems/helpers/RenderLayers.h"
+#include "../../rendering/RenderLayers.h"
 #include "UniformValue.h"
 namespace Wheel
 {
@@ -25,8 +24,8 @@ namespace Wheel
             /**
              * @brief Builds the camera matrix. Called once per frame
              */
-            static Math::Matrix4x4 ComputeViewProj(const Components::Transform2D& a_CameraTransform,
-                                                   const Components::CameraComponent& a_Camera)
+            static Math::Matrix4x4 ComputeViewProj(const Common::Transform2D& a_CameraTransform,
+                                                   const Rendering::CameraComponent& a_Camera)
             {
                 float cos_cr = std::cos(a_CameraTransform.GetRotationInRadians());
                 float sin_cr = std::sin(a_CameraTransform.GetRotationInRadians());
@@ -54,8 +53,8 @@ namespace Wheel
                 return proj * view;
             }
 
-            void Add2DComponent(const Components::Sprite& a_Render, uint32_t a_EntityId,
-                                const Components::Transform2D& a_Transform)
+            void Add2DComponent(const Rendering::Sprite& a_Render, uint32_t a_EntityId,
+                                const Common::Transform2D& a_Transform)
             {
                 Build(a_Render, a_EntityId, a_Transform.GetPosition(), a_Transform.GetRotationInRadians(),
                       a_Transform.GetScale());
@@ -63,7 +62,7 @@ namespace Wheel
 
             // Same as Add2DComponent but takes raw pos/rot/scale so the caller can pass
             // values interpolated between two fixed-timestep physics states.
-            void Add2DComponentInterpolated(const Components::Sprite& a_Render, uint32_t a_EntityId,
+            void Add2DComponentInterpolated(const Rendering::Sprite& a_Render, uint32_t a_EntityId,
                                             const Math::Vector2& a_Position, float a_Rotation,
                                             const Math::Vector2& a_Scale)
             {
@@ -71,7 +70,7 @@ namespace Wheel
             }
 
             // Builds only the per-object rotation matrix and sets the translation
-            void Build(const Components::Sprite& a_Render, uint32_t a_EntityId,
+            void Build(const Rendering::Sprite& a_Render, uint32_t a_EntityId,
                        const Math::Vector2& a_Position, float a_Rotation,
                        const Math::Vector2& a_Scale)
             {
@@ -127,7 +126,7 @@ namespace Wheel
             Math::Vector4 color = Math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             float linear[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
             float translate[2] = { 0.0f, 0.0f };
-            Wheel::Helpers::RenderLevel level = 0;
+            Helpers::RenderLevel level = 0;
 
             UniformOverride overrides[MAX_UNIFORM_OVERRIDES];
             uint8_t overrideCount = 0;

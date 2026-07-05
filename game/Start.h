@@ -6,11 +6,11 @@
 
 #include <core/Scene.h>
 
-#include "Renderer.h"
-#include "systems/RenderSystem.h"
+#include "renderer/include/Renderer.h"
+#include "../wheel/rendering/RenderSystem.h"
 #include "core/Description.h"
-#include "components/CameraComponent.h"
-#include "systems/InputSystem.h"
+#include "../wheel/rendering/CameraComponent.h"
+#include "../wheel/input/InputSystem.h"
 
 
 //This is the class that communicates with the engine. Override any part of this to fit your needs
@@ -22,15 +22,13 @@ public:
     ~Start()
     {delete m_Scene; delete m_Renderer;}
 
-    uint32_t SpawnObject(float x, float y, float w = 0.9f, float h = 0.5f);
-    void CreateGroundEntity();
     void CreateNewtonsCradle();
     void CreateEntities();
     void Init();
 
 
     void Update();
-    Wheel::Engine::Scene* GetScene() { return m_Scene; }
+    Wheel::Core::Scene* GetScene() { return m_Scene; }
 
 private:
     bool m_RunSimulation;
@@ -39,8 +37,8 @@ private:
     uint32_t m_BoxMaterial    = 0;
     uint32_t m_CircleMaterial = 0;
     Wheel::Renderer::Renderer* m_Renderer;
-    Wheel::Engine::Scene* m_Scene;
-    Wheel::Engine::Systems::RenderSystem* m_RenderSystem = nullptr;
-    Wheel::Engine::Systems::InputSystem* m_InputSystem = nullptr;
+    Wheel::Core::Scene* m_Scene;
+    Wheel::Rendering::RenderSystem* m_RenderSystem = nullptr;
+    Wheel::Input::InputSystem* m_InputSystem = nullptr;
     std::vector<Wheel::EventSystem::SubscriptionToken> m_SubscriptionTokens;
 };

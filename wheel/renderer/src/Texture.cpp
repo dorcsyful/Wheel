@@ -1,9 +1,9 @@
-#include "Texture.h"
+#include "renderer/include/Texture.h"
 #include <filesystem>
 #include <iostream>
-#include "core/AssetPath.h"
+#include "../../helpers/AssetPath.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../dependencies/stb/stb_image.h"
 std::pair<std::string, unsigned int> Wheel::Renderer::Texture::LoadTexture()
 {
     assert(m_ID == -1 && "Texture already loaded.");

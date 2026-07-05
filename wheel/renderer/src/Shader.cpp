@@ -1,11 +1,11 @@
-#include "Shader.h"
+#include "renderer/include/Shader.h"
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-#include "core/AssetPath.h"
+#include "helpers/AssetPath.h"
 
 Wheel::Renderer::Shader::Shader(const std::string& a_VertexPath, const std::string& a_FragmentPath)
 {

@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "EventBus.h"
+#include "../wheel/events/EventBus.h"
 
 using namespace Wheel::EventSystem;
 

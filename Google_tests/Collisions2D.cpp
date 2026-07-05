@@ -2,15 +2,15 @@
 #include <cmath>
 
 #include "math/Vector2.h"
-#include "components/Transform2D.h"
-#include "components/Collider2D.h"
-#include "helpers/Collision2DManifold.h"
-#include "../wheel/include/systems/helpers/BoxBoxCollision2D.h"
-#include "../wheel/include/systems/helpers/CircleBoxCollision2D.h"
-#include "../wheel/include/systems/helpers/CircleCircleCollision2D.h"
+#include "../wheel/include/core/Transform2D.h"
+#include "../wheel/collision/Collider2D.h"
+#include "../wheel/collision/Collision2DManifold.h"
+#include "../wheel/collision/BoxBoxCollision2D.h"
+#include "../wheel/collision/CircleBoxCollision2D.h"
+#include "../wheel/collision/CircleCircleCollision2D.h"
 
 using Wheel::Math::Vector2;
-using Wheel::Components::Transform2D;
+using Wheel::Common::Transform2D;
 using Wheel::Components::BoxCollider2D;
 using Wheel::Components::CircleCollider2D;
 using Wheel::Engine::Collision::BoxBoxCollision2D;

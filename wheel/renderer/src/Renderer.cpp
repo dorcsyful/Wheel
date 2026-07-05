@@ -1,14 +1,14 @@
-#include "Renderer.h"
+#include "renderer/include/Renderer.h"
 
 #include <iostream>
 
-#include "Shader.h"
-#include "Texture.h"
-#include "TypeInfo.h"
-#include "RenderedObject.h"
-#include "EventBus.h"
-#include "Events.h"
-#include "Debugger.h"
+#include "renderer/include/Shader.h"
+#include "renderer/include/Texture.h"
+#include "renderer/include/TypeInfo.h"
+#include "renderer/include/RenderedObject.h"
+#include "../../events/EventBus.h"
+#include "../../events/Events.h"
+#include "debug/Debugger.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -23,7 +23,7 @@ static void glfwError(int id, const char* description)
 Wheel::Renderer::Renderer::~Renderer()
 {
 #ifdef DEBUG_BUILD
-    Engine::Debugger::get().Shutdown();
+    Debug::Debugger::get().Shutdown();
 #endif
     for (auto element : m_Shaders)
     {
@@ -57,9 +57,9 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     int winH = a_Height;
     if (a_AdjustToOSScale)
     {
-        float xscale, yscale;
-        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
-        winW = int(a_Width * xscale);
+        float xscale = 1.0f, yscale = 1.0f;
+        if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
+            glfwGetMonitorContentScale(monitor, &xscale, &yscale);        winW = int(a_Width * xscale);
         winH = int(a_Height * yscale);
     }
     m_Window = glfwCreateWindow(winW, winH, a_Title, nullptr, nullptr);
@@ -90,9 +90,9 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     CreateTestSquare();
 #ifdef DEBUG_BUILD
-    Engine::Debugger::get().Initialize(m_Window);
-    Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::ENTITY_LIST);
-    Engine::Debugger::get().AddModule(Engine::DEBUG_MODULES::WINDOW_STATS);
+    Debug::Debugger::get().Initialize(m_Window);
+    Debug::Debugger::get().AddModule(Debug::DEBUG_MODULES::ENTITY_LIST);
+    Debug::Debugger::get().AddModule(Debug::DEBUG_MODULES::WINDOW_STATS);
 #endif
 }
 void Wheel::Renderer::Renderer::BindAttributes(Wheel::Renderer::Shader* a_Shader)
@@ -195,7 +195,7 @@ void Wheel::Renderer::Renderer::Update()
     }
 
 #ifdef DEBUG_BUILD
-    Engine::Debugger::get().Draw();
+    Debug::Debugger::get().Draw();
 #endif
 
     glfwSwapBuffers(m_Window);
