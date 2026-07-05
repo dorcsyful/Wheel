@@ -90,7 +90,15 @@ void Wheel::Debug::Debugger::DrawEntityList()
 {
     //Transform components hold the names
     auto transforms = m_Scene->GetComponents<Common::Transform2D>();
-    if (ImGui::BeginListBox("##EntityList", ImVec2(-FLT_MIN, 10 * ImGui::GetTextLineHeightWithSpacing()))) {
+    const ImGuiStyle& style = ImGui::GetStyle();
+
+    // Width the list box to the longest entity name so it fits without manual resizing.
+    float entityListWidth = 0.0f;
+    for (auto& [id, transform] : transforms)
+        entityListWidth = std::max(entityListWidth, ImGui::CalcTextSize(transform->name.c_str()).x);
+    entityListWidth += style.FramePadding.x * 2.0f + style.ScrollbarSize;
+
+    if (ImGui::BeginListBox("##EntityList", ImVec2(entityListWidth, 10 * ImGui::GetTextLineHeightWithSpacing()))) {
         for (auto& [id, transform] : transforms) {
             const bool isSelected = (m_SelectedEntityIndex >= 0 && m_SelectedEntityId == id);
             if (ImGui::Selectable(transform->name.c_str(), isSelected)) {
@@ -107,7 +115,13 @@ void Wheel::Debug::Debugger::DrawEntityList()
     if (m_SelectedEntityIndex >= 0) {
         auto componentNames = m_Scene->GetEntityComponentNames(m_SelectedEntityId);
         if (!componentNames.empty()) {
-            if (ImGui::BeginListBox("##ComponentList", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
+            // Width the list box to the longest component name so it fits without manual resizing.
+            float componentListWidth = 0.0f;
+            for (const auto& name : componentNames)
+                componentListWidth = std::max(componentListWidth, ImGui::CalcTextSize(name.c_str()).x);
+            componentListWidth += style.FramePadding.x * 2.0f + style.ScrollbarSize;
+
+            if (ImGui::BeginListBox("##ComponentList", ImVec2(componentListWidth, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
                 bool isSelected = false;
                 for (const auto& name : componentNames) {
                     if (ImGui::Selectable(name.c_str(), isSelected)) {

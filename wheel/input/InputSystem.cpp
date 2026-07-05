@@ -123,24 +123,12 @@ void Wheel::Input::InputSystem::Initialize(GLFWwindow* window)
     SubscribeToEvents();
 }
 
-Wheel::Math::Vector2 Wheel::Input::InputSystem::ScreenToWorldPoint(const Math::Vector2& screenPoint)
-{
-    const Common::Transform2D& camTransform = m_Scene->GetComponent<Common::Transform2D>(m_CameraEntity);
-    const Rendering::CameraComponent& camComponent = m_Scene->GetComponent<Rendering::CameraComponent>(m_CameraEntity);
-    return Helpers::Coordinates::ScreenToWorldCoordinates(screenPoint, camComponent, camTransform);
-}
-
-Wheel::Math::Vector2 Wheel::Input::InputSystem::WorldToScreenPoint(const Math::Vector2& worldPoint)
-{
-    const Common::Transform2D& camTransform = m_Scene->GetComponent<Common::Transform2D>(m_CameraEntity);
-    const Rendering::CameraComponent& camComponent = m_Scene->GetComponent<Rendering::CameraComponent>(m_CameraEntity);
-
-    return Helpers::Coordinates::WorldToScreenCoordinates(worldPoint, camComponent, camTransform);
-}
 
 Wheel::Math::Vector2 Wheel::Input::InputSystem::MousePositionToWorldPoint()
 {
-    return ScreenToWorldPoint(Math::Vector2(m_MouseX, m_MouseY));
+    auto camTransform = m_Scene->GetComponent<Common::Transform2D>(m_CameraEntity);
+    auto camComponent = m_Scene->GetComponent<Rendering::CameraComponent>(m_CameraEntity);
+    return Helpers::Coordinates::ScreenToWorldCoordinates(Math::Vector2(m_MouseX,m_MouseY),camComponent, camTransform);
 }
 
 void Wheel::Input::InputSystem::Update(float deltaTime)

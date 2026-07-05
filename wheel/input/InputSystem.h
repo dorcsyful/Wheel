@@ -42,8 +42,6 @@ namespace Wheel
              */
             void DisableCursorInsideWindow() { glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);}
             void EnableCursor() { glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
-            Math::Vector2 ScreenToWorldPoint(const Math::Vector2& screenPoint);
-            Math::Vector2 WorldToScreenPoint(const Math::Vector2& worldPoint);
             Math::Vector2 MousePositionToWorldPoint();
             //TODO: raw mouse motion and custom cursors
             void Update(float deltaTime) override;
