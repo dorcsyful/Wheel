@@ -1,5 +1,5 @@
 #pragma once
-#include "Collider2D.h"
+#include <stdint.h>
 #include "math/Vector2.h"
 #include <cfloat>
 namespace Wheel

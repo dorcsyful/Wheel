@@ -91,8 +91,8 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
     CreateTestSquare();
 #ifdef DEBUG_BUILD
     Debug::Debugger::get().Initialize(m_Window);
-    Debug::Debugger::get().AddModule(Debug::DEBUG_MODULES::ENTITY_LIST);
-    Debug::Debugger::get().AddModule(Debug::DEBUG_MODULES::WINDOW_STATS);
+    //Debug::Debugger::get().AddModule(Debug::DEBUG_MODULES::ENTITY_LIST);
+    //Debug::Debugger::get().AddModule(Debug::DEBUG_MODULES::WINDOW_STATS);
 #endif
 }
 void Wheel::Renderer::Renderer::BindAttributes(Wheel::Renderer::Shader* a_Shader)
@@ -112,7 +112,17 @@ void Wheel::Renderer::Renderer::BindAttributes(Wheel::Renderer::Shader* a_Shader
 }
 void Wheel::Renderer::Renderer::Update()
 {
-    if (!m_RenderedObjects || m_RenderedObjects->empty()) return;
+    //Need to make sure the ImGui frame renders even when there's nothing else to draw
+    if (!m_RenderedObjects || m_RenderedObjects->empty())
+    {
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+#ifdef DEBUG_BUILD
+        Debug::Debugger::get().Draw();
+#endif
+        glfwSwapBuffers(m_Window);
+        return;
+    }
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);

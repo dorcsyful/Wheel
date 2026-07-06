@@ -70,7 +70,16 @@ endif()
 # --- 4. THE GAME (User Code) ---
 
 file(GLOB_RECURSE USER_SOURCES CONFIGURE_DEPENDS "game/*.cpp" "game/*.h")
-add_executable(WheelApp ${USER_SOURCES}) # Using USER_SOURCES which includes your main.cpp
+add_executable(WheelApp ${USER_SOURCES}
+        game/demos/DemoSelector.cpp
+        game/demos/DemoSelector.h
+        game/demos/Demo.h
+        game/demos/scenes/FallingColliders.cpp
+        game/demos/scenes/FallingColliders.h
+        game/demos/scenes/CollisionPhases.cpp
+        game/demos/scenes/CollisionPhases.h
+        game/demos/scenes/NewtonsCradle.cpp
+        game/demos/scenes/NewtonsCradle.h) # Using USER_SOURCES which includes your main.cpp
 
 # Link the Game to the Engine
 target_link_libraries(WheelApp PRIVATE wheel_engine)

@@ -22,8 +22,10 @@ void Wheel::Initializer::InitEverything(bool a_LoadAssets, Renderer::Renderer*& 
     //Initialize a window with a size adjusted to the monitor's resolution
     a_Out_Renderer = new Renderer::Renderer();
     a_Out_Scene = new Core::Scene();
+#ifdef DEBUG_BUILD
     Debug::Debugger::get().get();
     Debug::Debugger::get().GetScene(a_Out_Scene);
+#endif
     a_Out_Renderer->Init(800,600,"Wheel Engine", true);
     if (a_LoadAssets)
     {

@@ -17,14 +17,14 @@ namespace Wheel
     namespace Core { class Scene; }
     namespace Rendering { class CameraComponent; }
     namespace Common { class Transform2D; }
-
     namespace Debug
     {
         enum class DEBUG_MODULES
         {
             ENTITY_LIST,
             COMPONENT_DETAILS,
-            WINDOW_STATS
+            WINDOW_STATS,
+            DEMO_LIST
         };
         enum class DebugColor { Red, Green, Yellow, White, Cyan };
 
@@ -44,6 +44,7 @@ namespace Wheel
             void GetScene(Core::Scene* a_Scene) { m_Scene = a_Scene; }
             void AddModule(DEBUG_MODULES a_Module);
             void RemoveModule(DEBUG_MODULES a_Module);
+            void PrepareFrame();
             void Draw();
 
             template<typename T>
@@ -51,8 +52,18 @@ namespace Wheel
                 m_Descriptors.insert({desc, &T::descriptor()});
             }
 
+            struct DemoInspectable { void* instance; const ComponentDescriptor* descriptor; };
+            template<typename T>
+            void RegisterDemoInspectable(T* a_Instance) {
+                m_DemoInspectables.push_back({ a_Instance, &T::descriptor() });
+            }
+            void ClearDemoInspectables() { m_DemoInspectables.clear(); }
+            const std::vector<DemoInspectable>& GetDemoInspectables() const { return m_DemoInspectables; }
+
             void SetFrameTime(double a_Time) { m_LastFrameTime = a_Time; }
             void SetCameraEntity(uint32_t a_Id) { m_CameraEntity = a_Id; }
+
+            static bool RenderField(void* componentPtr, const FieldDescriptor& field);
 
         private:
             Debugger() = default;
@@ -60,7 +71,6 @@ namespace Wheel
             //Windowed areas
             void DrawEntityList();
             void DrawWindowStats();
-            bool RenderField(void* componentPtr, const FieldDescriptor& field);
 
             //Overlay
             void DrawOverlay();
@@ -83,6 +93,7 @@ namespace Wheel
             std::vector<EventSystem::SubscriptionToken> m_Tokens{};
             double m_LastFrameTime = 0.0;
             std::map<Core::Description, const ComponentDescriptor*> m_Descriptors{};
+            std::vector<DemoInspectable> m_DemoInspectables{};
             Core::Scene* m_Scene = nullptr;
             GLFWwindow* m_Window = nullptr ;
             std::map<Core::Description, std::string> m_ComponentNames {};

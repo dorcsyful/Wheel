@@ -41,7 +41,6 @@ void Wheel::Debug::Debugger::Initialize(GLFWwindow* a_Window)
         }, m_Tokens.back());
 }
 
-
 void Wheel::Debug::Debugger::Shutdown()
 {
     ImGui_ImplOpenGL3_Shutdown();
@@ -59,25 +58,30 @@ void Wheel::Debug::Debugger::RemoveModule(DEBUG_MODULES a_Module)
     m_Modules[static_cast<int>(a_Module)] = false;
 }
 
-void Wheel::Debug::Debugger::Draw()
+void Wheel::Debug::Debugger::PrepareFrame()
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
     ImGui::NewFrame();
-    ImGui::Begin("Wheel Debugger");
+}
+
+void Wheel::Debug::Debugger::Draw()
+{
     if (m_Modules[static_cast<int>(DEBUG_MODULES::ENTITY_LIST)])
     {
+        ImGui::Begin("Wheel Debugger");
         DrawEntityList();
-    }
-    ImGui::End();
+        ImGui::End();
 
-    ImGui::Begin("Window Stats");
+    }
+
     if (m_Modules[static_cast<int>(DEBUG_MODULES::WINDOW_STATS)])
     {
+        ImGui::Begin("Window Stats");
         DrawWindowStats();
+        ImGui::End();
     }
-    ImGui::End();
 
     DrawOverlay();
     ImGui::Render();
@@ -116,10 +120,10 @@ void Wheel::Debug::Debugger::DrawEntityList()
         auto componentNames = m_Scene->GetEntityComponentNames(m_SelectedEntityId);
         if (!componentNames.empty()) {
             // Width the list box to the longest component name so it fits without manual resizing.
-            float componentListWidth = 0.0f;
+            float componentListWidth = 100;
             for (const auto& name : componentNames)
-                componentListWidth = std::max(componentListWidth, ImGui::CalcTextSize(name.c_str()).x);
-            componentListWidth += style.FramePadding.x * 2.0f + style.ScrollbarSize;
+            //     componentListWidth = std::max(componentListWidth, ImGui::CalcTextSize(name.c_str()).x);
+            // componentListWidth += style.FramePadding.x * 2.0f + style.ScrollbarSize;
 
             if (ImGui::BeginListBox("##ComponentList", ImVec2(componentListWidth, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
                 bool isSelected = false;

@@ -1,54 +1,12 @@
 #include "Start.h"
 #include "debug/Debugger.h"
-#include "../wheel/collision/Collision2DSystem.h"
-#include "../wheel/collision/Collider2D.h"
-#include "../wheel/physics/Rigidbody2D.h"
-#include "../wheel/rendering/Highlight2D.h"
-#include "../wheel/physics/Physics2DSystem.h"
 #include "renderer/include/Texture.h"
-#include <cmath>
 
 #include "../wheel/Initializer.h"
-
-/*void Start::CreateNewtonsCradle()
-{
-    float width = 0.5f;
-    float gap   = 0.002f;
-    float step  = width + gap;   // center spacing: the gap MUST be in the step, or neighbours stay exactly touching
-    float x0    = -1.0f;         // ball 0
-
-    for (int i = 0; i < 4; i++)
-    {
-        float x = x0 + i * step;
-        uint32_t entityId = SpawnObject(x, 2.f, width, width);
-        Wheel::Physics::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Physics::DistanceJoint2D>(entityId);
-        joint.distance = 1.f;
-        joint.otherAnchorPoint = Wheel::Math::Vector2(x, 3.f);   // pivot directly above
-    }
-    {
-        // Striker: one step left of ball 0, pulled back to horizontal and taut (distance == rest length).
-        float pivotX   = x0 - step;
-        float strikerX = pivotX - 1.0f;
-        uint32_t entityId = SpawnObject(strikerX, 3.f, width, width);
-        Wheel::Physics::DistanceJoint2D& joint = m_Scene->AddComponent<Wheel::Physics::DistanceJoint2D>(entityId);
-        joint.distance = 1.f;
-        joint.otherAnchorPoint = Wheel::Math::Vector2(pivotX, 3.f);
-    }
-}*/
-
-void Start::CreateEntities()
-{
-
-    Wheel::Renderer::Material* mat = m_Renderer->CreateMaterial("base","key.png");
-    uint32_t characterEntity = m_Scene->AddEntity();
-    Wheel::Common::Transform2D& transform = m_Scene->AddComponent<Wheel::Common::Transform2D>(characterEntity);
-    Wheel::Rendering::Sprite& sprite = m_Scene->AddComponent<Wheel::Rendering::Sprite>(characterEntity);
-    Wheel::Rendering::Highlight2D& hl = m_Scene->AddComponent<Wheel::Rendering::Highlight2D>(characterEntity);
-    hl.active = true; hl.color = Wheel::Math::Vector4(1.0f, 0.0f, 0.0f, 1.0f); hl.thickness = 10;
-    sprite.MaterialName = mat->id;
-    sprite.width = 1; sprite.height = 1;
-    transform.SetPosition(0.0f, 0.0f);
-}
+#include "demos/scenes/CollisionPhases.h"
+#include "demos/scenes/FallingColliders.h"
+#include "demos/scenes/MouseEvents.h"
+#include "demos/scenes/NewtonsCradle.h"
 
 void Start::Init()
 {
@@ -62,9 +20,7 @@ void Start::Init()
     m_RenderSystem = m_Scene->GetSystem<Wheel::Rendering::RenderSystem>();
     m_InputSystem = m_Scene->GetSystem<Wheel::Input::InputSystem>();
 
-    CreateEntities();
     m_SubscriptionTokens.emplace_back();
-
 
 #ifdef DEBUG_BUILD
     Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::RunSimulation>(
@@ -72,7 +28,25 @@ void Start::Init()
 #endif
    // Wheel::EventSystem::EventBus::Subscribe<Wheel::Events::LeftMouseButtonPressEvent>(
    // [&](const Wheel::Events::LeftMouseButtonPressEvent& e) { Wheel::Math::Vector2 world = m_Scene->GetSystem<Wheel::Rendering::RenderSystem>()->ScreenToWorld(e.x,e.y); SpawnObject(world.x,world.y); }, m_SubscriptionTokens.back());
+    CreateDemos();
+}
 
+void Start::CreateDemos()
+{
+    m_DemoSelector = std::make_unique<Wheel::Game::DemoSelector>(m_Renderer->GetWindow(),m_Scene);
+    std::unique_ptr<Wheel::Game::CollisionPhases> cp = std::make_unique<Wheel::Game::CollisionPhases>();
+    std::unique_ptr<Wheel::Game::FallingColliders> fc = std::make_unique<Wheel::Game::FallingColliders>();
+    std::unique_ptr<Wheel::Game::MouseEvents> me = std::make_unique<Wheel::Game::MouseEvents>();
+    std::unique_ptr<Wheel::Game::NewtonsCradle> nc = std::make_unique<Wheel::Game::NewtonsCradle>();
+    nc->GetCircleMaterial(m_CircleMaterial);
+    fc->GetMaterials(m_BoxMaterial, m_CircleMaterial);
+    m_DemoSelector->AddDemo("Collision Phases", std::move(cp));
+    m_DemoSelector->AddDemo("Falling Colliders", std::move(fc));
+    m_DemoSelector->AddDemo("Mouse Events", std::move(me));
+    m_DemoSelector->AddDemo("Newton's Cradle", std::move(nc));
+
+
+    m_DemoSelector->ExecuteDemo("Falling Colliders");
 }
 
 
@@ -91,7 +65,6 @@ void Start::Update()
         if (frameTime > 0.25f) frameTime = 0.25f;   // clamp to avoid the spiral of death after a hitch
 
         glfwPollEvents();
-
         if (m_RunSimulation)
         {
             accumulator += frameTime;
@@ -109,6 +82,11 @@ void Start::Update()
 
         float alpha = m_RunSimulation ? (accumulator / kFixedDt) : 1.0f;
         m_RenderSystem->Render(alpha);
+#ifdef DEBUG_BUILD
+        Wheel::Debug::Debugger::get().PrepareFrame();
+#endif
+        m_DemoSelector->Update(frameTime);
+
         m_Renderer->Update();
 
 #ifdef DEBUG_BUILD

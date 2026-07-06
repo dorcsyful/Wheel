@@ -7,6 +7,9 @@ namespace Wheel
 {
     namespace Collision
     {
+        struct CircleCollider2D;
+        struct BoxCollider2D;
+
         class CircleBoxCollision2D
         {
         public:

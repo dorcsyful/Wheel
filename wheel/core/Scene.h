@@ -9,6 +9,10 @@
 #include "ComponentManager.h"
 #include "EntityManager.h"
 
+#ifdef DEBUG_BUILD
+#include "Debug/Debugger.h"
+#endif
+
 namespace Wheel
 {
     namespace Core
