@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "debug/DebugDescriptor.h"
+#include "debugger/DebugDescriptor.h"
 #include "RenderLayers.h"
 
 namespace Wheel

@@ -10,7 +10,7 @@
 #include "physics/Joint2D.h"
 #include "rendering/Highlight2D.h"
 #include "collision/Collision2DSystem.h"
-#include "debug/Debugger.h"
+#include "debugger/Debugger.h"
 #include "input/InputSystem.h"
 #include "physics/Physics2DSystem.h"
 #include "rendering/RenderSystem.h"

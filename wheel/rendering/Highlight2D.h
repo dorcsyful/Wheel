@@ -1,5 +1,5 @@
 #pragma once
-#include "debug/DebugDescriptor.h"
+#include "debugger/DebugDescriptor.h"
 #include "math/Vector4.h"
 
 namespace Wheel

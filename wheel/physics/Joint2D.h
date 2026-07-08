@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "math/Vector2.h"
-#include "debug/DebugDescriptor.h"
+#include "debugger/DebugDescriptor.h"
 #include "core/Globals.h"
 
 namespace Wheel

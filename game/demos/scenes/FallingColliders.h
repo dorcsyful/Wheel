@@ -1,6 +1,6 @@
 #pragma once
 #include "../Demo.h"
-#include "debug/DebugDescriptor.h"
+#include "debugger/DebugDescriptor.h"
 
 namespace Wheel
 {

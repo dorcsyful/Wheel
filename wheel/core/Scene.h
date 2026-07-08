@@ -10,7 +10,7 @@
 #include "EntityManager.h"
 
 #ifdef DEBUG_BUILD
-#include "Debug/Debugger.h"
+#include "debugger/Debugger.h"
 #endif
 
 namespace Wheel

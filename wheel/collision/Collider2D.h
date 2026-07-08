@@ -2,7 +2,7 @@
 #include <cfloat>
 #include "math/Vector2.h"
 
-#include "debug/DebugDescriptor.h"
+#include "debugger/DebugDescriptor.h"
 namespace Wheel
 {
     namespace Collision

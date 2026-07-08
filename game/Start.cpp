@@ -1,5 +1,5 @@
 #include "Start.h"
-#include "debug/Debugger.h"
+#include "debugger/Debugger.h"
 #include "renderer/include/Texture.h"
 
 #include "../wheel/Initializer.h"

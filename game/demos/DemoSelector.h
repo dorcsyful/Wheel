@@ -43,6 +43,7 @@ namespace Wheel
 
             void ExecuteDemo(const std::string& a_Name)
             {
+                m_Scene->Reset();
                 assert(m_DemoList.find(a_Name) != m_DemoList.end() && "Demo not found");
 #ifdef DEBUG_BUILD
                 ClearDemoInspectables();
@@ -58,12 +59,12 @@ namespace Wheel
             void ClearDemoInspectables() { m_DemoInspectables.clear(); }
 
         private:
-
 #ifdef DEBUG_BUILD
-            std::vector<DemoInspectable>              m_DemoInspectables{};
+            std::vector<DemoInspectable> m_DemoInspectables{};
             std::map<std::string, const TypeDescriptor*> m_DemoDescriptors{};
 #endif
-            int m_SelectedDemoIndex;
+
+            std::string m_SelectedDemoIndex = "";
             Core::Scene* m_Scene;
             std::map<std::string, std::unique_ptr<Demo>> m_DemoList{};
             GLFWwindow* m_Window;

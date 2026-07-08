@@ -4,9 +4,9 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
-#include "debug/Debugger.h"
+#include "debugger/Debugger.h"
 
-Wheel::Game::DemoSelector::DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene) : m_SelectedDemoIndex(0)
+Wheel::Game::DemoSelector::DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene) : m_SelectedDemoIndex("")
 {
     m_Window = a_Window;
     m_Scene = a_Scene;
@@ -48,9 +48,9 @@ void Wheel::Game::DemoSelector::Update(float a_DeltaTime)
     ImGui::Begin("Demo Selector");
     if (ImGui::BeginListBox("##DemoList", ImVec2(maxWidth + 20, 10 * ImGui::GetTextLineHeightWithSpacing()))) {
         for (auto& [id, demo] : m_DemoList) {
-            const bool isSelected = (m_SelectedDemoIndex >= 0);
+            const bool isSelected = (m_SelectedDemoIndex != "");
             if (ImGui::Selectable(id.c_str(), isSelected)) {
-                m_SelectedDemoIndex = 0;
+                m_SelectedDemoIndex = id;
             }
             if (isSelected) {
                 ImGui::SetItemDefaultFocus();
@@ -58,7 +58,10 @@ void Wheel::Game::DemoSelector::Update(float a_DeltaTime)
         }
         ImGui::EndListBox();
     }
-
+    if (ImGui::Button("Start demo"))
+    {
+        ExecuteDemo(m_SelectedDemoIndex);
+    }
 
     #ifdef DEBUG_BUILD
     for (const auto& inspectable : GetDemoInspectables())

@@ -8,7 +8,7 @@
 #include "renderer/include/RenderedObject.h"
 #include "../../events/EventBus.h"
 #include "../../events/Events.h"
-#include "debug/Debugger.h"
+#include "debugger/Debugger.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {

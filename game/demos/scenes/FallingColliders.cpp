@@ -5,7 +5,7 @@
 #include "helpers/Coordinates.h"
 #include "rendering/Sprite.h"
 #include "rendering/RenderSystem.h"
-#include "debug/Debugger.h"
+#include "debugger/Debugger.h"
 void Wheel::Game::FallingColliders::Initialize(Core::Scene* scene)
 {
     m_Scene = scene;

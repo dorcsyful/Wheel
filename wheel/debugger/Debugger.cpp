@@ -122,14 +122,16 @@ void Wheel::Debug::Debugger::DrawEntityList()
             // Width the list box to the longest component name so it fits without manual resizing.
             float componentListWidth = 100;
             for (const auto& name : componentNames)
-            //     componentListWidth = std::max(componentListWidth, ImGui::CalcTextSize(name.c_str()).x);
-            // componentListWidth += style.FramePadding.x * 2.0f + style.ScrollbarSize;
+            {
+                componentListWidth = std::max(componentListWidth, ImGui::CalcTextSize(name.c_str()).x);
+                componentListWidth += style.FramePadding.x * 2.0f + style.ScrollbarSize;
+            }
 
             if (ImGui::BeginListBox("##ComponentList", ImVec2(componentListWidth, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
                 bool isSelected = false;
-                for (const auto& name : componentNames) {
-                    if (ImGui::Selectable(name.c_str(), isSelected)) {
-                        m_SelectedEntityDescription = m_Scene->GetComponentDescription(name);
+                for (const auto& a_name : componentNames) {
+                    if (ImGui::Selectable(a_name.c_str(), isSelected)) {
+                        m_SelectedEntityDescription = m_Scene->GetComponentDescription(a_name);
                     }
                 }
                 ImGui::EndListBox();
@@ -159,7 +161,6 @@ void Wheel::Debug::Debugger::DrawEntityList()
         }
     }
 }
-
 
 void Wheel::Debug::Debugger::DrawWindowStats()
 {

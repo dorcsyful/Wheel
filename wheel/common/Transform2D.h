@@ -5,7 +5,7 @@
 #include "core/Globals.h"
 #include "math/Matrix2x2.h"
 
-#include "debug/DebugDescriptor.h"
+#include "debugger/DebugDescriptor.h"
 
 namespace Wheel::Core { template <typename T> class ComponentPool; }
 
