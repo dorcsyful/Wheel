@@ -33,10 +33,6 @@ void Wheel::Game::FallingColliders::Initialize(Core::Scene* scene)
         Wheel::Math::Vector2 world = Helpers::Coordinates::ScreenToWorldCoordinates(screenCoord,*activeCamera,*camTransform);
         SpawnObject(Math::Vector2(world.x,world.y));
     }, m_SubscriptionTokens.back());
-#ifdef DEBUG_BUILD
-    Debug::Debugger::get().ClearDemoInspectables();
-    Debug::Debugger::get().RegisterDemoInspectable(this);
-#endif
 }
 
 void Wheel::Game::FallingColliders::SpawnObject(const Math::Vector2& a_Position)
