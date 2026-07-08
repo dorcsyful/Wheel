@@ -52,14 +52,6 @@ namespace Wheel
                 m_Descriptors.insert({desc, &T::descriptor()});
             }
 
-            struct DemoInspectable { void* instance; const ComponentDescriptor* descriptor; };
-            template<typename T>
-            void RegisterDemoInspectable(T* a_Instance) {
-                m_DemoInspectables.push_back({ a_Instance, &T::descriptor() });
-            }
-            void ClearDemoInspectables() { m_DemoInspectables.clear(); }
-            const std::vector<DemoInspectable>& GetDemoInspectables() const { return m_DemoInspectables; }
-
             void SetFrameTime(double a_Time) { m_LastFrameTime = a_Time; }
             void SetCameraEntity(uint32_t a_Id) { m_CameraEntity = a_Id; }
 
@@ -92,8 +84,7 @@ namespace Wheel
             std::vector<Collision::Collision2DManifold> m_ActiveCollisions {};
             std::vector<EventSystem::SubscriptionToken> m_Tokens{};
             double m_LastFrameTime = 0.0;
-            std::map<Core::Description, const ComponentDescriptor*> m_Descriptors{};
-            std::vector<DemoInspectable> m_DemoInspectables{};
+            std::map<Core::Description, const TypeDescriptor*> m_Descriptors{};
             Core::Scene* m_Scene = nullptr;
             GLFWwindow* m_Window = nullptr ;
             std::map<Core::Description, std::string> m_ComponentNames {};

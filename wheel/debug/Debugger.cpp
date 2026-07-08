@@ -140,7 +140,7 @@ void Wheel::Debug::Debugger::DrawEntityList()
     if (!m_SelectedEntityDescription.IsEmpty() && m_SelectedEntityIndex >= 0)
     {
         auto raw = m_Scene->GetComponentRaw(m_SelectedEntityId, m_SelectedEntityDescription);
-        const ComponentDescriptor* desc = nullptr;
+        const TypeDescriptor* desc = nullptr;
         auto it = m_Descriptors.find(m_SelectedEntityDescription);
         if (it != m_Descriptors.end())
             desc = it->second;

@@ -21,13 +21,13 @@ struct FieldDescriptor {
     size_t                  offset;   // offsetof() into the struct
 };
 
-// One of these per component type
-struct ComponentDescriptor {
+// One of these per reflected type
+struct TypeDescriptor {
     const char*                  name;
     const FieldDescriptor* fields;
     size_t                 fieldCount;
 
-    ComponentDescriptor(const char* n,const FieldDescriptor* f, size_t c)
+    TypeDescriptor(const char* n,const FieldDescriptor* f, size_t c)
     : name(n), fields(f), fieldCount(c) {}
 
 };
@@ -111,7 +111,7 @@ FieldDescriptor makeField(const char* name, Wheel::Rendering::CameraMode C::*mp)
  * };
  */
 #define  REFLECT_BEGIN(ComponentType) \
-static const ComponentDescriptor& descriptor() { \
+static const TypeDescriptor& descriptor() { \
 typedef ComponentType _C; \
 static const FieldDescriptor fields[] = {
 
@@ -120,7 +120,7 @@ makeField(#memberName, &_C::memberName),
 
 #define REFLECT_END(ComponentType, displayName) \
 }; \
-static ComponentDescriptor d = { \
+static TypeDescriptor d = { \
 displayName, fields, \
 sizeof(fields)/sizeof(fields[0]) \
 }; \

@@ -63,7 +63,7 @@ void Wheel::Game::DemoSelector::Update(float a_DeltaTime)
     #ifdef DEBUG_BUILD
     for (const auto& inspectable : Debug::Debugger::get().GetDemoInspectables())
     {
-        const ComponentDescriptor* desc = inspectable.descriptor;
+        const TypeDescriptor* desc = inspectable.descriptor;
         if (!desc || !inspectable.instance) continue;
         if (ImGui::CollapsingHeader(desc->name))
         {
