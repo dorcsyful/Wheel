@@ -84,6 +84,29 @@ namespace Wheel
                 return nullptr;
             }
 
+            void Reset(bool a_FullReset)
+            {
+                if (a_FullReset)
+                {
+                    m_SystemCount = 0;
+                    for (int i = 0; i < MAX_SYSTEMS; i++)
+                    {
+                        delete m_Systems[i];
+                        m_Systems[i] = nullptr;
+                        m_SystemNames[i] = nullptr;
+                    }
+                }
+                else
+                {
+                    // Only the first m_SystemCount slots hold live systems; the rest
+                    // are nullptr, so iterating the whole array would deref null.
+                    for (int i = 0; i < m_SystemCount; i++)
+                    {
+                        m_Systems[i]->Reset();
+                    }
+                }
+            }
+
         private:
             System* m_Systems[MAX_SYSTEMS];
             const char* m_SystemNames[MAX_SYSTEMS];

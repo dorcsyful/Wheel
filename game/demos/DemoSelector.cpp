@@ -6,10 +6,11 @@
 #include <GLFW/glfw3.h>
 #include "debugger/Debugger.h"
 
-Wheel::Game::DemoSelector::DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene) : m_SelectedDemoIndex("")
+Wheel::Game::DemoSelector::DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene, Renderer::Renderer* a_Renderer) : m_SelectedDemoIndex("")
 {
     m_Window = a_Window;
     m_Scene = a_Scene;
+    m_Renderer = a_Renderer;
     //In Debug mode the renderer intializes it but not in release
     if (!ImGui::GetCurrentContext())
     {

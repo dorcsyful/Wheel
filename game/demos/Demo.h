@@ -13,7 +13,7 @@ namespace Wheel
 
             virtual void Initialize(Core::Scene* scene) = 0;
         protected:
-            Core::Scene* m_Scene;
+            Core::Scene* m_Scene = nullptr;
         };
     }
 }

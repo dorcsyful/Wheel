@@ -36,6 +36,8 @@ namespace Wheel
             void SetScene(Scene* a_Scene) { m_Scene = a_Scene; }
 
             virtual void Update(float deltaTime) = 0;
+
+            void Reset() { m_EntityIDs.clear(); }
         protected:
             Scene* m_Scene = nullptr;
             std::vector<uint32_t> m_EntityIDs;

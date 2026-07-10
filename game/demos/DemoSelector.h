@@ -6,6 +6,7 @@
 
 #include "Demo.h"
 #include "core/Scene.h"
+#include "Initializer.h"
 #include "GLFW/glfw3.h"
 
 //Checking if the demos have any inspectable members
@@ -24,7 +25,7 @@ namespace Wheel
         class DemoSelector
         {
         public:
-            DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene);
+            DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene, Renderer::Renderer* a_Renderer);
             ~DemoSelector() = default;
 
             struct DemoInspectable { void* instance; const TypeDescriptor* descriptor; };
@@ -43,7 +44,10 @@ namespace Wheel
 
             void ExecuteDemo(const std::string& a_Name)
             {
-                m_Scene->Reset();
+                m_Scene->Reset(false);
+                // The soft reset wipes every entity including the camera, so recreate
+                // it and re-point the render/input/debug systems before the demo runs.
+                Initializer::CreateCameraEntity(m_Scene, m_Renderer);
                 assert(m_DemoList.find(a_Name) != m_DemoList.end() && "Demo not found");
 #ifdef DEBUG_BUILD
                 ClearDemoInspectables();
@@ -66,6 +70,7 @@ namespace Wheel
 
             std::string m_SelectedDemoIndex = "";
             Core::Scene* m_Scene;
+            Renderer::Renderer* m_Renderer;
             std::map<std::string, std::unique_ptr<Demo>> m_DemoList{};
             GLFWwindow* m_Window;
         };

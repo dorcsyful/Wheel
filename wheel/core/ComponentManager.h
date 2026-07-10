@@ -130,6 +130,30 @@ namespace Wheel
                 return pool->GetRaw(a_EntityId);
             }
 
+            /**
+             *
+             * @param a_Full Whether to remove all component pools
+             */
+            void Reset(bool a_Full)
+            {
+                if (a_Full)
+                {
+                    for (const auto& it : m_ComponentPools)
+                    {
+                        delete it.second;
+                    }
+                    m_ComponentPools.clear();
+                    m_Descriptions.clear();
+                }
+                else
+                {
+                    for (const auto& it : m_ComponentPools)
+                    {
+                        it.second->Reset();
+                    }
+                }
+            }
+
         private:
             std::unordered_map<std::string, IComponentPool*> m_ComponentPools;
             std::unordered_map<std::string, Description> m_Descriptions;

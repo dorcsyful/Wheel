@@ -17,6 +17,7 @@ namespace Wheel
             virtual ~IComponentPool() = default;
             virtual void EntityDestroyed(uint32_t a_Entity) = 0;
             virtual void* GetRaw(uint32_t entityId) = 0;
+            virtual void Reset() = 0;
 
         };
 
@@ -114,6 +115,18 @@ namespace Wheel
             Description GetDescription() const
             {
                 return m_Description;
+            }
+
+            void Reset() override
+            {
+                m_Size = 0;
+                m_Components.clear();
+                m_EntityToComponent.assign(MAX_ENTITIES, NO_VALUE);
+                for (int i = 0; i < MAX_ENTITIES; i++)
+                {
+                    m_EntityToComponent[i] = NO_VALUE;
+                }
+                m_ComponentToEntity.clear();
             }
         private:
             //T m_Components[MAX_ENTITIES];

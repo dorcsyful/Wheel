@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cassert>
 #include <cstdint>
 #include <queue>
@@ -35,6 +35,10 @@ namespace Wheel
             }
             void DestroyEntity(uint32_t a_EntityID) {
                 assert(a_EntityID < MAX_ENTITIES && "Entity ID out of range.");
+                // Guard against double-destroy: an already-destroyed entity has an
+                // empty description. Without this, its id gets pushed onto the free
+                // queue twice and CreateEntity later hands the same id to two entities.
+                if (m_EntityDescriptions[a_EntityID].IsEmpty()) return;
                 m_EntityDescriptions[a_EntityID].Reset();
                 m_AvailableEntities.push(a_EntityID);
                 --m_EntityCount;
@@ -50,6 +54,22 @@ namespace Wheel
             const std::array<Description, MAX_ENTITIES>* GetEntityDescriptions() const
             {
                 return &m_EntityDescriptions;
+            }
+
+            /**
+             * @brief Removes all entities
+             * @param a_FullReset Whether to null Description sizes
+             */
+            void Reset(bool a_FullReset)
+            {
+                m_EntityCount = 0;
+                m_AvailableEntities = std::queue<uint32_t>();
+                m_EntityDescriptions = std::array<Description, MAX_ENTITIES>();
+                for (uint32_t entityID = 0; entityID < MAX_ENTITIES; ++entityID)
+                {
+                    m_AvailableEntities.push(entityID);
+                    m_EntityDescriptions[entityID] = Description();
+                }
             }
 
         private:

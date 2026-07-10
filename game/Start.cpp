@@ -33,7 +33,7 @@ void Start::Init()
 
 void Start::CreateDemos()
 {
-    m_DemoSelector = std::make_unique<Wheel::Game::DemoSelector>(m_Renderer->GetWindow(),m_Scene);
+    m_DemoSelector = std::make_unique<Wheel::Game::DemoSelector>(m_Renderer->GetWindow(),m_Scene,m_Renderer);
     std::unique_ptr<Wheel::Game::CollisionPhases> cp = std::make_unique<Wheel::Game::CollisionPhases>();
     std::unique_ptr<Wheel::Game::FallingColliders> fc = std::make_unique<Wheel::Game::FallingColliders>();
     std::unique_ptr<Wheel::Game::MouseEvents> me = std::make_unique<Wheel::Game::MouseEvents>();
