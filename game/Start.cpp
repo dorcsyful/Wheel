@@ -1,4 +1,5 @@
 #include "Start.h"
+#include <iostream>
 #include "debugger/Debugger.h"
 #include "_gfx/include/Texture.h"
 
@@ -57,6 +58,10 @@ void Start::Update()
     double lastTime = glfwGetTime();
     float accumulator = 0.0f;
 
+    // --- temporary frame profiler: accumulate per-phase time, print every 60 frames ---
+    double accPoll = 0, accPhysics = 0, accRenderCPU = 0, accDemo = 0, accRendererUpdate = 0;
+    int profFrames = 0;
+
     while (!glfwWindowShouldClose(m_Renderer->GetWindow()))
     {
         double now = glfwGetTime();
@@ -64,7 +69,10 @@ void Start::Update()
         lastTime = now;
         if (frameTime > 0.25f) frameTime = 0.25f;   // clamp to avoid the spiral of death after a hitch
 
+        double t0 = glfwGetTime();
         glfwPollEvents();
+        double t1 = glfwGetTime();
+        int physicsSteps = 0;
         if (m_RunSimulation)
         {
             accumulator += frameTime;
@@ -77,17 +85,39 @@ void Start::Update()
                     m_RenderSystem->SavePreviousTransforms();
                 m_Scene->Update(kFixedDt);                  // every physics step sees an identical dt
                 accumulator -= kFixedDt;
+                ++physicsSteps;
             }
         }
+        double t2 = glfwGetTime();
 
         float alpha = m_RunSimulation ? (accumulator / kFixedDt) : 1.0f;
         m_RenderSystem->Render(alpha);
+        double t3 = glfwGetTime();
 #ifdef DEBUG_BUILD
         Wheel::Debug::Debugger::get().PrepareFrame();
 #endif
         m_DemoSelector->Update(frameTime);
+        double t4 = glfwGetTime();
 
         m_Renderer->Update();
+        double t5 = glfwGetTime();
+
+        accPoll           += t1 - t0;
+        accPhysics        += t2 - t1;
+        accRenderCPU      += t3 - t2;
+        accDemo           += t4 - t3;
+        accRendererUpdate += t5 - t4;
+        if (++profFrames >= 60)
+        {
+            std::cout << "[frame ms/60] poll=" << accPoll / 60 * 1000
+                      << " physics=" << accPhysics / 60 * 1000
+                      << " renderCPU=" << accRenderCPU / 60 * 1000
+                      << " demo=" << accDemo / 60 * 1000
+                      << " rendererUpdate(GPU+swap+imgui)=" << accRendererUpdate / 60 * 1000
+                      << " | lastPhysicsSteps=" << physicsSteps << std::endl;
+            accPoll = accPhysics = accRenderCPU = accDemo = accRendererUpdate = 0;
+            profFrames = 0;
+        }
 
 #ifdef DEBUG_BUILD
         Wheel::Debug::Debugger::get().SetFrameTime(frameTime);

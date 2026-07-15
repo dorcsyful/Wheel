@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <stdint.h>
 
 #include "../math/Vector2.h"
 #include "core/Globals.h"

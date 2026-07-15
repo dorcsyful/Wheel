@@ -10,6 +10,12 @@
 #include "../../events/EventBus.h"
 #include "../../events/Events.h"
 #include "debugger/Debugger.h"
+#ifndef DEBUG_BUILD
+// Release has no Debugger to render ImGui, but the DemoSelector still builds an
+// ImGui frame (the example switcher), so the renderer presents it itself.
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#endif
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -131,6 +137,9 @@ void Wheel::Renderer::Renderer::Update()
         glClear(GL_COLOR_BUFFER_BIT);
 #ifdef DEBUG_BUILD
         Debug::Debugger::get().Draw();
+#else
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
         glfwSwapBuffers(m_Window);
         return;
@@ -218,6 +227,9 @@ void Wheel::Renderer::Renderer::Update()
 
 #ifdef DEBUG_BUILD
     Debug::Debugger::get().Draw();
+#else
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
 
     glfwSwapBuffers(m_Window);

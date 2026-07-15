@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "debugger/DebugDescriptor.h"
 #include "RenderLayers.h"
-
+#include "math/Vector4.h"
 namespace Wheel
 {
     namespace Rendering

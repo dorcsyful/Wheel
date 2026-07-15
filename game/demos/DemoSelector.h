@@ -28,7 +28,9 @@ namespace Wheel
             DemoSelector(GLFWwindow* a_Window, Core::Scene* a_Scene, Renderer::Renderer* a_Renderer);
             ~DemoSelector() = default;
 
+#ifdef DEBUG_BUILD
             struct DemoInspectable { void* instance; const TypeDescriptor* descriptor; };
+#endif
 
             void Update(float a_DeltaTime);
             template<typename T>
@@ -59,8 +61,10 @@ namespace Wheel
 
                 m_DemoList.at(a_Name)->Initialize(m_Scene);
             }
+#ifdef DEBUG_BUILD
             const std::vector<DemoInspectable>& GetDemoInspectables() const { return m_DemoInspectables; }
             void ClearDemoInspectables() { m_DemoInspectables.clear(); }
+#endif
 
         private:
 #ifdef DEBUG_BUILD
