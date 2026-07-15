@@ -1,4 +1,5 @@
 #include "_gfx/include/Texture.h"
+#include <cassert>
 #include <filesystem>
 #include <iostream>
 #include "../../helpers/AssetPath.h"

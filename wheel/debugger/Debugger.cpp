@@ -39,6 +39,7 @@ void Wheel::Debug::Debugger::Initialize(GLFWwindow* a_Window)
         {
             m_ActiveCollisions.push_back(e.manifold);
         }, m_Tokens.back());
+    AddModule(DEBUG_MODULES::WINDOW_STATS);
 }
 
 void Wheel::Debug::Debugger::Shutdown()

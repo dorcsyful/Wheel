@@ -1,6 +1,6 @@
 #include "FallingColliders.h"
 #include "common/Transform2D.h"
-#include "Physics/Rigidbody2D.h"
+#include "physics/Rigidbody2D.h"
 #include "collision/Collider2D.h"
 #include "helpers/Coordinates.h"
 #include "rendering/Sprite.h"

@@ -1,8 +1,11 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <unordered_map>
 
 #include "core/System.h"
+#include "core/ComponentPool.h"
+#include "core/Globals.h"
 #include "math/Vector2.h"
 #include "Constraint2DResolver.h"
 
@@ -59,6 +62,10 @@ namespace Wheel
             Core::ComponentPool<Collision::BoxCollider2D>* m_BoxColliderPool = nullptr;
             Core::ComponentPool<Collision::CircleCollider2D>* m_CircleColliderPool = nullptr;
             Core::ComponentPool<Rigidbody2D>* m_RigidbodyPool = nullptr;
+
+            const std::array<Core::Description, MAX_ENTITIES>* m_DescriptionRef = nullptr;
+            Core::Description m_BoxColliderDesc;
+            Core::Description m_CircleColliderDesc;
 
         };
     }

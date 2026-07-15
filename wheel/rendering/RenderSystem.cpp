@@ -66,8 +66,6 @@ void Wheel::Rendering::RenderSystem::Render(float a_Alpha)
 
     for (unsigned int entityId : m_EntityIDs)
     {
-        if (!m_Scene->HasComponent<Sprite>(entityId)) continue;
-
         const auto& render = m_RenderPool->GetComponent(entityId);
         const Common::Transform2D& curr = m_TransformPool->GetComponent(entityId);
 

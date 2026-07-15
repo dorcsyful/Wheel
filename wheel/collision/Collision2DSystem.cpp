@@ -52,8 +52,7 @@ void Wheel::Collision::Collision2DSystem::CheckNarrowPhase()
 
     Core::Description boxComponentDesc = m_BoxColliderPool->GetDescription();
     Core::Description circleComponentDesc = m_CircleColliderPool->GetDescription();
-    bool enable = true;
-    SetDirtyFlag(boxComponentDesc, circleComponentDesc, enable);
+    SetDirtyFlag(boxComponentDesc, circleComponentDesc, true);
 
     for (int i = 0; i < (int)m_EntityIDs.size(); i++)
     {
@@ -105,6 +104,4 @@ void Wheel::Collision::Collision2DSystem::CheckNarrowPhase()
         }
     }
     EventSystem::EventBus::Publish(Events::CollisionResultsFinished(&m_Manifolds));
-    enable = false;
-    SetDirtyFlag(boxComponentDesc, circleComponentDesc, enable);
 }

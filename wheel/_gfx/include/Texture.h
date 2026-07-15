@@ -1,6 +1,8 @@
 #pragma once
 #include <filesystem>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "glad.h"
 #include "../../helpers/AssetPath.h"

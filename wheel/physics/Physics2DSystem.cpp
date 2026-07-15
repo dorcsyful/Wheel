@@ -10,7 +10,8 @@
 
 bool Wheel::Physics::Physics2DSystem::UpdateRigidbodyInertia(std::vector<unsigned>::value_type id, Common::Transform2D& transform, Rigidbody2D& rigidbody)
 {
-    if (m_Scene->HasComponent<Collision::BoxCollider2D>(id))
+    const Core::Description& desc = m_DescriptionRef->at(id);
+    if (desc.HasComponentType(m_BoxColliderDesc))
     {
         auto& collider = m_BoxColliderPool->GetComponent(id);
         if (transform.isDirty || collider.isDirty || rigidbody.isDirty)
@@ -20,7 +21,7 @@ bool Wheel::Physics::Physics2DSystem::UpdateRigidbodyInertia(std::vector<unsigne
             transform.isDirty = false;
             collider.isDirty = false;            }
     }
-    else if (m_Scene->HasComponent<Collision::CircleCollider2D>(id))
+    else if (desc.HasComponentType(m_CircleColliderDesc))
     {
         auto& collider = m_CircleColliderPool->GetComponent(id);
         rigidbody.SetInertia(CalculateCircleInertia(collider, transform, rigidbody.GetMass()));
@@ -42,6 +43,9 @@ void Wheel::Physics::Physics2DSystem::EnsurePools()
         m_BoxColliderPool  = m_Scene->GetComponentPool<Collision::BoxCollider2D>();
         m_CircleColliderPool  = m_Scene->GetComponentPool<Collision::CircleCollider2D>();
         m_RigidbodyPool = m_Scene->GetComponentPool<Rigidbody2D>();
+        m_DescriptionRef = m_Scene->GetEntityDescriptions();
+        m_BoxColliderDesc = m_BoxColliderPool->GetDescription();
+        m_CircleColliderDesc = m_CircleColliderPool->GetDescription();
     }
 }
 

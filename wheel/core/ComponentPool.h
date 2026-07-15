@@ -5,6 +5,7 @@
 #include "Globals.h"
 #include "Description.h"
 #include <array>
+#include <vector>
 namespace Wheel
 {
     namespace Core

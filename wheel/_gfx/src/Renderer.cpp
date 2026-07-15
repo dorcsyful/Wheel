@@ -1,6 +1,7 @@
 #include "_gfx/include/Renderer.h"
 
 #include <iostream>
+#include <string>
 
 #include "_gfx/include/Shader.h"
 #include "_gfx/include/Texture.h"
@@ -79,6 +80,17 @@ void Wheel::Renderer::Renderer::Init(int a_Width, int a_Height, const char* a_Ti
         glfwTerminate();
         return;
     }
+    // One-time GL info dump — invaluable when a shader works on desktop but not
+    // on the Pi's GLES2 driver (e.g. a missing extension).
+    std::cout << "GL_VENDOR:   " << (const char*)glGetString(GL_VENDOR)   << "\n"
+              << "GL_RENDERER: " << (const char*)glGetString(GL_RENDERER) << "\n"
+              << "GL_VERSION:  " << (const char*)glGetString(GL_VERSION)  << "\n"
+              << "GLSL:        " << (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
+    if (const char* ext = (const char*)glGetString(GL_EXTENSIONS))
+        std::cout << "GL_OES_standard_derivatives present: "
+                  << (std::string(ext).find("GL_OES_standard_derivatives") != std::string::npos ? "YES" : "NO")
+                  << std::endl;
+
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(m_Window, &fbWidth, &fbHeight);
     glViewport(0, 0, fbWidth, fbHeight);

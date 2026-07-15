@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include <cstring>
 #include <vector>
 
 #include "ComponentPool.h"
@@ -76,7 +77,7 @@ namespace Wheel
                 const char* t_name = typeid(T).name();
                 for (int i = 0; i < m_SystemCount; i++)
                 {
-                    if (strcmp(t_name,m_SystemNames[i]) == 0)
+                    if (std::strcmp(t_name,m_SystemNames[i]) == 0)
                     {
                         return static_cast<T*>(m_Systems[i]);
                     }

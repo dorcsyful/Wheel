@@ -38,8 +38,7 @@ namespace Wheel
         std::filesystem::path exe = std::filesystem::read_symlink("/proc/self/exe", ec);
         if (ec)
             return std::filesystem::current_path();
-        return ex
-        e.parent_path();
+        return exe.parent_path();
 #endif
     }
 
