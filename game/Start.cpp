@@ -1,6 +1,6 @@
 #include "Start.h"
 #include "debugger/Debugger.h"
-#include "renderer/include/Texture.h"
+#include "_gfx/include/Texture.h"
 
 #include "../wheel/Initializer.h"
 #include "demos/scenes/CollisionPhases.h"

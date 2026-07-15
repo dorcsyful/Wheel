@@ -1,7 +1,7 @@
 #include "Initializer.h"
 
-#include "renderer/include/Renderer.h"
-#include "renderer/include/Texture.h"
+#include "_gfx/include/Renderer.h"
+#include "_gfx/include/Texture.h"
 #include "core/Scene.h"
 #include "rendering/CameraComponent.h"
 #include "physics/Rigidbody2D.h"

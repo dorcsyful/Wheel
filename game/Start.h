@@ -6,7 +6,7 @@
 
 #include <core/Scene.h>
 
-#include "renderer/include/Renderer.h"
+#include "_gfx/include/Renderer.h"
 #include "../wheel/rendering/RenderSystem.h"
 #include "core/Description.h"
 #include "../wheel/rendering/CameraComponent.h"

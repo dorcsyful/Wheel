@@ -4,7 +4,7 @@
 #include <functional>
 #include <algorithm>
 #include "../events/EventBus.h"
-#include "renderer/include/RenderedObject.h"
+#include "_gfx/include/RenderedObject.h"
 #include "core/System.h"
 #include "core/Scene.h"
 #include "core/ComponentPool.h"

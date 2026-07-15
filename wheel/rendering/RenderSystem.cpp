@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "renderer/include/RenderedObject.h"
-#include "renderer/include/Renderer.h"
+#include "_gfx/include/RenderedObject.h"
+#include "_gfx/include/Renderer.h"
 #include "../events/EventBus.h"
 #include "../events/Events.h"
 #include "core/Scene.h"

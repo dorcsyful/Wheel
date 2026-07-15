@@ -1,11 +1,11 @@
-#include "renderer/include/Renderer.h"
+#include "_gfx/include/Renderer.h"
 
 #include <iostream>
 
-#include "renderer/include/Shader.h"
-#include "renderer/include/Texture.h"
-#include "renderer/include/TypeInfo.h"
-#include "renderer/include/RenderedObject.h"
+#include "_gfx/include/Shader.h"
+#include "_gfx/include/Texture.h"
+#include "_gfx/include/TypeInfo.h"
+#include "_gfx/include/RenderedObject.h"
 #include "../../events/EventBus.h"
 #include "../../events/Events.h"
 #include "debugger/Debugger.h"
