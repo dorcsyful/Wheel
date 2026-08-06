@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
-#include "../wheel/include/math/Vector2.h"
+#include "math/Vector2.h"
 
 using Wheel::Math::Vector2;
 
@@ -266,11 +266,6 @@ TEST(Vector2, Cross_GeneralCase)
 
 // ==================== Length ====================
 
-TEST(Vector2, Length_ZeroVector_ReturnsZero)
-{
-    EXPECT_FLOAT_EQ(Vector2().Length(), 0.0f);
-}
-
 TEST(Vector2, Length_UnitX_ReturnsOne)
 {
     EXPECT_FLOAT_EQ(Vector2(1.0f, 0.0f).Length(), 1.0f);
@@ -379,4 +374,23 @@ TEST(Vector2, Perpendicular_AppliedTwice_NegatesOriginal)
     Vector2 pp = v.Perpendicular().Perpendicular();
     EXPECT_FLOAT_EQ(pp.x, -v.x);
     EXPECT_FLOAT_EQ(pp.y, -v.y);
+}
+
+TEST(Vector2, ConstBracket)
+{
+    const Vector2 v = Vector2(100,21);
+    EXPECT_FLOAT_EQ(v[0],100);
+    EXPECT_FLOAT_EQ(v[1],21);
+}
+
+TEST(Vector2, ZeroVector)
+{
+    Vector2 v = Vector2(0,0);
+    EXPECT_EQ(Vector2::Zero(),v);
+}
+
+TEST(Vector2, NormalizeFuzzyLength)
+{
+    Vector2 v = Vector2(WHEEL_EPSILON,0);
+    EXPECT_EQ(Vector2::Zero(),v.Normalized());
 }

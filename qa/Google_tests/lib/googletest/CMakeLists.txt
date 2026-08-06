@@ -229,12 +229,12 @@ if (gtest_build_tests)
   # MSVC 7.1 does not support STL with exceptions disabled.
   if (NOT MSVC OR MSVC_VERSION GREATER 1310)
     cxx_library(gtest_no_exception "${cxx_no_exception}"
-      src/gtest-all.cc)
+            src/gtest-all.cc)
     cxx_library(gtest_main_no_exception "${cxx_no_exception}"
-      src/gtest-all.cc src/gtest_main.cc)
+            src/gtest-all.cc src/gtest_main.cc)
   endif()
   cxx_library(gtest_main_no_rtti "${cxx_no_rtti}"
-    src/gtest-all.cc src/gtest_main.cc)
+          src/gtest-all.cc src/gtest_main.cc)
 
   cxx_test_with_flags(gtest-death-test_ex_nocatch_test
     "${cxx_exception} -DGTEST_ENABLE_CATCH_EXCEPTIONS_=0"
@@ -247,7 +247,7 @@ if (gtest_build_tests)
     gtest_main_no_rtti test/gtest_unittest.cc)
 
   cxx_shared_library(gtest_dll "${cxx_default}"
-    src/gtest-all.cc src/gtest_main.cc)
+          src/gtest-all.cc src/gtest_main.cc)
 
   cxx_executable_with_flags(gtest_dll_test_ "${cxx_default}"
     gtest_dll test/gtest_all_test.cc)

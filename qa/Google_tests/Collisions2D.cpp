@@ -2,21 +2,21 @@
 #include <cmath>
 
 #include "math/Vector2.h"
-#include "../wheel/include/core/Transform2D.h"
-#include "../wheel/collision/Collider2D.h"
-#include "../wheel/collision/Collision2DManifold.h"
-#include "../wheel/collision/BoxBoxCollision2D.h"
-#include "../wheel/collision/CircleBoxCollision2D.h"
-#include "../wheel/collision/CircleCircleCollision2D.h"
+#include "common/Transform2D.h"
+#include "collision/Collider2D.h"
+#include "collision/Collision2DManifold.h"
+#include "collision/BoxBoxCollision2D.h"
+#include "collision/CircleBoxCollision2D.h"
+#include "collision/CircleCircleCollision2D.h"
 
 using Wheel::Math::Vector2;
 using Wheel::Common::Transform2D;
-using Wheel::Components::BoxCollider2D;
-using Wheel::Components::CircleCollider2D;
-using Wheel::Engine::Collision::BoxBoxCollision2D;
-using Wheel::Engine::Collision::CircleBoxCollision2D;
-using Wheel::Engine::Collision::Collision2DManifold;
-using Wheel::Engine::Physics::CircleCircleCollision2D;
+using Wheel::Collision::BoxCollider2D;
+using Wheel::Collision::CircleCollider2D;
+using Wheel::Collision::BoxBoxCollision2D;
+using Wheel::Collision::CircleBoxCollision2D;
+using Wheel::Collision::Collision2DManifold;
+using Wheel::Collision::CircleCircleCollision2D;
 
 namespace
 {

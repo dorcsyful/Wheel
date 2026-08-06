@@ -55,16 +55,25 @@ if(WIN32)
     # Windows uses standard OpenGL
     target_link_libraries(wheel_engine PUBLIC opengl32)
     message(STATUS "Configuring for Windows (Desktop OpenGL)")
-
-    # Setup Google Test for Windows
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Google_tests/CMakeLists.txt")
-        add_subdirectory("Google_tests")
-    endif()
 else()
     # Raspberry Pi 3 uses OpenGL ES 2.0/3.0
     # 'm' is math library, 'dl' is for loading drivers
     target_link_libraries(wheel_engine PUBLIC GLESv2 m dl pthread)
     message(STATUS "Configuring for Raspberry Pi (OpenGL ES)")
+endif()
+
+# QA harness/oracles and their tests are plain C++ over wheel_engine — no
+# renderer, no window — so they build the same way on every target platform.
+# That's also what the cross-target oracle (same scene on Windows vs RPi)
+# needs: these binaries must exist on both.
+add_subdirectory("qa")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/qa/Google_tests/CMakeLists.txt")
+    add_subdirectory("qa/Google_tests")
+    # Must come after qa/Google_tests: reuses the gtest/gtest_main targets
+    # defined by its lib subdirectory instead of re-adding googletest.
+    add_subdirectory("qa/harness_tests")
+    add_subdirectory("qa/oracle_tests")
+    add_subdirectory("qa/agent_tests")
 endif()
 
 # --- 4. THE GAME (User Code) ---

@@ -1,7 +1,7 @@
 #pragma once
 #include <gtest/gtest.h>
 #include <string>
-#include "../wheel/include/core/Scene.h"
+#include "core/Scene.h"
 
 // assert() is compiled out in release (NDEBUG) builds, so assertion-based
 // death tests can only run when asserts are enabled (debug builds).
@@ -24,7 +24,7 @@ struct Counter { int count = 0; };
 
 TEST(ECS, Entity_IDsAreSequential)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     for (int i = 0; i < 10; ++i) {
         uint32_t id = scene.AddEntity();
         EXPECT_EQ(id, static_cast<uint32_t>(i));
@@ -33,7 +33,7 @@ TEST(ECS, Entity_IDsAreSequential)
 
 TEST(ECS, Entity_CountTracking)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     EXPECT_EQ(scene.GetNumberOfEntities(), 0u);
     for (int i = 1; i <= 5; ++i) {
         scene.AddEntity();
@@ -44,7 +44,7 @@ TEST(ECS, Entity_CountTracking)
 TEST(ECS, Entity_TooManyEntitiesAsserts)
 {
     SKIP_IF_ASSERTS_DISABLED();
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     for (int i = 0; i < MAX_ENTITIES; ++i)
         scene.AddEntity();
     EXPECT_DEATH(scene.AddEntity(), "Too many entities in existence.");
@@ -54,7 +54,7 @@ TEST(ECS, Entity_TooManyEntitiesAsserts)
 
 TEST(ECS, Entity_RemovalDecreasesCount)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
     uint32_t e2 = scene.AddEntity();
@@ -71,7 +71,7 @@ TEST(ECS, Entity_RemovalDecreasesCount)
 TEST(ECS, Entity_RemovalOutOfRangeAsserts)
 {
     SKIP_IF_ASSERTS_DISABLED();
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     EXPECT_DEATH(scene.RemoveEntity(MAX_ENTITIES + 1), "");
 }
 
@@ -79,14 +79,14 @@ TEST(ECS, Entity_RemovalOutOfRangeAsserts)
 
 TEST(ECS, ComponentReg_SingleType)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     EXPECT_EQ(scene.GetNumberOfComponentTypes(), 1);
 }
 
 TEST(ECS, ComponentReg_MultipleTypes)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
@@ -98,7 +98,7 @@ TEST(ECS, ComponentReg_MultipleTypes)
 TEST(ECS, ComponentReg_DuplicateAsserts)
 {
     SKIP_IF_ASSERTS_DISABLED();
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     EXPECT_DEATH(scene.RegisterComponentType<A>(), "Component type already registered.");
 }
@@ -107,7 +107,7 @@ TEST(ECS, ComponentReg_DuplicateAsserts)
 
 TEST(ECS, Component_HasFalseBeforeAdd)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     EXPECT_FALSE(scene.HasComponent<A>(e));
@@ -115,7 +115,7 @@ TEST(ECS, Component_HasFalseBeforeAdd)
 
 TEST(ECS, Component_HasTrueAfterAdd)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -124,7 +124,7 @@ TEST(ECS, Component_HasTrueAfterAdd)
 
 TEST(ECS, Component_HasFalseAfterRemove)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -135,7 +135,7 @@ TEST(ECS, Component_HasFalseAfterRemove)
 TEST(ECS, Component_AddDuplicateAsserts)
 {
     SKIP_IF_ASSERTS_DISABLED();
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -145,7 +145,7 @@ TEST(ECS, Component_AddDuplicateAsserts)
 TEST(ECS, Component_RemoveMissingAsserts)
 {
     SKIP_IF_ASSERTS_DISABLED();
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     EXPECT_DEATH(scene.RemoveComponent<A>(e), "Entity does not have component.");
@@ -155,7 +155,7 @@ TEST(ECS, Component_RemoveMissingAsserts)
 
 TEST(ECS, Component_DefaultValues)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     uint32_t e = scene.AddEntity();
@@ -169,7 +169,7 @@ TEST(ECS, Component_DefaultValues)
 
 TEST(ECS, Component_ModifyViaGetComponent)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -180,7 +180,7 @@ TEST(ECS, Component_ModifyViaGetComponent)
 
 TEST(ECS, Component_ModifyPersistsAcrossMultipleCalls)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -192,7 +192,7 @@ TEST(ECS, Component_ModifyPersistsAcrossMultipleCalls)
 
 TEST(ECS, Component_MultipleEntitiesIndependentData)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -212,7 +212,7 @@ TEST(ECS, Component_MultipleEntitiesIndependentData)
 
 TEST(ECS, Component_ReAddAfterRemove_ResetsToDefault)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -230,7 +230,7 @@ TEST(ECS, Component_ReAddAfterRemove_ResetsToDefault)
 
 TEST(ECS, Component_MultipleTypesOnOneEntity)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
@@ -254,7 +254,7 @@ TEST(ECS, Component_MultipleTypesOnOneEntity)
 
 TEST(ECS, Component_DifferentEntitiesHaveDifferentSubsets)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
@@ -287,7 +287,7 @@ TEST(ECS, Component_DifferentEntitiesHaveDifferentSubsets)
 
 TEST(ECS, Component_RemoveOneTypePreservesOthers)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
@@ -307,7 +307,7 @@ TEST(ECS, Component_RemoveOneTypePreservesOthers)
 
 TEST(ECS, ComponentSize_IncreasesOnAdd)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     EXPECT_EQ(scene.GetComponents<A>().size(), 0u);
 
@@ -320,7 +320,7 @@ TEST(ECS, ComponentSize_IncreasesOnAdd)
 
 TEST(ECS, ComponentSize_DecreasesOnRemove)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -340,7 +340,7 @@ TEST(ECS, ComponentSize_DecreasesOnRemove)
 
 TEST(ECS, ComponentSize_UnregisteredComponentIsZero)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
 
@@ -355,7 +355,7 @@ TEST(ECS, ComponentSize_UnregisteredComponentIsZero)
 
 TEST(ECS, ComponentPool_RemoveFirst_OthersIntact)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -377,7 +377,7 @@ TEST(ECS, ComponentPool_RemoveFirst_OthersIntact)
 
 TEST(ECS, ComponentPool_RemoveMiddle_OthersIntact)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -399,7 +399,7 @@ TEST(ECS, ComponentPool_RemoveMiddle_OthersIntact)
 
 TEST(ECS, ComponentPool_RemoveLast_OthersIntact)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -421,7 +421,7 @@ TEST(ECS, ComponentPool_RemoveLast_OthersIntact)
 
 TEST(ECS, ComponentPool_RemoveOnly_Succeeds)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -434,7 +434,7 @@ TEST(ECS, ComponentPool_RemoveOnly_Succeeds)
 
 TEST(ECS, ComponentPool_LargeScale_RemoveEveryOther)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
 
     std::vector<uint32_t> entities;
@@ -467,7 +467,7 @@ TEST(ECS, ComponentPool_LargeScale_RemoveEveryOther)
 
 TEST(ECS, EntityDestroy_CleansUpSingleComponent)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e = scene.AddEntity();
     scene.AddComponent<A>(e);
@@ -479,7 +479,7 @@ TEST(ECS, EntityDestroy_CleansUpSingleComponent)
 
 TEST(ECS, EntityDestroy_CleansUpAllComponents)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
@@ -497,7 +497,7 @@ TEST(ECS, EntityDestroy_CleansUpAllComponents)
 
 TEST(ECS, EntityDestroy_EntityWithNoComponentsDoesNotCrash)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -511,7 +511,7 @@ TEST(ECS, EntityDestroy_EntityWithNoComponentsDoesNotCrash)
 
 TEST(ECS, EntityDestroy_MiddleEntity_OthersPreserved)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     uint32_t e0 = scene.AddEntity();
@@ -539,7 +539,7 @@ TEST(ECS, EntityDestroy_MiddleEntity_OthersPreserved)
 
 TEST(ECS, EntityDestroy_AllEntities_AllComponentsGone)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
 
     std::vector<uint32_t> entities;
@@ -561,7 +561,7 @@ TEST(ECS, EntityDestroy_AllEntities_AllComponentsGone)
 
 TEST(ECS, EntityReuse_RecycledIDHasNoComponents)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
 
@@ -584,13 +584,13 @@ TEST(ECS, EntityReuse_RecycledIDHasNoComponents)
 
 TEST(ECS, Description_EmptyByDefault)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     EXPECT_TRUE(desc.IsEmpty());
 }
 
 TEST(ECS, Description_IsNotEmptyAfterAdd)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[3] = true;
     desc.AddComponentType(bits);
@@ -599,7 +599,7 @@ TEST(ECS, Description_IsNotEmptyAfterAdd)
 
 TEST(ECS, Description_AddSingleBitSetsCorrectSlot)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[5] = true;
     desc.AddComponentType(bits);
@@ -611,7 +611,7 @@ TEST(ECS, Description_AddSingleBitSetsCorrectSlot)
 
 TEST(ECS, Description_AddMultipleBitsIndependently)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
     std::bitset<MAX_COMPONENT_TYPES> b7; b7[7] = true;
     desc.AddComponentType(b0);
@@ -624,7 +624,7 @@ TEST(ECS, Description_AddMultipleBitsIndependently)
 
 TEST(ECS, Description_RemoveComponentType_ClearsBit)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[2] = true;
     desc.AddComponentType(bits);
@@ -636,7 +636,7 @@ TEST(ECS, Description_RemoveComponentType_ClearsBit)
 
 TEST(ECS, Description_RemoveOneOfManyPreservesOthers)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
     std::bitset<MAX_COMPONENT_TYPES> b1; b1[1] = true;
     std::bitset<MAX_COMPONENT_TYPES> b2; b2[2] = true;
@@ -652,8 +652,8 @@ TEST(ECS, Description_RemoveOneOfManyPreservesOthers)
 
 TEST(ECS, Description_HasComponentType_Present)
 {
-    Wheel::Engine::Description entity_desc;
-    Wheel::Engine::Description comp_desc;
+    Wheel::Core::Description entity_desc;
+    Wheel::Core::Description comp_desc;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[4] = true;
     entity_desc.AddComponentType(bits);
@@ -664,8 +664,8 @@ TEST(ECS, Description_HasComponentType_Present)
 
 TEST(ECS, Description_HasComponentType_Absent)
 {
-    Wheel::Engine::Description entity_desc;
-    Wheel::Engine::Description comp_desc;
+    Wheel::Core::Description entity_desc;
+    Wheel::Core::Description comp_desc;
     std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
     std::bitset<MAX_COMPONENT_TYPES> b1; b1[1] = true;
     entity_desc.AddComponentType(b0);
@@ -677,18 +677,18 @@ TEST(ECS, Description_HasComponentType_Absent)
 TEST(ECS, Description_HasComponentType_EmptyQueryAsserts)
 {
     SKIP_IF_ASSERTS_DISABLED();
-    Wheel::Engine::Description entity_desc;
+    Wheel::Core::Description entity_desc;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[0] = true;
     entity_desc.AddComponentType(bits);
 
-    Wheel::Engine::Description empty;
+    Wheel::Core::Description empty;
     EXPECT_DEATH(entity_desc.HasComponentType(empty), "Component type out of range");
 }
 
 TEST(ECS, Description_Reset_ClearsAllBits)
 {
-    Wheel::Engine::Description desc;
+    Wheel::Core::Description desc;
     std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
     std::bitset<MAX_COMPONENT_TYPES> b1; b1[1] = true;
     std::bitset<MAX_COMPONENT_TYPES> b2; b2[2] = true;
@@ -703,13 +703,13 @@ TEST(ECS, Description_Reset_ClearsAllBits)
 
 TEST(ECS, Description_AssignmentOperatorCopiesBits)
 {
-    Wheel::Engine::Description src;
+    Wheel::Core::Description src;
     std::bitset<MAX_COMPONENT_TYPES> b0; b0[0] = true;
     std::bitset<MAX_COMPONENT_TYPES> b6; b6[6] = true;
     src.AddComponentType(b0);
     src.AddComponentType(b6);
 
-    Wheel::Engine::Description dst;
+    Wheel::Core::Description dst;
     dst = src;
     EXPECT_TRUE (dst.GetAsBitset()[0]);
     EXPECT_TRUE (dst.GetAsBitset()[6]);
@@ -718,12 +718,12 @@ TEST(ECS, Description_AssignmentOperatorCopiesBits)
 
 TEST(ECS, Description_MoveConstructorCopiesBits)
 {
-    Wheel::Engine::Description src;
+    Wheel::Core::Description src;
     std::bitset<MAX_COMPONENT_TYPES> bits;
     bits[9] = true;
     src.AddComponentType(bits);
 
-    Wheel::Engine::Description dst(std::move(src));
+    Wheel::Core::Description dst(std::move(src));
     EXPECT_TRUE(dst.GetAsBitset()[9]);
 }
 
@@ -734,7 +734,7 @@ TEST(ECS, Description_MoveConstructorCopiesBits)
 
 TEST(ECS, System_UpdateAll_CountersReachExpected)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<Counter>();
 
     std::vector<uint32_t> entities;
@@ -757,7 +757,7 @@ TEST(ECS, System_UpdateAll_CountersReachExpected)
 
 TEST(ECS, System_UpdatePartial_OnlyMatchingEntitiesUpdated)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<Counter>();
     scene.RegisterComponentType<A>();
 
@@ -792,7 +792,7 @@ TEST(ECS, System_UpdatePartial_OnlyMatchingEntitiesUpdated)
 
 TEST(ECS, System_UpdateWithEntityRemovedMidSimulation)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<Counter>();
     uint32_t e0 = scene.AddEntity();
     uint32_t e1 = scene.AddEntity();
@@ -828,7 +828,7 @@ TEST(ECS, System_UpdateWithEntityRemovedMidSimulation)
 
 TEST(ECS, System_UpdateWithEntityAddedMidSimulation)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<Counter>();
     uint32_t e0 = scene.AddEntity();
     scene.AddComponent<Counter>(e0);
@@ -861,7 +861,7 @@ TEST(ECS, System_UpdateWithEntityAddedMidSimulation)
 
 TEST(ECS, Mixed_ManyEntitiesVariedComponents)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<A>();
     scene.RegisterComponentType<B>();
     scene.RegisterComponentType<C>();
@@ -891,7 +891,7 @@ TEST(ECS, Mixed_ManyEntitiesVariedComponents)
 
 TEST(ECS, Mixed_StressCreateDestroyWithComponents)
 {
-    Wheel::Engine::Scene scene;
+    Wheel::Core::Scene scene;
     scene.RegisterComponentType<Counter>();
 
     // Create 50, destroy odd ones, create 50 more, verify counts

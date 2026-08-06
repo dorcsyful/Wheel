@@ -3,9 +3,22 @@
 .vs/
 *.user
 
-# Build Folders 
+# Build Folders
 build-pi/
 cmake-build-*/
+
+# Generated coverage report (regenerate via qa/coverage/run_coverage.sh)
+qa/coverage/report/
+
+# Generated mutation results (regenerate via qa/mutation/mutate.py)
+qa/mutation/results.json
+
+# Python bytecode cache (mutation driver / agent interface)
+__pycache__/
+*.pyc
+
+# WSL zone-identifier metadata
+*:Zone.Identifier
 
 # Compiled Binaries
 *.o

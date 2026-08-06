@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <cmath>
 
+#include "core/Globals.h"
+
 namespace Wheel
 {
     namespace Math
@@ -34,15 +36,33 @@ namespace Wheel
             float Length() const
             {
                 float temp = x * x + y * y;
-                return temp < 1e-6f ? 1e-6f : std::sqrt(temp);
+                return temp < 0 ? 0 : std::sqrt(temp);
             }
 
             float LengthSquared() const { return x * x + y * y; }
-            Vector2 Normalized() const { return *this / Length(); }
-            static Vector2 Normalize(const Vector2& a) { return a / a.Length(); }
+            Vector2 Normalized() const
+            {
+                float length = Length();
+                if (length <= WHEEL_EPSILON)
+                {
+                    return Vector2::Zero();
+                }
+                return *this / length;
+            }
+            void Normalize()
+            {
+                float length = Length();
+                x /= length; y /= length;
+            }
+            static Vector2 Normalize(const Vector2& a)
+            {
+                float length = a.Length();
+                if (length <= WHEEL_EPSILON) { return Vector2::Zero(); }
+                return a / length;
+            }
             Vector2 Perpendicular() const { return Vector2(-y, x); }
             static Vector2 Lerp(const Vector2& a, const Vector2& b, float t) { return a + (b - a) * t; }
-
+            static Vector2 Zero() { return Vector2(0.0f, 0.0f); }
             float x;
             float y;
         };
