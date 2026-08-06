@@ -60,7 +60,7 @@ void Wheel::Physics::Physics2DSystem::Update(float deltaTime)
 
         if (UpdateRigidbodyInertia(id, transform, rigidbody)) continue;
 
-        if (rigidbody.GetType() == Rigidbody2DType::STATIC)
+        if (rigidbody.GetType() == Rigidbody2DType::STATIC || rigidbody.GetType() == Rigidbody2DType::KINEMATIC)
             continue;
         if (!rigidbody.active)
             continue;
@@ -75,7 +75,8 @@ void Wheel::Physics::Physics2DSystem::Update(float deltaTime)
     for (uint32_t id : m_EntityIDs)
     {
         Rigidbody2D& rigidbody2D = m_RigidbodyPool->GetComponent(id);
-        if (!rigidbody2D.active || rigidbody2D.GetType() == Rigidbody2DType::STATIC)
+        if (!rigidbody2D.active || rigidbody2D.GetType() != Rigidbody2DType::DYNAMIC
+            )
             continue;
         m_CollisionResolver->IntegratePseudoPosition(m_TransformPool->GetComponent(id), rigidbody2D, deltaTime);
         IntegratePosition(m_TransformPool->GetComponent(id), rigidbody2D, deltaTime);

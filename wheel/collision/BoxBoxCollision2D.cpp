@@ -5,6 +5,25 @@
 #include <algorithm>
 #include <cmath>
 
+bool Wheel::Collision::BoxBoxCollision2D::CalculateAndUpdateOverlap(const Wheel::Collision::BoxCollider2D& a_Collider1, const Wheel::Math::Vector2* vertices1, const Wheel::Math::Vector2* vertices2, Wheel::Collision::Collision2DManifold manifold, float& minOverlap1, int& bestAxis1, int i, Wheel::Collision::Collision2DManifold& a_Value)
+{
+    Math::Vector2 axis = a_Collider1.cachedNormals[i];
+
+    float min1, max1, min2, max2;
+    ProjectOntoAxis(vertices1, axis, min1, max1);
+    ProjectOntoAxis(vertices2, axis, min2, max2);
+
+    if (min1 >= max2 || min2 >= max1)
+    {
+        a_Value = manifold;
+        return true;
+    }
+
+    float overlap = std::min(max1, max2) - std::max(min1, min2);
+    if (overlap < minOverlap1) { minOverlap1 = overlap; bestAxis1 = i; }
+    return false;
+}
+
 Wheel::Collision::Collision2DManifold Wheel::Collision::BoxBoxCollision2D::BoxBoxCollision(
     const BoxCollider2D& a_Collider1, const Common::Transform2D& a_Transform1, const BoxCollider2D& a_Collider2, const Common::Transform2D& a_Transform2)
 {
@@ -19,32 +38,9 @@ Wheel::Collision::Collision2DManifold Wheel::Collision::BoxBoxCollision2D::BoxBo
     // Projecting onto opposite axes gives the same overlap, so only 2 unique axes per box.
     for (int i = 0; i < 2; i++)
     {
-        Math::Vector2 axis = a_Collider1.cachedNormals[i];
-
-        float min1, max1, min2, max2;
-        ProjectOntoAxis(vertices1, axis, min1, max1);
-        ProjectOntoAxis(vertices2, axis, min2, max2);
-
-        if (min1 >= max2 || min2 >= max1)
-            return manifold;
-
-        float overlap = std::min(max1, max2) - std::max(min1, min2);
-        if (overlap < minOverlap1) { minOverlap1 = overlap; bestAxis1 = i; }
-    }
-
-    for (int i = 0; i < 2; i++)
-    {
-        Math::Vector2 axis = a_Collider2.cachedNormals[i];
-
-        float min1, max1, min2, max2;
-        ProjectOntoAxis(vertices1, axis, min1, max1);
-        ProjectOntoAxis(vertices2, axis, min2, max2);
-
-        if (min1 >= max2 || min2 >= max1)
-            return manifold;
-
-        float overlap = std::min(max1, max2) - std::max(min1, min2);
-        if (overlap < minOverlap2) { minOverlap2 = overlap; bestAxis2 = i; }
+            Wheel::Collision::Collision2DManifold a_Value;
+            if (CalculateAndUpdateOverlap(a_Collider1, vertices1, vertices2, manifold, minOverlap1, bestAxis1, i, a_Value)) return a_Value;
+            if (CalculateAndUpdateOverlap(a_Collider2, vertices1, vertices2, manifold, minOverlap2, bestAxis2, i, a_Value)) return a_Value;
     }
 
     if (minOverlap1 < minOverlap2)

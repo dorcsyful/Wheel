@@ -1,4 +1,5 @@
 #include "Constraint2DResolver.h"
+#include <algorithm>
 #include "core/Scene.h"
 #include "../collision/Collision2DManifold.h"
 #include "CollisionConstraintSolver.h"
@@ -18,13 +19,15 @@ Wheel::Physics::Constraint2DResolver::Constraint2DResolver()
     EventSystem::EventBus::Subscribe<Events::ComponentAddedEvent<Physics::DistanceJoint2D>>(
         [this](const Events::ComponentAddedEvent<Physics::DistanceJoint2D>& a_Event)
         {
-            m_JointEntities.insert(a_Event.entityId);
+            if (std::find(m_JointEntities.begin(), m_JointEntities.end(), a_Event.entityId) == m_JointEntities.end())
+                m_JointEntities.push_back(a_Event.entityId);
         }, m_Tokens);
 
     EventSystem::EventBus::Subscribe<Events::ComponentRemovedEvent<DistanceJoint2D>>(
         [this](const Events::ComponentRemovedEvent<DistanceJoint2D>& a_Event)
         {
-            m_JointEntities.erase(a_Event.entityId);
+            auto it = std::find(m_JointEntities.begin(), m_JointEntities.end(), a_Event.entityId);
+            if (it != m_JointEntities.end()) m_JointEntities.erase(it);
         }, m_Tokens);
 
     // Entity destruction tears the joint down without firing ComponentRemovedEvent,
@@ -32,7 +35,8 @@ Wheel::Physics::Constraint2DResolver::Constraint2DResolver()
     EventSystem::EventBus::Subscribe<Events::EntityDestroyed>(
         [this](const Events::EntityDestroyed& a_Event)
         {
-            m_JointEntities.erase(a_Event.entityId);
+            auto it = std::find(m_JointEntities.begin(), m_JointEntities.end(), a_Event.entityId);
+            if (it != m_JointEntities.end()) m_JointEntities.erase(it);
         }, m_Tokens);
 }
 void Wheel::Physics::Constraint2DResolver::IntegratePseudoPosition(Common::Transform2D& a_Transform2D,

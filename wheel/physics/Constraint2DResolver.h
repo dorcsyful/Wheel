@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 #include "core/ComponentPool.h"
 #include "CollisionConstraintSolver.h"
 #include "../events/EventBus.h"
@@ -57,7 +56,10 @@ namespace Wheel
             Core::ComponentPool<Rigidbody2D>* m_RigidbodyPool = nullptr;
             Core::ComponentPool<DistanceJoint2D>* m_JointPool = nullptr;
 
-            std::unordered_set<uint32_t> m_JointEntities;
+            // Insertion-ordered (not unordered_set) so joint solve order is
+            // deterministic and identical across stdlib implementations —
+            // Gauss-Seidel solving is order-dependent when joints share a body.
+            std::vector<uint32_t> m_JointEntities;
             EventSystem::SubscriptionToken m_Tokens;
 
         };

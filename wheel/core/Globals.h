@@ -5,6 +5,7 @@
 #define MAX_CONSTRAINT_ITERATION 6
 #define PI 3.14159265358979323846f
 #define NO_VALUE UINT32_MAX
+#define WHEEL_EPSILON 1e-6f
 constexpr float RAD_TO_DEG = 180.0f / PI;
 constexpr float DEG_TO_RAD = PI / 180.0f;
 

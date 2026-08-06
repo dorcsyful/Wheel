@@ -34,7 +34,7 @@ namespace Wheel
             void SetType(Rigidbody2DType a_Type)
             {
                 rigidbodyType = a_Type;
-                if (a_Type == Rigidbody2DType::STATIC)
+                if (a_Type == Rigidbody2DType::STATIC || a_Type == Rigidbody2DType::KINEMATIC)
                 {
                     invMass = 0.0f;
                     invInertia = 0.0f;

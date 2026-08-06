@@ -10,6 +10,12 @@ namespace Wheel
         class BoxBoxCollision2D
         {
         public:
+            static bool CalculateAndUpdateOverlap(const Wheel::Collision::BoxCollider2D& a_Collider1,
+                                                  const Wheel::Math::Vector2* vertices1,
+                                                  const Wheel::Math::Vector2* vertices2,
+                                                  Wheel::Collision::Collision2DManifold manifold, float& minOverlap1,
+                                                  int& bestAxis1, int i,
+                                                  Wheel::Collision::Collision2DManifold& a_Value);
             static Collision2DManifold BoxBoxCollision(const BoxCollider2D& a_Collider1, const Common::Transform2D& a_Transform1, const BoxCollider2D& a_Collider2, const Common::Transform2D& a_Transform2);
             static const Math::Vector2* GetVertices(const BoxCollider2D& a_Collider, const Common::Transform2D& a_Transform2D);
 

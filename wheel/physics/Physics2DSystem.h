@@ -49,6 +49,8 @@ namespace Wheel
                                         Rigidbody2D& rigidbody);
             void EnsurePools();
             void Update(float deltaTime) override;
+            void SetGravity(const Math::Vector2& a_Gravity) { m_Gravity = a_Gravity; }
+            Math::Vector2 GetGravity() { return m_Gravity; }
         private:
             void ApplyGravity(Rigidbody2D& a_Rigidbody2D,float deltaTime);
             void IntegrateVelocity(Rigidbody2D& a_Rigidbody2D,float deltaTime);
